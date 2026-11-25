@@ -50,6 +50,20 @@ pnpm dev
 - `pnpm db:push:dev` / `pnpm db:push:prod` — применить схему Prisma к нужной базе
 - `pnpm db:copy-prod-to-dev` — скопировать `data/prod.db` в `data/dev.db`
 - `pnpm prisma:generate` — сгенерировать клиент Prisma (в `generated/`, в git не попадает)
+- `pnpm db:import` — перенести зрителей из дампа Postgres старого fox-sphere (см. ниже)
+
+## Импорт зрителей из старого fox-sphere
+
+Скрипт читает data-only дамп `pg_dump` (по умолчанию `data/prod-pg-dump.sql`) и переносит зрителей, героев, историю монет и XP, watch streak и `SystemState` (соответствие полей — `docs/spec.md`, 1.2). Токены Twitch и legacy-таблицы не переносятся.
+
+```bash
+pnpm db:import                          # пробный прогон по dev.db: что изменится и что не сошлось
+pnpm db:import --apply                  # записать (перед этим делается копия базы в data/)
+pnpm db:import --db data/prod.db        # другая база
+pnpm db:import --file data/other.sql    # другой дамп
+```
+
+Повторный запуск не дублирует строки. Балансы совпадающих зрителей **перезаписываются** значениями из дампа, поэтому после перехода на нового бота старый дамп накатывать нельзя. На время `--apply` бота этой базы лучше остановить.
 
 ## База данных и драйвер
 

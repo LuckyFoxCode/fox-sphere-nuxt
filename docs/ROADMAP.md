@@ -56,10 +56,10 @@
 
 ## 4. Импорт данных
 
-- ⬜ `scripts/import-from-postgres.ts`: `ChannelUser` + `Viewer` → `Viewer`, затем `ViewerHero`, `CoinHistory`, `XpHistory`, `WatchStreak`, `SystemState`
-- ⬜ Источник баланса — `ChannelUser`, **не** `User`
-- ⬜ Идемпотентность (`upsert` по `twitchId`), сверка `SUM(coins)`, `SUM(xp)`, `COUNT(*)`
-- ⬜ `TwitchToken` не импортируем
+- 🟨 `scripts/import-from-postgres.ts` (`pnpm db:import`): `ChannelUser` + `Viewer` → `Viewer`, затем `ViewerHero`, `CoinHistory`, `XpHistory`, `WatchStreak`, `SystemState` — прод-данные записаны в `dev.db`; в `prod.db` — свежей выгрузкой при переходе на нового бота
+- ✅ Источник баланса — `ChannelUser`, **не** `User`
+- ✅ Идемпотентность (`upsert` по `twitchId`), сверка `SUM(coins)`, `SUM(xp)`, `COUNT(*)`
+- ✅ `TwitchToken` не импортируем
 
 ## 5. Игры (по одной; каждый виджет собирается заново в стиле наклеек)
 

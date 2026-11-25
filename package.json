@@ -15,6 +15,7 @@
     "db:push:dev": "dotenv -e .env.development -- prisma db push",
     "db:push:prod": "dotenv -e .env.production -- prisma db push",
     "db:copy-prod-to-dev": "node scripts/copy-prod-db.mjs",
+    "db:import": "dotenv -e .env.development -- pnpm --filter bot exec tsx ../scripts/import-from-postgres.ts",
     "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare && prisma generate"
   },
