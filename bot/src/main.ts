@@ -2,6 +2,7 @@ import { ChatClient, type ChatMessage } from '@twurple/chat';
 import { createAnnouncer } from './announcements';
 import { createAuth } from './auth';
 import { createBadgeResolver } from './badges';
+import { getJackpot } from './bank';
 import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
 import { config } from './config';
@@ -9,11 +10,25 @@ import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
+import { createSpinStage } from './spinStage';
 import { addStreamXp, getStreamState } from './stream';
 import type { ChatMessagePayload } from '../../shared/events';
-import { awardMessageXp, ensureViewer } from './viewers';
+import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 
-await startSocketServer({ getStreamState });
+// Одна очередь вращений на настоящие спины и эмулятор
+const playSpin = createSpinStage();
+
+await startSocketServer({
+  getStreamState,
+  getJackpot,
+  playDevSpin: (result) => {
+    // Эмулятор базу не трогает: банк в конце — тот, что пришёл в событии
+    void playSpin(
+      async () => result,
+      async () => emitEvent('stream:jackpot-updated', { jackpotTotal: result.jackpotTotalAfter }),
+    ).catch((error: unknown) => console.error('[spin] эмуляция вращения не удалась:', error));
+  },
+});
 
 if (!config.enabled) {
   console.log('[bot] BOT_ENABLED != true — бот выключен (так задумано для dev).');
@@ -32,7 +47,6 @@ if (!config.enabled) {
   const isFollower = createFollowerChecker(api, ensureBroadcaster);
   const badges = createBadgeResolver(api, config.streamerId);
   void badges.load();
-  const registry = createRegistry(config.prefix);
   const chat = new ChatClient({ authProvider, channels: [channel] });
 
   const showBotMessage = createBotOverlayChat({
@@ -103,6 +117,50 @@ if (!config.enabled) {
     await showBotMessage(text);
   };
 
+  const announcer = createAnnouncer({
+    api,
+    botUserId,
+    broadcasterId: config.streamerId,
+    onAnnouncementSent: (text, announceColor) =>
+      showBotMessage(text, { isAnnouncement: true, announceColor }),
+  });
+
+  // Начисленный зрителю XP: оверлей (полоса и level-up) и тот же XP стриму
+  const showXpAward = async (
+    viewer: { twitchId: string; username: string },
+    award: { xp: number; totalXp: number; fromLvl: number; lvl: number; leveledUp: boolean },
+    reply: (text: string) => Promise<void>,
+    stream: Awaited<ReturnType<typeof addStreamXp>> | null,
+  ) => {
+    // lvl в xp:gain — уровень до начисления: полоса дойдёт до 100%, а переход покажет level:up
+    emitEvent('xp:gain', { ...viewer, amount: award.xp, totalXp: award.totalXp, lvl: award.fromLvl });
+    if (award.leveledUp) {
+      emitEvent('level:up', { ...viewer, fromLvl: award.fromLvl, toLvl: award.lvl });
+    }
+    if (stream) emitEvent('stream:xp-updated', stream.state);
+
+    if (award.leveledUp) await reply(`@${viewer.username} достиг(ла) уровня ${award.lvl}! 🎉`);
+    if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
+  };
+
+  // Ошибка XP стрима не должна съедать сообщение о level-up зрителя
+  const tryAddStreamXp = (amount: number) =>
+    addStreamXp(amount).catch((error: unknown) => {
+      console.error('[stream] не удалось начислить XP стриму:', error);
+      return null;
+    });
+
+  const registry = createRegistry({
+    prefix: config.prefix,
+    playSpin,
+    announce: announcer.announce,
+    awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
+      const award = await awardBonusXp(viewer.id, xp);
+      const stream = await tryAddStreamXp(xp);
+      return () => showXpAward({ twitchId: viewer.twitchId, username: displayName }, award, reply, stream);
+    },
+  });
+
   chat.onMessage(async (_channel, _user, text, msg) => {
     const info = msg.userInfo;
     console.log(`[chat] ${info.displayName}: ${text}`);
@@ -159,43 +217,17 @@ if (!config.enabled) {
             `(${roles.isBroadcaster ? 'стример' : roles.isSubscriber ? 'саб' : roles.isFollower ? 'фолловер' : 'зритель'}${roles.isVip ? ', VIP' : ''}) ` +
             `(всего XP ${result.totalXp}, уровень ${result.lvl})`,
         );
-        // lvl в xp:gain — уровень до начисления: полоса дойдёт до 100%, а переход покажет level:up
-        emitEvent('xp:gain', {
-          twitchId: info.userId,
-          username: info.displayName,
-          amount: result.xp,
-          totalXp: result.totalXp,
-          lvl: viewer.lvl,
-        });
-        if (result.leveledUp) {
-          emitEvent('level:up', {
-            twitchId: info.userId,
-            username: info.displayName,
-            fromLvl: viewer.lvl,
-            toLvl: result.lvl,
-          });
-        }
-        // Тот же XP идёт стриму. Ошибка здесь не должна съедать сообщение о level-up зрителя
-        const stream = await addStreamXp(result.xp).catch((error: unknown) => {
-          console.error('[stream] не удалось начислить XP стриму:', error);
-          return null;
-        });
-        if (stream) emitEvent('stream:xp-updated', stream.state);
-
-        if (result.leveledUp) await reply(`@${info.displayName} достиг(ла) уровня ${result.lvl}! 🎉`);
-        if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
+        // Тот же XP идёт стриму
+        await showXpAward(
+          { twitchId: info.userId, username: info.displayName },
+          { ...result, fromLvl: viewer.lvl },
+          reply,
+          await tryAddStreamXp(result.xp),
+        );
       }
     } catch (error) {
       console.error('[bot] ошибка обработки сообщения:', error);
     }
-  });
-
-  const announcer = createAnnouncer({
-    api,
-    botUserId,
-    broadcasterId: config.streamerId,
-    onAnnouncementSent: (text, announceColor) =>
-      showBotMessage(text, { isAnnouncement: true, announceColor }),
   });
 
   // Алерты: в оверлей событие уходит всегда, а в чат отвечает только prod

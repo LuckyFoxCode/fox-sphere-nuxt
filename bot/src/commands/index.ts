@@ -1,9 +1,12 @@
 import { getLevelRange } from '../../../shared/xp';
 import { prisma } from '../db';
 import { CommandRegistry } from './registry';
+import { registerSpinCommands, type SpinDeps } from './spin';
 
-export const createRegistry = (prefix: string) => {
-  const registry = new CommandRegistry(prefix);
+export const createRegistry = (deps: SpinDeps) => {
+  const registry = new CommandRegistry(deps.prefix);
+
+  registerSpinCommands(registry, deps);
 
   registry.register({
     name: 'coins',

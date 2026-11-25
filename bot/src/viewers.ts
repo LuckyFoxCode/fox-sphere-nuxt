@@ -62,10 +62,27 @@ export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<
     },
   });
 
-  let lvl = updated.lvl;
-  while (updated.xp >= getXpThresholdForLevel(lvl)) lvl++;
-  if (lvl !== updated.lvl) {
-    await prisma.viewer.update({ where: { id: viewer.id }, data: { lvl } });
-  }
-  return { status: 'awarded', xp, totalXp: updated.xp, lvl, leveledUp: lvl !== updated.lvl };
+  return { status: 'awarded', xp, totalXp: updated.xp, ...(await applyLevel(updated)) };
+};
+
+// Поднимает уровень под накопленный XP; вниз уровень не опускается
+const applyLevel = async (viewer: Viewer): Promise<{ lvl: number; leveledUp: boolean }> => {
+  let lvl = viewer.lvl;
+  while (viewer.xp >= getXpThresholdForLevel(lvl)) lvl++;
+  if (lvl === viewer.lvl) return { lvl, leveledUp: false };
+  // Условие по старому уровню: XP за сообщение и приз рулетки могут начисляться одновременно
+  const { count } = await prisma.viewer.updateMany({
+    where: { id: viewer.id, lvl: { lt: lvl } },
+    data: { lvl },
+  });
+  return { lvl, leveledUp: count > 0 };
+};
+
+// XP не за сообщение (приз рулетки): без надбавок за роли, кулдауна и XP недели, как в старом боте
+export const awardBonusXp = async (
+  viewerId: number,
+  xp: number,
+): Promise<{ xp: number; totalXp: number; fromLvl: number; lvl: number; leveledUp: boolean }> => {
+  const updated = await prisma.viewer.update({ where: { id: viewerId }, data: { xp: { increment: xp } } });
+  return { xp, totalXp: updated.xp, fromLvl: updated.lvl, ...(await applyLevel(updated)) };
 };

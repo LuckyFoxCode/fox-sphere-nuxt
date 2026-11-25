@@ -3,15 +3,19 @@ import { Server } from 'socket.io';
 import {
   isChatMessagePayload,
   isFollowPayload,
+  isJackpotPayload,
   isLevelUpPayload,
   isRaidPayload,
   isRewardRedeemPayload,
+  isRouletteSpinPayload,
   isStreamStatePayload,
   isSubPayload,
   isXpGainPayload,
   resolveSocketPort,
   type ClientToServerEvents,
   type DevAck,
+  type JackpotPayload,
+  type RouletteSpinResultPayload,
   type ServerToClientEvents,
   type StreamStatePayload,
 } from '../../shared/events';
@@ -60,17 +64,25 @@ const relayDev =
     ack?.({ ok: true });
   };
 
-// Откуда брать состояние стрима, задаётся при запуске: сам сервер базу не читает
-let readStreamState: () => Promise<StreamStatePayload>;
+// Откуда брать состояние и кто крутит рулетку, задаётся при запуске: сам сервер базу не читает
+type SocketSources = {
+  getStreamState: () => Promise<StreamStatePayload>;
+  getJackpot: () => Promise<JackpotPayload>;
+  playDevSpin: (result: RouletteSpinResultPayload) => void;
+};
+let sources: SocketSources;
 
-const loadStreamState = async (): Promise<StreamStatePayload | null> => {
+// null, если база не прочиталась: ошибка остаётся в логе бота
+const load = async <T>(what: string, read: () => Promise<T>): Promise<T | null> => {
   try {
-    return await readStreamState();
+    return await read();
   } catch (error) {
-    console.error('[socket] не удалось прочитать состояние стрима:', error);
+    console.error(`[socket] не удалось прочитать ${what}:`, error);
     return null;
   }
 };
+const loadStreamState = () => load('состояние стрима', () => sources.getStreamState());
+const loadJackpot = () => load('банк рулетки', () => sources.getJackpot());
 
 io.on('connection', (socket) => {
   console.log(`[socket] клиент подключился (${io.engine.clientsCount})`);
@@ -126,13 +138,26 @@ io.on('connection', (socket) => {
     relayDev(isRewardRedeemPayload, (payload) => emitEvent('twitch:reward-redeem', payload)),
   );
   socket.on('dev:sub', relayDev(isSubPayload, (payload) => emitEvent('twitch:sub', payload)));
+
+  // Рулетка и банк
+  socket.on('stream:get-jackpot', async (ack) => {
+    if (typeof ack !== 'function') return;
+    ack(await loadJackpot());
+  });
+  socket.on('dev:roulette-spin', relayDev(isRouletteSpinPayload, (payload) => sources.playDevSpin(payload)));
+  socket.on('dev:jackpot', relayDev(isJackpotPayload, (payload) => emitEvent('stream:jackpot-updated', payload)));
+  socket.on('dev:jackpot-reset', async (ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    const state = await loadJackpot();
+    if (!state) return ack?.({ ok: false, reason: 'не удалось прочитать базу' });
+    emitEvent('stream:jackpot-updated', state);
+    ack?.({ ok: true });
+  });
 });
 
-export const startSocketServer = (options: {
-  getStreamState: () => Promise<StreamStatePayload>;
-}): Promise<void> =>
+export const startSocketServer = (options: SocketSources): Promise<void> =>
   new Promise((resolve, reject) => {
-    readStreamState = options.getStreamState;
+    sources = options;
     httpServer.once('error', (error: NodeJS.ErrnoException) => {
       if (error.code === 'EADDRINUSE') {
         reject(new Error(`порт ${port} занят. Задайте другой SOCKET_PORT в .env.* (и тот же для Nuxt).`));

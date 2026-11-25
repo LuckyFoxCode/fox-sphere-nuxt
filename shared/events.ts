@@ -1,3 +1,5 @@
+import type { RoulettePrizeType } from './roulette';
+
 // Контракты событий Socket.io: один файл для бота (сервер) и Nuxt (клиент).
 // Сервер живёт в bot/ (bot/src/socket.ts), оверлей подключается к нему как клиент.
 // Имена событий — «домен:действие», как в docs/spec.md, раздел 3.
@@ -92,8 +94,28 @@ export type SubPayload =
   | { kind: 'resub'; userId: string; username: string; tier: SubTier; months: number }
   | { kind: 'gift'; username: string | null; tier: SubTier; amount: number };
 
+// Рулетка. Поля те же, что у `roulette:spin-result` в старом fox-sphere. Приходит в момент старта
+// ленты; через ROULETTE_SPIN_ANIMATION_MS лента встаёт на этом призе. `coinAmount` у джекпота — весь
+// забранный банк, `jackpotTotalAfter` — банк после спина.
+export type RouletteSpinResultPayload = {
+  userId: string;
+  username: string;
+  prizeType: RoulettePrizeType;
+  coinAmount: number;
+  xpAmount: number;
+  jackpotWon: boolean;
+  jackpotTotalAfter: number;
+};
+
+// Банк рулетки. После спина приходит в момент остановки ленты, чтобы шапка не выдала результат раньше.
+export type JackpotPayload = {
+  jackpotTotal: number;
+};
+
 // Сервер → оверлей
 export type ServerToClientEvents = {
+  'roulette:spin-result': (payload: RouletteSpinResultPayload) => void;
+  'stream:jackpot-updated': (payload: JackpotPayload) => void;
   'xp:gain': (payload: XpGainPayload) => void;
   'level:up': (payload: LevelUpPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
@@ -107,12 +129,18 @@ export type ServerToClientEvents = {
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
 
 // Оверлей → сервер.
-// `stream:get-system-state` — запрос состояния при подключении; null, если бот не смог прочитать базу.
+// `stream:get-system-state` и `stream:get-jackpot` — запрос состояния при подключении;
+// null, если бот не смог прочитать базу.
 // События `dev:*` принимаются только эмулятором (/dev/events) и только при DEV_EVENTS=true:
 // сервер проверяет payload и рассылает его всем оверлеям, как будто событие прислал бот.
-// В базу они ничего не пишут; `dev:stream-reset` возвращает оверлеям состояние из базы.
+// В базу они ничего не пишут; `dev:stream-reset` и `dev:jackpot-reset` возвращают оверлеям значения
+// из базы. `dev:roulette-spin` встаёт в ту же очередь вращений, что и настоящие спины.
 export type ClientToServerEvents = {
   'stream:get-system-state': (ack: (state: StreamStatePayload | null) => void) => void;
+  'stream:get-jackpot': (ack: (state: JackpotPayload | null) => void) => void;
+  'dev:roulette-spin': (payload: unknown, ack?: DevAck) => void;
+  'dev:jackpot': (payload: unknown, ack?: DevAck) => void;
+  'dev:jackpot-reset': (ack?: DevAck) => void;
   'dev:xp-gain': (payload: unknown, ack?: DevAck) => void;
   'dev:level-up': (payload: unknown, ack?: DevAck) => void;
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
@@ -224,6 +252,21 @@ export const isSubPayload = (value: unknown): value is SubPayload => {
   if (!isNonEmptyString(value.userId) || !isNonEmptyString(value.username)) return false;
   return value.kind === 'new' || (value.kind === 'resub' && isInt(value.months, 1));
 };
+
+const PRIZE_TYPES: readonly unknown[] = ['empty', 'coins', 'xp', 'jackpot'];
+
+export const isRouletteSpinPayload = (value: unknown): value is RouletteSpinResultPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  PRIZE_TYPES.includes(value.prizeType) &&
+  isInt(value.coinAmount, 0) &&
+  isInt(value.xpAmount, 0) &&
+  value.jackpotWon === (value.prizeType === 'jackpot') &&
+  isInt(value.jackpotTotalAfter, 0);
+
+export const isJackpotPayload = (value: unknown): value is JackpotPayload =>
+  isRecord(value) && isInt(value.jackpotTotal, 0);
 
 // Порт Socket.io-сервера бота. Один на dev и prod, если не задан SOCKET_PORT:
 // чтобы запускать оба окружения на одной машине, разведите порты в .env.*.
