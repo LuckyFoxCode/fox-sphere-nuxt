@@ -1,25 +1,30 @@
 <script setup lang="ts">
 // Эмулятор событий без Twitch: кнопки шлют dev-события на сервер бота, он рассылает их оверлеям
-// как настоящие. Справа — превью /overlay/xp и /overlay/chat. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
+// как настоящие. Справа — превью оверлеев. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
 import type { ChatAnnounceColor, ChatMessagePayload } from '#shared/events';
-import { getXpThresholdForLevel } from '#shared/xp';
+import { buildStreamState, getStreamLevel, getXpThresholdForLevel } from '#shared/xp';
 
 const { $socket } = useNuxtApp();
 const xp = useXpStore();
+const stream = useStreamStore();
 
 // Какой оверлей показывать в превью справа
 const previews = [
+  { path: '/overlay/stream', label: 'Шапка' },
   { path: '/overlay/xp', label: 'XP' },
   { path: '/overlay/chat', label: 'Чат' },
 ] as const;
-const previewPath = ref<(typeof previews)[number]['path']>('/overlay/chat');
+const previewPath = ref<(typeof previews)[number]['path']>('/overlay/stream');
 
 const username = ref('TestViewer');
 const lvl = ref(3);
 const amount = ref(3);
 const status = ref('');
 
-const send = (event: 'dev:xp-gain' | 'dev:level-up' | 'dev:chat-message', payload: unknown) => {
+const send = (
+  event: 'dev:xp-gain' | 'dev:level-up' | 'dev:chat-message' | 'dev:stream-state',
+  payload: unknown,
+) => {
   $socket.emit(event, payload, (result) => {
     status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
   });
@@ -59,6 +64,28 @@ const burst = () => {
       });
     }, index * 800);
   }
+};
+
+// --- Стрим -----------------------------------------------------------------------------
+// Считаем от того, что сейчас показывает шапка. В базу ничего не пишется.
+const streamAmount = ref(500);
+
+const sendStreamXp = (totalXp: number, lvl: number) =>
+  send('dev:stream-state', buildStreamState(getStreamLevel(lvl, totalXp), totalXp));
+
+const addStreamXp = () => {
+  if (stream.state) sendStreamXp(stream.state.newXp + streamAmount.value, stream.state.lvl);
+};
+
+// Добавляет ровно столько, сколько не хватает до следующего уровня
+const streamLevelUp = () => {
+  if (stream.state) sendStreamXp(stream.state.maxXp, stream.state.lvl);
+};
+
+const resetStream = () => {
+  $socket.emit('dev:stream-reset', (result) => {
+    status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
+  });
 };
 
 // --- Чат -------------------------------------------------------------------------------
@@ -204,6 +231,20 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
 
     <div class="mt-5 flex flex-wrap gap-x-8 gap-y-6">
       <section class="flex w-80 flex-col gap-y-3">
+        <h2 class="text-lg font-bold">Стрим</h2>
+        <p class="text-sm text-sticker-muted tabular-nums">
+          {{ stream.state ? `Уровень ${stream.state.lvl}, ${stream.state.newXp} / ${stream.state.maxXp} XP` : 'Состояние ещё не получено' }}.
+          База не меняется.
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          XP стрима за нажатие
+          <input v-model.number="streamAmount" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="addStreamXp">Добавить XP стрима</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="streamLevelUp">Повысить уровень стрима</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetStream">Вернуть значения из базы</button>
+
+        <h2 class="mt-4 text-lg font-bold">XP зрителя</h2>
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
           Ник
           <input v-model="username" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />

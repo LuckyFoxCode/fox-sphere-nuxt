@@ -9,6 +9,15 @@ import IconRank06 from '~/components/icons/ranks/IconRank06.vue';
 import IconRank07 from '~/components/icons/ranks/IconRank07.vue';
 import IconRank08 from '~/components/icons/ranks/IconRank08.vue';
 import IconRank09 from '~/components/icons/ranks/IconRank09.vue';
+import IconRing01 from '~/components/icons/ranks/IconRing01.vue';
+import IconRing02 from '~/components/icons/ranks/IconRing02.vue';
+import IconRing03 from '~/components/icons/ranks/IconRing03.vue';
+import IconRing04 from '~/components/icons/ranks/IconRing04.vue';
+import IconRing05 from '~/components/icons/ranks/IconRing05.vue';
+import IconRing06 from '~/components/icons/ranks/IconRing06.vue';
+import IconRing07 from '~/components/icons/ranks/IconRing07.vue';
+import IconRing08 from '~/components/icons/ranks/IconRing08.vue';
+import IconRing09 from '~/components/icons/ranks/IconRing09.vue';
 
 export interface RankTier {
   gradient: string;
@@ -34,7 +43,20 @@ export const RANK_BADGES: Record<number, Component> = {
   9: IconRank09,
 };
 
-// Визуальных рангов девять: IconRank01..09, иконки свыше не будет.
+// Кольца вокруг цифры уровня в шапке стрима
+export const RANK_RINGS: Record<number, Component> = {
+  1: IconRing01,
+  2: IconRing02,
+  3: IconRing03,
+  4: IconRing04,
+  5: IconRing05,
+  6: IconRing06,
+  7: IconRing07,
+  8: IconRing08,
+  9: IconRing09,
+};
+
+// Визуальных рангов девять: IconRank01..09 и IconRing01..09, иконки свыше не будет.
 // Tier 10 (OVERLORD) намеренно показывается девятым знаком — свой десятый не рисуем.
 export const MAX_ICON_TIER = 9;
 

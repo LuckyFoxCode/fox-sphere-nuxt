@@ -9,10 +9,11 @@ import { createFollowerChecker } from './followers';
 import { prisma } from './db';
 import { startRaidListener } from './raids';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
+import { addStreamXp, getStreamState } from './stream';
 import type { ChatMessagePayload } from '../../shared/events';
 import { awardMessageXp, ensureViewer } from './viewers';
 
-await startSocketServer();
+await startSocketServer({ getStreamState });
 
 if (!config.enabled) {
   console.log('[bot] BOT_ENABLED != true — бот выключен (так задумано для dev).');
@@ -92,6 +93,16 @@ if (!config.enabled) {
   chat.onMessageRatelimit((_channel, text) => console.error(`[bot] лимит сообщений Twitch: ${text}`));
   chat.onNoPermission((_channel, text) => console.error(`[bot] нет прав на отправку: ${text}`));
 
+  const announceStreamLevel = async (lvl: number) => {
+    console.log(`[stream] стрим достиг уровня ${lvl}`);
+    // Как в старом боте: в dev только лог
+    if (!config.isProduction) return;
+    // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.LEVEL_UP_STREAM)
+    const text = `⚡ STREAM LEVEL UP! We are now Level ${lvl}! Keep spamming those messages! 🚀`;
+    await chat.say(channel, text);
+    await showBotMessage(text);
+  };
+
   chat.onMessage(async (_channel, _user, text, msg) => {
     const info = msg.userInfo;
     console.log(`[chat] ${info.displayName}: ${text}`);
@@ -164,7 +175,15 @@ if (!config.enabled) {
             toLvl: result.lvl,
           });
         }
+        // Тот же XP идёт стриму. Ошибка здесь не должна съедать сообщение о level-up зрителя
+        const stream = await addStreamXp(result.xp).catch((error: unknown) => {
+          console.error('[stream] не удалось начислить XP стриму:', error);
+          return null;
+        });
+        if (stream) emitEvent('stream:xp-updated', stream.state);
+
         if (result.leveledUp) await reply(`@${info.displayName} достиг(ла) уровня ${result.lvl}! 🎉`);
+        if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
       }
     } catch (error) {
       console.error('[bot] ошибка обработки сообщения:', error);

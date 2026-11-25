@@ -53,21 +53,37 @@ export type ChatMessagePayload = {
   watchStreak?: { value: number; reward: number };
 };
 
+// Состояние стрима для шапки. Поля те же, что у `stream:xp-updated` в старом fox-sphere:
+// `newXp` — весь накопленный XP стрима, `startXp` и `maxXp` — границы уровня `lvl`.
+export type StreamStatePayload = {
+  lvl: number;
+  newXp: number;
+  maxXp: number;
+  startXp: number;
+};
+
 // Сервер → оверлей
 export type ServerToClientEvents = {
   'xp:gain': (payload: XpGainPayload) => void;
   'level:up': (payload: LevelUpPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
+  'stream:xp-updated': (payload: StreamStatePayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
 
-// Оверлей → сервер. Принимаются только эмулятором (/dev/events) и только при DEV_EVENTS=true:
+// Оверлей → сервер.
+// `stream:get-system-state` — запрос состояния при подключении; null, если бот не смог прочитать базу.
+// События `dev:*` принимаются только эмулятором (/dev/events) и только при DEV_EVENTS=true:
 // сервер проверяет payload и рассылает его всем оверлеям, как будто событие прислал бот.
+// В базу они ничего не пишут; `dev:stream-reset` возвращает оверлеям состояние из базы.
 export type ClientToServerEvents = {
+  'stream:get-system-state': (ack: (state: StreamStatePayload | null) => void) => void;
   'dev:xp-gain': (payload: unknown, ack?: DevAck) => void;
   'dev:level-up': (payload: unknown, ack?: DevAck) => void;
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
+  'dev:stream-state': (payload: unknown, ack?: DevAck) => void;
+  'dev:stream-reset': (ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -94,6 +110,14 @@ export const isLevelUpPayload = (value: unknown): value is LevelUpPayload =>
   isInt(value.fromLvl, 1) &&
   isInt(value.toLvl, 2) &&
   value.toLvl > value.fromLvl;
+
+export const isStreamStatePayload = (value: unknown): value is StreamStatePayload =>
+  isRecord(value) &&
+  isInt(value.lvl, 1) &&
+  isInt(value.newXp, 0) &&
+  isInt(value.startXp, 0) &&
+  isInt(value.maxXp, 1) &&
+  value.maxXp > value.startXp;
 
 const ANNOUNCE_COLORS: readonly string[] = ['blue', 'green', 'orange', 'purple'];
 const CHAT_FLAGS = [

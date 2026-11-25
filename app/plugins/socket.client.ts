@@ -25,6 +25,9 @@ export default defineNuxtPlugin(() => {
   socket.on('xp:gain', xp.onXpGain);
   socket.on('level:up', xp.onLevelUp);
   socket.on('chat:message', useChatStore().onMessage);
+  const stream = useStreamStore();
+  socket.on('connect', () => stream.sync(socket));
+  socket.on('stream:xp-updated', stream.onUpdate);
 
   return { provide: { socket } };
 });

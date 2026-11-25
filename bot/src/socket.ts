@@ -3,10 +3,12 @@ import { Server } from 'socket.io';
 import {
   isChatMessagePayload,
   isLevelUpPayload,
+  isStreamStatePayload,
   isXpGainPayload,
   resolveSocketPort,
   type ClientToServerEvents,
   type ServerToClientEvents,
+  type StreamStatePayload,
 } from '../../shared/events';
 
 // Socket.io на встроенном HTTP-сервере Node (без Express). Оверлей в OBS подключается сюда.
@@ -43,6 +45,18 @@ export const emitEvent = <E extends keyof ServerToClientEvents>(
   io.emit(event, ...args);
 };
 
+// Откуда брать состояние стрима, задаётся при запуске: сам сервер базу не читает
+let readStreamState: () => Promise<StreamStatePayload>;
+
+const loadStreamState = async (): Promise<StreamStatePayload | null> => {
+  try {
+    return await readStreamState();
+  } catch (error) {
+    console.error('[socket] не удалось прочитать состояние стрима:', error);
+    return null;
+  }
+};
+
 io.on('connection', (socket) => {
   console.log(`[socket] клиент подключился (${io.engine.clientsCount})`);
   socket.on('disconnect', () => console.log(`[socket] клиент отключился (${io.engine.clientsCount})`));
@@ -67,10 +81,34 @@ io.on('connection', (socket) => {
     emitEvent('chat:message', payload);
     ack?.({ ok: true });
   });
+
+  // Ack ждёт оверлей: отвечаем всегда, при ошибке — null
+  socket.on('stream:get-system-state', async (ack) => {
+    if (typeof ack !== 'function') return;
+    ack(await loadStreamState());
+  });
+
+  socket.on('dev:stream-state', (payload, ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    if (!isStreamStatePayload(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
+    emitEvent('stream:xp-updated', payload);
+    ack?.({ ok: true });
+  });
+
+  socket.on('dev:stream-reset', async (ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    const state = await loadStreamState();
+    if (!state) return ack?.({ ok: false, reason: 'не удалось прочитать базу' });
+    emitEvent('stream:xp-updated', state);
+    ack?.({ ok: true });
+  });
 });
 
-export const startSocketServer = (): Promise<void> =>
+export const startSocketServer = (options: {
+  getStreamState: () => Promise<StreamStatePayload>;
+}): Promise<void> =>
   new Promise((resolve, reject) => {
+    readStreamState = options.getStreamState;
     httpServer.once('error', (error: NodeJS.ErrnoException) => {
       if (error.code === 'EADDRINUSE') {
         reject(new Error(`порт ${port} занят. Задайте другой SOCKET_PORT в .env.* (и тот же для Nuxt).`));
