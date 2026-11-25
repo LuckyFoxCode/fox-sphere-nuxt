@@ -125,6 +125,15 @@ if (!config.enabled) {
       showBotMessage(text, { isAnnouncement: true, announceColor }),
   });
 
+  const announceViewerLevel = async (username: string, lvl: number, reply: (text: string) => Promise<void>) => {
+    // Как в старом боте: в dev только лог, чтобы не поздравлять вторым после боевого
+    if (!config.isProduction) {
+      console.log(`[xp] dev: ${username} достиг(ла) уровня ${lvl}, в чат не отправляется`);
+      return;
+    }
+    await reply(`@${username} достиг(ла) уровня ${lvl}! 🎉`);
+  };
+
   // После начисления XP: шапка стрима и сообщения о новых уровнях в чат
   const showXpAward = async (
     username: string,
@@ -134,7 +143,7 @@ if (!config.enabled) {
   ) => {
     if (stream) emitEvent('stream:xp-updated', stream.state);
 
-    if (award.leveledUp) await reply(`@${username} достиг(ла) уровня ${award.lvl}! 🎉`);
+    if (award.leveledUp) await announceViewerLevel(username, award.lvl, reply);
     if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
   };
 
