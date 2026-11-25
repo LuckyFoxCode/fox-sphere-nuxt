@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Viewer {
+  id             Int           @id @default(autoincrement())
+  twitchId       String        @unique
+  username       String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  coins          Int           @default(0)
+  lvl            Int           @default(1)
+  xp             Int           @default(0)
+  lastXpAt       DateTime      @default(now())
+  isMod          Boolean       @default(false)
+  isFounder      Boolean       @default(false)
+  isSubscriber   Boolean       @default(false)
+  isPermanentVip Boolean       @default(false)
+  spinsCount     Int           @default(0)
+  goldenBeers    Int           @default(0)
+  totalWin       Int           @default(0)
+  totalLoss      Int           @default(0)
+  xpThisWeek     Int           @default(0)
+  hasTicket      Boolean       @default(false)
+  isLuckyVip     Boolean       @default(false)
+  coinHistory    CoinHistory[]
+  xpHistory      XpHistory[]
+  watchStreaks   WatchStreak[]
+  heroes         ViewerHero[]
+
+  @@index([xp])
+  @@index([coins])
+}
+
+model ViewerHero {
+  id        Int      @id @default(autoincrement())
+  viewerId  Int
+  heroId    String // ключ из heroes.json
+  isActive  Boolean  @default(false)
+  level     Int      @default(1)
+  xp        Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  viewer    Viewer   @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([viewerId, heroId])
+}
+
+model CoinHistory {
+  id           Int      @id @default(autoincrement())
+  viewerId     Int
+  amount       Int
+  reason       String // BOSS_REWARD|GIFT|LOTTERY|CHANGE_POINTS|WATCH_STREAK|SPIN|SPIN_PRIZE|JACKPOT|FISH|HERO_PURCHASE
+  details      String?
+  redemptionId String?  @unique // идемпотентность наград за баллы
+  createdAt    DateTime @default(now())
+  viewer       Viewer   @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([viewerId])
+  @@index([createdAt])
+}
+
+model XpHistory {
+  id        Int      @id @default(autoincrement())
+  viewerId  Int
+  amount    Int
+  reason    String
+  details   String?
+  createdAt DateTime @default(now())
+  viewer    Viewer   @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@index([viewerId])
+}
+
+model WatchStreak {
+  id          Int      @id @default(autoincrement())
+  viewerId    Int
+  streakValue Int
+  createdAt   DateTime @default(now())
+  viewer      Viewer   @relation(fields: [viewerId], references: [id], onDelete: Cascade)
+
+  @@unique([viewerId, streakValue])
+}
+
+model SystemState {
+  id                Int       @id @default(1)
+  streamLevel       Int       @default(1)
+  streamCurrentXp   Int       @default(0)
+  jackpotTotal      Int       @default(1000)
+  xpBoostMultiplier Int       @default(1)
+  xpBoostExpiresAt  DateTime?
+  timerTitle        String?
+  timerColor        String?
+  timerEndsAt       DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
+model TwitchToken {
+  twitchUserId        String   @id
+  accessToken         String
+  refreshToken        String
+  expiresIn           Int      @default(0)
+  obtainmentTimestamp BigInt // в SQLite хранится как INTEGER; в JSON не отдавать
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

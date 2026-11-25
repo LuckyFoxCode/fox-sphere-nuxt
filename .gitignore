@@ -1,0 +1,17 @@
+node_modules
+.nuxt
+.output
+.data
+dist
+.DS_Store
+*.log
+
+# env: коммитим только .env.example
+.env
+.env.*
+!.env.example
+
+# базы SQLite и сгенерированный клиент Prisma
+data/*
+!data/.gitkeep
+generated

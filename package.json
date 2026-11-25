@@ -1,0 +1,43 @@
+{
+  "name": "fox-sphere-nuxt",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "concurrently -n web,bot -c cyan,magenta \"pnpm dev:web\" \"pnpm dev:bot\"",
+    "dev:web": "dotenv -e .env.development -- nuxt dev",
+    "dev:bot": "dotenv -e .env.development -- pnpm --filter bot dev",
+    "build": "dotenv -e .env.production -- nuxt build",
+    "start": "concurrently -n web,bot -c cyan,magenta \"pnpm start:web\" \"pnpm start:bot\"",
+    "start:web": "dotenv -e .env.production -- node .output/server/index.mjs",
+    "start:bot": "dotenv -e .env.production -- pnpm --filter bot start",
+    "prisma:generate": "prisma generate",
+    "db:push:dev": "dotenv -e .env.development -- prisma db push",
+    "db:push:prod": "dotenv -e .env.production -- prisma db push",
+    "db:copy-prod-to-dev": "node scripts/copy-prod-db.mjs",
+    "typecheck": "nuxt typecheck",
+    "postinstall": "nuxt prepare && prisma generate"
+  },
+  "dependencies": {
+    "@pinia/nuxt": "^1.0.3",
+    "@prisma/adapter-libsql": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "nuxt": "^4.7.0",
+    "pinia": "^4.1.0",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "concurrently": "^10.0.7",
+    "dotenv-cli": "^11.1.0",
+    "prisma": "^7.10.1",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^5.9.3",
+    "vue-tsc": "latest"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "prisma", "esbuild"],
+    "ignoredBuiltDependencies": ["better-sqlite3"]
+  }
+}
