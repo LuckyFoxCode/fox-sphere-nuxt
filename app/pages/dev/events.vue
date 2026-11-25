@@ -27,15 +27,17 @@ const { $socket } = useNuxtApp();
 const app = useAppStore();
 const stream = useStreamStore();
 const bank = useBankStore();
+const roulette = useRouletteStore();
 
-// Какой оверлей показывать в превью справа
+// Что показывать в превью справа: слои снизу вверх. «Сцена» — все оверлеи друг на друге, как в OBS
 const previews = [
-  { path: '/overlay/stream', label: 'Шапка' },
-  { path: '/overlay/roulette', label: 'Рулетка' },
-  { path: '/overlay/chat', label: 'Чат' },
-  { path: '/overlay/alerts', label: 'Алерты' },
+  { label: 'Сцена', paths: ['/overlay/chat', '/overlay/stream', '/overlay/roulette', '/overlay/alerts'] },
+  { label: 'Шапка', paths: ['/overlay/stream'] },
+  { label: 'Рулетка', paths: ['/overlay/roulette'] },
+  { label: 'Чат', paths: ['/overlay/chat'] },
+  { label: 'Алерты', paths: ['/overlay/alerts'] },
 ] as const;
-const previewPath = ref<(typeof previews)[number]['path']>('/overlay/stream');
+const preview = shallowRef<(typeof previews)[number]>(previews[0]);
 
 const username = ref('TestViewer');
 const status = ref('');
@@ -47,6 +49,7 @@ type DevEvent =
   | 'dev:raid'
   | 'dev:reward-redeem'
   | 'dev:sub'
+  | 'dev:fishing-chest'
   | 'dev:roulette-spin'
   | 'dev:jackpot';
 
@@ -223,6 +226,32 @@ const resub = () => sendSub({ kind: 'resub', ...alertUser(), tier: subTier.value
 const giftSubs = (gifter: string | null) =>
   sendSub({ kind: 'gift', username: gifter, tier: subTier.value, amount: giftAmount.value });
 
+// --- Сундук из рыбалки -----------------------------------------------------------------
+// Как настоящий улов: алерт и монеты в банк шапки. Пока крутится лента, банк ждёт её остановки.
+const CHEST_COINS = FISH_CATCHES.bank200.bankAmount;
+// Монеты сундуков, пойманных во время вращения
+let heldChestCoins = 0;
+
+const addToBank = (amount: number) => send('dev:jackpot', { jackpotTotal: (bank.total ?? JACKPOT_SEED) + amount });
+
+const topUpBank = (amount: number) => {
+  if (!roulette.current || roulette.phase !== 'spinning') return addToBank(amount);
+  // Первый сундук за это вращение ждёт банк от остановки ленты, остальные прибавляются к нему
+  if (heldChestCoins === 0) {
+    $socket.once('stream:jackpot-updated', () => {
+      const held = heldChestCoins;
+      heldChestCoins = 0;
+      addToBank(held);
+    });
+  }
+  heldChestCoins += amount;
+};
+
+const chest = (name = username.value, lang: Lang = fishLang.value) => {
+  topUpBank(CHEST_COINS);
+  send('dev:fishing-chest', { userId: `dev-${name.toLowerCase()}`, username: name, coinAmount: CHEST_COINS, lang });
+};
+
 // Все сразу: на оверлее они должны идти по одному
 const allAlerts = () => {
   follow();
@@ -231,6 +260,7 @@ const allAlerts = () => {
   subNew();
   resub();
   giftSubs(username.value);
+  chest();
 };
 
 // --- Рулетка и банк --------------------------------------------------------------------
@@ -289,8 +319,8 @@ const resetBank = () => {
 };
 
 // --- Рыбалка ---------------------------------------------------------------------------
-// Своего оверлея у рыбалки нет: ответы бота видны в чате оверлея, сундук — в банке шапки,
-// XP — в XP стрима. База не меняется; поклёвка здесь через 3 с вместо 10–30.
+// Своего оверлея у рыбалки нет: ответы бота видны в чате оверлея, сундук — в алертах и банке
+// шапки, XP — в XP стрима. База не меняется; поклёвка здесь через 3 с вместо 10–30.
 const FISH_DEV_BITE_MS = 3000;
 const fishPick = ref<FishCatchId>('bank200');
 // Язык ответов бота в эмуляции; у настоящего бота — BOT_LANG
@@ -335,14 +365,13 @@ const botSay = (text: string) =>
   );
 
 const fish = (id: FishCatchId, name = username.value) => {
-  // Оба ответа одного заброса — на одном языке, даже если его переключили во время ожидания
-  const texts = fishTexts.value;
+  // Ответы и алерт одного заброса — на одном языке, даже если его переключили во время ожидания
+  const lang = fishLang.value;
+  const texts = MESSAGES[lang].fish;
   botSay(texts.cast(name));
   setTimeout(() => {
     const caught = FISH_CATCHES[id];
-    if (caught.bankAmount > 0) {
-      send('dev:jackpot', { jackpotTotal: (bank.total ?? JACKPOT_SEED) + caught.bankAmount });
-    }
+    if (caught.catchType === 'bank') chest(name, lang);
     if (caught.xpAmount > 0 && stream.state) sendStreamXp(stream.state.newXp + caught.xpAmount, stream.state.lvl);
     botSay(fishCatchMessage(texts, caught, name, Math.floor(Math.random() * FISH_MESSAGE_VARIANTS)));
   }, FISH_DEV_BITE_MS);
@@ -438,7 +467,10 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
 
       <section class="flex w-80 flex-col gap-y-3">
         <h2 class="text-lg font-bold">Алерты</h2>
-        <p class="text-sm text-sticker-muted">Ник берётся из поля «Ник». Откройте превью «Алерты».</p>
+        <p class="text-sm text-sticker-muted">Ник берётся из поля «Ник». Откройте превью «Алерты» или «Сцена».</p>
+        <button class="rounded-lg bg-[#ffd066] px-3 py-2 font-bold text-sticker-body" @click="chest()">
+          Сундук из рыбалки (+{{ CHEST_COINS }} в банк)
+        </button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="follow">Follow</button>
 
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
@@ -509,12 +541,12 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
 
         <h2 class="mt-4 text-lg font-bold">Рыбалка</h2>
         <p class="text-sm text-sticker-muted">
-          Ник берётся из поля «Ник», поклёвка через 3 с. Ответы бота видны в превью «Чат», банк и XP стрима — в превью
-          «Шапка». База не меняется.
+          Ник берётся из поля «Ник», поклёвка через 3 с. Ответы бота видны в превью «Чат», банк и XP стрима — в «Шапке»,
+          алерт сундука — в «Алертах», всё вместе — в «Сцене». База не меняется.
           <NuxtLink class="underline" to="/dev/messages">Все фразы на трёх языках</NuxtLink>
         </p>
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
-          Язык ответов
+          Язык ответов и алерта сундука
           <select v-model="fishLang" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
             <option v-for="lang in LANGS" :key="lang" :value="lang">{{ lang }}</option>
           </select>
@@ -535,19 +567,20 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
       <section class="min-w-[24rem] flex-1">
         <div class="mb-2 flex gap-x-2">
           <button
-            v-for="preview in previews"
-            :key="preview.path"
+            v-for="item in previews"
+            :key="item.label"
             class="rounded-lg px-3 py-1 text-sm font-bold"
-            :class="previewPath === preview.path ? 'bg-sticker-edge text-sticker-body' : 'bg-sticker-track'"
-            @click="previewPath = preview.path"
+            :class="preview.label === item.label ? 'bg-sticker-edge text-sticker-body' : 'bg-sticker-track'"
+            @click="preview = item"
           >
-            {{ preview.label }}
+            {{ item.label }}
           </button>
         </div>
         <div ref="box" class="relative w-full overflow-hidden rounded-xl border-2 border-sticker-edge checker" :style="{ height: `${1080 * scale}px` }">
           <iframe
-            :key="previewPath"
-            :src="previewPath"
+            v-for="path in preview.paths"
+            :key="path"
+            :src="path"
             class="absolute top-0 left-0 origin-top-left border-0"
             :style="{ width: '1920px', height: '1080px', transform: `scale(${scale})` }"
           />
