@@ -56,3 +56,7 @@ pnpm build && pnpm start           # prod: Nuxt на :3000, база prod.db, б
 - [`docs/DESIGN.md`](docs/DESIGN.md) — визуальный стиль оверлея (наклейки, токены, виджеты)
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — что перенесено и в каком порядке переносим
 - [`docs/spec.md`](docs/spec.md) — спецификация: схема БД, команды бота, события Socket.io, структура папок
+
+## Префикс команд
+
+`COMMAND_PREFIX`: в dev `!t` (`!tcoins`, `!tprofile`), в prod `!` (`!coins`, `!profile`). Так dev-бот не дублирует ответы боевого (в том числе старого fox-sphere) в одном чате. Значение задаётся в `.env.development` / `.env.production`; без переменной бот берёт `!t`, а `!` только при `NODE_ENV=production`.

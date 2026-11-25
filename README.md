@@ -37,6 +37,7 @@ pnpm dev
 | порт Nuxt | 3001 | 3000 |
 | база | `data/dev.db` | `data/prod.db` |
 | бот | **выключен** (`BOT_ENABLED=false`) | включён |
+| префикс команд | `!t` (`!tcoins`, `!tprofile`) | `!` |
 
 Бот в dev по умолчанию выключен, чтобы не отвечать в чат дважды. Чтобы включить — `BOT_ENABLED=true` в `.env.development`.
 Оверлей: `http://localhost:3001/overlay` (dev), `http://localhost:3000/overlay` (prod).
@@ -61,3 +62,10 @@ SQLite подключается через `@prisma/adapter-libsql` (внутр�
 
 SQLite открывается из двух процессов (Nuxt и бот), поэтому бот включает `PRAGMA journal_mode=WAL`.
 Секреты не коммитятся: в git только `.env.example`.
+
+## Вход через Twitch (два аккаунта)
+
+- Бот: `http://localhost:3001/auth/twitch/login` (аккаунт бота; если бот — ваш основной аккаунт, это тот же вход).
+- Стример: `http://localhost:3001/auth/twitch/broadcaster/login` (нужен `TWITCH_USER_ID`). Права: `shared/twitch.ts`.
+- Оба входа используют один Redirect URL `http://localhost:3001/auth/twitch/callback`. Права запрашиваются в ссылке авторизации, в консоли dev.twitch.tv их настраивать не нужно.
+- Один аккаунт = одна строка `TwitchToken`. Если бот и стример — один аккаунт (`TWITCH_BOT_ID` пуст или равен `TWITCH_USER_ID`), оба входа просят права обеих ролей.
