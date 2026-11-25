@@ -4,12 +4,20 @@ import { createRegistry } from './commands';
 import { config } from './config';
 import { createFollowerChecker } from './followers';
 import { prisma } from './db';
+import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { awardMessageXp, ensureViewer } from './viewers';
+
+await startSocketServer();
 
 if (!config.enabled) {
   console.log('[bot] BOT_ENABLED != true — бот выключен (так задумано для dev).');
-  // Держим процесс живым, чтобы concurrently/watch не считал его упавшим
-  setInterval(() => {}, 1 << 30);
+  // Процесс жив за счёт Socket.io-сервера (эмулятор событий работает и без Twitch)
+  const shutdownIdle = async () => {
+    await stopSocketServer();
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdownIdle);
+  process.on('SIGTERM', shutdownIdle);
 } else {
   const channel = config.channelName();
   console.log(`[bot] включён. Канал: #${channel}, база: ${process.env.DATABASE_URL}`);
@@ -77,6 +85,22 @@ if (!config.enabled) {
             `(${roles.isBroadcaster ? 'стример' : roles.isSubscriber ? 'саб' : roles.isFollower ? 'фолловер' : 'зритель'}${roles.isVip ? ', VIP' : ''}) ` +
             `(всего XP ${result.totalXp}, уровень ${result.lvl})`,
         );
+        // lvl в xp:gain — уровень до начисления: полоса дойдёт до 100%, а переход покажет level:up
+        emitEvent('xp:gain', {
+          twitchId: info.userId,
+          username: info.displayName,
+          amount: result.xp,
+          totalXp: result.totalXp,
+          lvl: viewer.lvl,
+        });
+        if (result.leveledUp) {
+          emitEvent('level:up', {
+            twitchId: info.userId,
+            username: info.displayName,
+            fromLvl: viewer.lvl,
+            toLvl: result.lvl,
+          });
+        }
         if (result.leveledUp) await reply(`@${info.displayName} достиг(ла) уровня ${result.lvl}! 🎉`);
       }
     } catch (error) {
@@ -88,6 +112,7 @@ if (!config.enabled) {
 
   const shutdown = async () => {
     chat.quit();
+    await stopSocketServer();
     await prisma.$disconnect();
     process.exit(0);
   };
