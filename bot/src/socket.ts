@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import {
+  isChatMessagePayload,
   isLevelUpPayload,
   isXpGainPayload,
   resolveSocketPort,
@@ -57,6 +58,13 @@ io.on('connection', (socket) => {
     if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
     if (!isLevelUpPayload(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
     emitEvent('level:up', payload);
+    ack?.({ ok: true });
+  });
+
+  socket.on('dev:chat-message', (payload, ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    if (!isChatMessagePayload(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
+    emitEvent('chat:message', payload);
     ack?.({ ok: true });
   });
 });

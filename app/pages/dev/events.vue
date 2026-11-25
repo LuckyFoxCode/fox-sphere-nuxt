@@ -1,17 +1,25 @@
 <script setup lang="ts">
 // Эмулятор событий без Twitch: кнопки шлют dev-события на сервер бота, он рассылает их оверлеям
-// как настоящие. Справа — превью /overlay/xp. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
+// как настоящие. Справа — превью /overlay/xp и /overlay/chat. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
+import type { ChatAnnounceColor, ChatMessagePayload } from '#shared/events';
 import { getXpThresholdForLevel } from '#shared/xp';
 
 const { $socket } = useNuxtApp();
 const xp = useXpStore();
+
+// Какой оверлей показывать в превью справа
+const previews = [
+  { path: '/overlay/xp', label: 'XP' },
+  { path: '/overlay/chat', label: 'Чат' },
+] as const;
+const previewPath = ref<(typeof previews)[number]['path']>('/overlay/chat');
 
 const username = ref('TestViewer');
 const lvl = ref(3);
 const amount = ref(3);
 const status = ref('');
 
-const send = (event: 'dev:xp-gain' | 'dev:level-up', payload: unknown) => {
+const send = (event: 'dev:xp-gain' | 'dev:level-up' | 'dev:chat-message', payload: unknown) => {
   $socket.emit(event, payload, (result) => {
     status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
   });
@@ -52,6 +60,123 @@ const burst = () => {
     }, index * 800);
   }
 };
+
+// --- Чат -------------------------------------------------------------------------------
+const chatText = ref('Привет, чат! Kappa');
+const chatColor = ref('#ff7ab8');
+const chatLvl = ref(12);
+const chatRoles = reactive({
+  isBroadcaster: false,
+  isBot: false,
+  isMod: false,
+  isVip: false,
+  isSubscriber: false,
+  isFollower: false,
+  isHighlight: false,
+  isAction: false,
+});
+const chatRoleLabels: Record<keyof typeof chatRoles, string> = {
+  isBroadcaster: 'стример',
+  isBot: 'бот',
+  isMod: 'модератор',
+  isVip: 'VIP',
+  isSubscriber: 'саб',
+  isFollower: 'фолловер',
+  isHighlight: 'highlight',
+  isAction: '/me',
+};
+const chatAnnounce = ref<ChatAnnounceColor | ''>('');
+const chatStreak = ref(false);
+
+let chatSeq = 0;
+const chatMessage = (over: Partial<ChatMessagePayload> = {}): ChatMessagePayload => ({
+  id: `dev-chat-${Date.now()}-${chatSeq++}`,
+  userId: `dev-${username.value.toLowerCase()}`,
+  username: username.value.toLowerCase(),
+  displayName: username.value,
+  color: chatColor.value,
+  text: chatText.value,
+  badges: [],
+  // Смайл Kappa (id 25) на месте первого слова «Kappa», если оно есть в тексте
+  emotes: emotesFor(chatText.value),
+  timestamp: Date.now(),
+  userLvl: chatLvl.value,
+  isMod: chatRoles.isMod,
+  isFollower: chatRoles.isFollower,
+  isFounder: false,
+  isSubscriber: chatRoles.isSubscriber,
+  isVip: chatRoles.isVip,
+  isPermanentVip: false,
+  isBroadcaster: chatRoles.isBroadcaster,
+  isBot: chatRoles.isBot,
+  isHighlight: chatRoles.isHighlight,
+  isAction: chatRoles.isAction,
+  ...(chatAnnounce.value ? { isAnnouncement: true, announceColor: chatAnnounce.value } : {}),
+  ...(chatStreak.value ? { watchStreak: { value: 5, reward: 500 } } : {}),
+  ...over,
+});
+
+const emotesFor = (text: string): Record<string, string[]> => {
+  const emotes: Record<string, string[]> = {};
+  for (const [name, id] of [['Kappa', '25'], ['LUL', '425618'], ['PogChamp', '305954156']] as const) {
+    for (const match of text.matchAll(new RegExp(`\\b${name}\\b`, 'g'))) {
+      const start = match.index ?? 0;
+      (emotes[id] ??= []).push(`${start}-${start + name.length - 1}`);
+    }
+  }
+  return emotes;
+};
+
+const sendChat = () => send('dev:chat-message', chatMessage());
+
+// По одному сообщению от каждой роли: видно рамку, медаль и плашку каждого типа
+const ROLE_SAMPLES: [string, number, Partial<ChatMessagePayload>][] = [
+  ['Streamer', 100, { isBroadcaster: true }],
+  ['SysBot', 1, { isBot: true }],
+  ['ModMike', 45, { isMod: true }],
+  ['VipVera', 33, { isVip: true }],
+  ['SubSam', 22, { isSubscriber: true }],
+  ['FollowFin', 8, { isFollower: true }],
+  ['Viewer', 2, {}],
+];
+const chatRolesBurst = () => {
+  ROLE_SAMPLES.forEach(([name, lvl, flags], index) => {
+    setTimeout(() => {
+      send(
+        'dev:chat-message',
+        chatMessage({
+          id: `dev-chat-${Date.now()}-${chatSeq++}`,
+          userId: `dev-${name.toLowerCase()}`,
+          username: name.toLowerCase(),
+          displayName: name,
+          userLvl: lvl,
+          text: `Сообщение роли ${name} Kappa`,
+          emotes: emotesFor(`Сообщение роли ${name} Kappa`),
+          isMod: false,
+          isVip: false,
+          isSubscriber: false,
+          isFollower: false,
+          isBroadcaster: false,
+          isBot: false,
+          ...flags,
+        }),
+      );
+    }, index * 500);
+  });
+};
+
+// Семь подряд: проверка лимита в 5 сообщений и ухода старых вниз
+const chatSpam = () => {
+  for (let i = 1; i <= 7; i++) {
+    setTimeout(() => send('dev:chat-message', chatMessage({ text: `Сообщение №${i} LUL`, emotes: emotesFor(`Сообщение №${i} LUL`) })), i * 300);
+  }
+};
+
+const chatLongLink = () =>
+  send(
+    'dev:chat-message',
+    chatMessage({ text: 'Смотрите https://github.com/LuckyFoxCode/fox-sphere-nuxt, очень_длинное_слово_без_пробелов_чтобы_проверить_перенос_строки' , emotes: {} }),
+  );
 
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
@@ -95,13 +220,64 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="levelUp">Только level up</button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="gainWithLevelUp">+XP и level up (как в бою)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="burst">Серия от трёх зрителей</button>
+
+        <h2 class="mt-4 text-lg font-bold">Чат</h2>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Текст (Kappa, LUL, PogChamp станут смайлами)
+          <input v-model="chatText" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+        </label>
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Цвет ника
+            <input v-model="chatColor" type="color" class="h-10 w-full rounded-lg bg-sticker-track" />
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Уровень
+            <input v-model.number="chatLvl" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+          <label v-for="(label, key) in chatRoleLabels" :key="key" class="flex items-center gap-x-1.5 text-sm">
+            <input v-model="chatRoles[key]" type="checkbox" />
+            {{ label }}
+          </label>
+        </div>
+        <div class="flex items-center gap-x-3 text-sm">
+          <label class="flex items-center gap-x-1.5">
+            Announcement
+            <select v-model="chatAnnounce" class="rounded bg-sticker-track px-2 py-1">
+              <option value="">нет</option>
+              <option value="blue">blue</option>
+              <option value="green">green</option>
+              <option value="orange">orange</option>
+              <option value="purple">purple</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-x-1.5"><input v-model="chatStreak" type="checkbox" /> watch streak</label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendChat">Отправить сообщение</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst">По сообщению от каждой роли</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatSpam">Семь подряд (лимит 5)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatLongLink">Ссылка и длинное слово</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
       </section>
 
       <section class="min-w-[24rem] flex-1">
+        <div class="mb-2 flex gap-x-2">
+          <button
+            v-for="preview in previews"
+            :key="preview.path"
+            class="rounded-lg px-3 py-1 text-sm font-bold"
+            :class="previewPath === preview.path ? 'bg-sticker-edge text-sticker-body' : 'bg-sticker-track'"
+            @click="previewPath = preview.path"
+          >
+            {{ preview.label }}
+          </button>
+        </div>
         <div ref="box" class="relative w-full overflow-hidden rounded-xl border-2 border-sticker-edge checker" :style="{ height: `${1080 * scale}px` }">
           <iframe
-            src="/overlay/xp"
+            :key="previewPath"
+            :src="previewPath"
             class="absolute top-0 left-0 origin-top-left border-0"
             :style="{ width: '1920px', height: '1080px', transform: `scale(${scale})` }"
           />

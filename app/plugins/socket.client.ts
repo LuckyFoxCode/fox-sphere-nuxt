@@ -24,6 +24,7 @@ export default defineNuxtPlugin(() => {
   socket.on('connect_error', () => (xp.connection = 'disconnected'));
   socket.on('xp:gain', xp.onXpGain);
   socket.on('level:up', xp.onLevelUp);
+  socket.on('chat:message', useChatStore().onMessage);
 
   return { provide: { socket } };
 });

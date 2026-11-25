@@ -1,10 +1,12 @@
-import { ChatClient } from '@twurple/chat';
+import { ChatClient, type ChatMessage } from '@twurple/chat';
 import { createAuth } from './auth';
+import { createBadgeResolver } from './badges';
 import { createRegistry } from './commands';
 import { config } from './config';
 import { createFollowerChecker } from './followers';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
+import type { ChatMessagePayload } from '../../shared/events';
 import { awardMessageXp, ensureViewer } from './viewers';
 
 await startSocketServer();
@@ -24,6 +26,8 @@ if (!config.enabled) {
 
   const { authProvider, api, botUserId, ensureBroadcaster } = await createAuth();
   const isFollower = createFollowerChecker(api, ensureBroadcaster);
+  const badges = createBadgeResolver(api, config.streamerId);
+  void badges.load();
   const registry = createRegistry(config.prefix);
   const chat = new ChatClient({ authProvider, channels: [channel] });
 
@@ -36,6 +40,35 @@ if (!config.enabled) {
       `префикс команд: "${config.prefix}"`,
   );
 
+  // Общая часть payload `chat:message`; роли и бейджи дописываются по месту
+  const baseChatPayload = (
+    msg: ChatMessage,
+    text: string,
+  ): Pick<
+    ChatMessagePayload,
+    | 'id'
+    | 'userId'
+    | 'username'
+    | 'displayName'
+    | 'color'
+    | 'text'
+    | 'emotes'
+    | 'timestamp'
+    | 'isHighlight'
+    | 'isAction'
+  > => ({
+    id: msg.id,
+    userId: msg.userInfo.userId,
+    username: msg.userInfo.userName,
+    displayName: msg.userInfo.displayName,
+    color: msg.userInfo.color || '#9146FF',
+    text,
+    emotes: Object.fromEntries(msg.emoteOffsets),
+    timestamp: msg.date.getTime(),
+    isHighlight: msg.isHighlight,
+    isAction: false,
+  });
+
   chat.onConnect(() => console.log('[bot] подключён к IRC Twitch'));
   chat.onJoin((joined) => console.log(`[bot] зашёл в чат ${joined}, слушаю сообщения`));
   chat.onJoinFailure((joined, reason) => console.error(`[bot] не удалось зайти в ${joined}: ${reason}`));
@@ -47,7 +80,21 @@ if (!config.enabled) {
     const info = msg.userInfo;
     if (sentByBot.has(text)) {
       sentByBot.delete(text);
-      return; // это наш собственный ответ
+      // Это наш собственный ответ: в чате оверлея он показывается как сообщение бота
+      emitEvent('chat:message', {
+        ...baseChatPayload(msg, text),
+        badges: [],
+        userLvl: 1,
+        isBot: true,
+        isFollower: false,
+        isFounder: false,
+        isMod: false,
+        isSubscriber: false,
+        isVip: false,
+        isPermanentVip: false,
+        isBroadcaster: false,
+      });
+      return;
     }
     console.log(`[chat] ${info.displayName}: ${text}`);
 
@@ -62,6 +109,21 @@ if (!config.enabled) {
         isFollower: needsFollowCheck ? await isFollower(info.userId) : false,
       };
       const viewer = await ensureViewer(info.userId, info.displayName, roles);
+
+      // В чат оверлея сообщение уходит до команд, чтобы ответ бота шёл следом, а не раньше
+      emitEvent('chat:message', {
+        ...baseChatPayload(msg, text),
+        badges: badges.urls(info.badges),
+        userLvl: viewer.lvl,
+        isMod: roles.isMod,
+        isFollower: roles.isFollower,
+        isFounder: viewer.isFounder,
+        isSubscriber: roles.isSubscriber,
+        isVip: roles.isVip,
+        isPermanentVip: viewer.isPermanentVip || viewer.isLuckyVip,
+        isBroadcaster: roles.isBroadcaster,
+        isBot: config.botId !== '' && info.userId === config.botId,
+      });
       const reply = async (answer: string) => {
         sentByBot.add(answer);
         console.log(`[bot] ответ: ${answer}`);

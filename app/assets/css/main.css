@@ -13,6 +13,8 @@
   --text-second: #a1a1aa;
   --text-inverse: #09090b;
   --lime: #a3e635;
+  /* Ссылка в чате (виджет чата из старого проекта) */
+  --link: #3b82f6;
 
   --sticker-body: #2b2630;
   --sticker-edge: #dccbb2;
@@ -38,6 +40,7 @@
   --color-text-main: var(--text-main);
   --color-text-second: var(--text-second);
   --color-text-inverse: var(--text-inverse);
+  --color-link: var(--link);
 
   --color-sticker-body: var(--sticker-body);
   --color-sticker-edge: var(--sticker-edge);
