@@ -1,6 +1,7 @@
 import { ChatClient, type ChatMessage } from '@twurple/chat';
 import { createAuth } from './auth';
 import { createBadgeResolver } from './badges';
+import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
 import { config } from './config';
 import { createFollowerChecker } from './followers';
@@ -31,9 +32,14 @@ if (!config.enabled) {
   const registry = createRegistry(config.prefix);
   const chat = new ChatClient({ authProvider, channels: [channel] });
 
-  // Бот может быть тем же аккаунтом, что и стример: тогда сообщения стримера и ответы бота
-  // приходят с одним userId. Поэтому свои ответы узнаём по тексту, а не по userId.
-  const sentByBot = new Set<string>();
+  const showBotMessage = createBotOverlayChat({
+    api,
+    botUserId,
+    streamerId: config.streamerId,
+    ensureBroadcaster,
+    badgeUrls: badges.urls,
+  });
+
   const sameAsStreamer = config.streamerId !== '' && botUserId === config.streamerId;
   console.log(
     `[bot] аккаунт бота: id ${botUserId}${sameAsStreamer ? ' (тот же, что у стримера)' : ''}, ` +
@@ -79,26 +85,13 @@ if (!config.enabled) {
     console.error(`[bot] чат отклонил вход: ${text}. Авторизуйте бота заново (${config.loginUrl}).`);
   });
 
+  // Twitch принял say(), но может отклонить само сообщение (бан, режим «только фолловеры», повтор)
+  chat.onMessageFailed((_channel, reason) => console.error(`[bot] Twitch отклонил сообщение: ${reason}`));
+  chat.onMessageRatelimit((_channel, text) => console.error(`[bot] лимит сообщений Twitch: ${text}`));
+  chat.onNoPermission((_channel, text) => console.error(`[bot] нет прав на отправку: ${text}`));
+
   chat.onMessage(async (_channel, _user, text, msg) => {
     const info = msg.userInfo;
-    if (sentByBot.has(text)) {
-      sentByBot.delete(text);
-      // Это наш собственный ответ: в чате оверлея он показывается как сообщение бота
-      emitEvent('chat:message', {
-        ...baseChatPayload(msg, text),
-        badges: [],
-        userLvl: 1,
-        isBot: true,
-        isFollower: false,
-        isFounder: false,
-        isMod: false,
-        isSubscriber: false,
-        isVip: false,
-        isPermanentVip: false,
-        isBroadcaster: false,
-      });
-      return;
-    }
     console.log(`[chat] ${info.displayName}: ${text}`);
 
     try {
@@ -128,9 +121,9 @@ if (!config.enabled) {
         isBot: config.botId !== '' && info.userId === config.botId,
       });
       const reply = async (answer: string) => {
-        sentByBot.add(answer);
         console.log(`[bot] ответ: ${answer}`);
         await chat.say(channel, answer, { replyTo: msg });
+        await showBotMessage(answer);
       };
 
       const isCommand = await registry.dispatch(text, (args) => ({
