@@ -4,26 +4,6 @@ import type { RoulettePrizeType } from './roulette';
 // Сервер живёт в bot/ (bot/src/socket.ts), оверлей подключается к нему как клиент.
 // Имена событий — «домен:действие», как в docs/spec.md, раздел 3.
 
-// Бот начислил зрителю XP за сообщение.
-// `lvl` — уровень, на котором полоса показывалась ДО начисления, а `totalXp` — XP ПОСЛЕ него.
-// Если начисление перевело зрителя на новый уровень, totalXp >= порога lvl, и полоса упирается
-// в 100%; сам переход приходит отдельным `level:up`.
-export type XpGainPayload = {
-  twitchId: string;
-  username: string;
-  amount: number;
-  totalXp: number;
-  lvl: number;
-};
-
-// Зритель перешёл на новый уровень (fromLvl < toLvl; за одно сообщение можно перескочить несколько).
-export type LevelUpPayload = {
-  twitchId: string;
-  username: string;
-  fromLvl: number;
-  toLvl: number;
-};
-
 export type ChatAnnounceColor = 'blue' | 'green' | 'orange' | 'purple';
 
 // Сообщение в чате канала. Поля те же, что у `chat:message` в старом fox-sphere, кроме `hero`
@@ -116,8 +96,6 @@ export type JackpotPayload = {
 export type ServerToClientEvents = {
   'roulette:spin-result': (payload: RouletteSpinResultPayload) => void;
   'stream:jackpot-updated': (payload: JackpotPayload) => void;
-  'xp:gain': (payload: XpGainPayload) => void;
-  'level:up': (payload: LevelUpPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
   'stream:xp-updated': (payload: StreamStatePayload) => void;
   'twitch:follow': (payload: FollowPayload) => void;
@@ -141,8 +119,6 @@ export type ClientToServerEvents = {
   'dev:roulette-spin': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot-reset': (ack?: DevAck) => void;
-  'dev:xp-gain': (payload: unknown, ack?: DevAck) => void;
-  'dev:level-up': (payload: unknown, ack?: DevAck) => void;
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-state': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-reset': (ack?: DevAck) => void;
@@ -160,22 +136,6 @@ const isNonEmptyString = (value: unknown): value is string =>
 
 const isInt = (value: unknown, min: number, max = 1_000_000_000): value is number =>
   typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
-
-export const isXpGainPayload = (value: unknown): value is XpGainPayload =>
-  isRecord(value) &&
-  isNonEmptyString(value.twitchId) &&
-  isNonEmptyString(value.username) &&
-  isInt(value.amount, 1) &&
-  isInt(value.totalXp, 0) &&
-  isInt(value.lvl, 1);
-
-export const isLevelUpPayload = (value: unknown): value is LevelUpPayload =>
-  isRecord(value) &&
-  isNonEmptyString(value.twitchId) &&
-  isNonEmptyString(value.username) &&
-  isInt(value.fromLvl, 1) &&
-  isInt(value.toLvl, 2) &&
-  value.toLvl > value.fromLvl;
 
 export const isStreamStatePayload = (value: unknown): value is StreamStatePayload =>
   isRecord(value) &&

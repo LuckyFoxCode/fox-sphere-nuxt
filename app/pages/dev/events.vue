@@ -9,11 +9,11 @@ import {
   ROULETTE_SEGMENT_IDS,
   type RouletteSegmentId,
 } from '#shared/roulette';
-import { buildStreamState, getStreamLevel, getXpThresholdForLevel } from '#shared/xp';
+import { buildStreamState, getStreamLevel } from '#shared/xp';
 import { segmentView } from '~/utils/roulette/rarity';
 
 const { $socket } = useNuxtApp();
-const xp = useXpStore();
+const app = useAppStore();
 const stream = useStreamStore();
 const bank = useBankStore();
 
@@ -21,20 +21,15 @@ const bank = useBankStore();
 const previews = [
   { path: '/overlay/stream', label: 'Шапка' },
   { path: '/overlay/roulette', label: 'Рулетка' },
-  { path: '/overlay/xp', label: 'XP' },
   { path: '/overlay/chat', label: 'Чат' },
   { path: '/overlay/alerts', label: 'Алерты' },
 ] as const;
 const previewPath = ref<(typeof previews)[number]['path']>('/overlay/stream');
 
 const username = ref('TestViewer');
-const lvl = ref(3);
-const amount = ref(3);
 const status = ref('');
 
 type DevEvent =
-  | 'dev:xp-gain'
-  | 'dev:level-up'
   | 'dev:chat-message'
   | 'dev:stream-state'
   | 'dev:follow'
@@ -48,42 +43,6 @@ const send = (event: DevEvent, payload: unknown) => {
   $socket.emit(event, payload, (result) => {
     status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
   });
-};
-
-const base = () => ({ twitchId: `dev-${username.value.toLowerCase()}`, username: username.value });
-
-// totalXp = середина уровня, чтобы полоса была видна
-const midXp = () => Math.floor((getXpThresholdForLevel(lvl.value - 1) + getXpThresholdForLevel(lvl.value)) / 2);
-
-const gain = () =>
-  send('dev:xp-gain', { ...base(), amount: amount.value, totalXp: midXp(), lvl: lvl.value });
-
-const levelUp = () => send('dev:level-up', { ...base(), fromLvl: lvl.value, toLvl: lvl.value + 1 });
-
-// Как настоящий уровень: полоса добирается до 100%, затем level-up
-const gainWithLevelUp = () => {
-  send('dev:xp-gain', {
-    ...base(),
-    amount: amount.value,
-    totalXp: getXpThresholdForLevel(lvl.value),
-    lvl: lvl.value,
-  });
-  send('dev:level-up', { ...base(), fromLvl: lvl.value, toLvl: lvl.value + 1 });
-  lvl.value += 1;
-};
-
-const burst = () => {
-  for (const [index, name] of ['Fox', 'Lynx', 'Wolf'].entries()) {
-    setTimeout(() => {
-      send('dev:xp-gain', {
-        twitchId: `dev-${name}`,
-        username: name,
-        amount: 1 + index,
-        totalXp: getXpThresholdForLevel(4) - 30 + index * 40,
-        lvl: 5,
-      });
-    }, index * 800);
-  }
 };
 
 // --- Стрим -----------------------------------------------------------------------------
@@ -339,7 +298,7 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
   <main class="min-h-screen bg-sticker-well p-6 font-quicksand text-sticker-ink">
     <h1 class="text-2xl font-bold">Эмулятор событий</h1>
     <p class="mt-1 text-sm text-sticker-muted">
-      Сокет: {{ connectionLabel[xp.connection] }}. Бот должен быть запущен (<code>pnpm dev</code>).
+      Сокет: {{ connectionLabel[app.connection] }}. Бот должен быть запущен (<code>pnpm dev</code>).
     </p>
 
     <div class="mt-5 flex flex-wrap gap-x-8 gap-y-6">
@@ -357,23 +316,11 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="streamLevelUp">Повысить уровень стрима</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetStream">Вернуть значения из базы</button>
 
-        <h2 class="mt-4 text-lg font-bold">XP зрителя</h2>
+        <h2 class="mt-4 text-lg font-bold">Зритель</h2>
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
           Ник
           <input v-model="username" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
         </label>
-        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
-          Уровень (до события)
-          <input v-model.number="lvl" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
-        </label>
-        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
-          XP за сообщение
-          <input v-model.number="amount" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
-        </label>
-        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="gain">+XP</button>
-        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="levelUp">Только level up</button>
-        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="gainWithLevelUp">+XP и level up (как в бою)</button>
-        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="burst">Серия от трёх зрителей</button>
 
         <h2 class="mt-4 text-lg font-bold">Чат</h2>
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">

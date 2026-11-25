@@ -4,13 +4,11 @@ import {
   isChatMessagePayload,
   isFollowPayload,
   isJackpotPayload,
-  isLevelUpPayload,
   isRaidPayload,
   isRewardRedeemPayload,
   isRouletteSpinPayload,
   isStreamStatePayload,
   isSubPayload,
-  isXpGainPayload,
   resolveSocketPort,
   type ClientToServerEvents,
   type DevAck,
@@ -87,20 +85,6 @@ const loadJackpot = () => load('банк рулетки', () => sources.getJackp
 io.on('connection', (socket) => {
   console.log(`[socket] клиент подключился (${io.engine.clientsCount})`);
   socket.on('disconnect', () => console.log(`[socket] клиент отключился (${io.engine.clientsCount})`));
-
-  socket.on('dev:xp-gain', (payload, ack) => {
-    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
-    if (!isXpGainPayload(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
-    emitEvent('xp:gain', payload);
-    ack?.({ ok: true });
-  });
-
-  socket.on('dev:level-up', (payload, ack) => {
-    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
-    if (!isLevelUpPayload(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
-    emitEvent('level:up', payload);
-    ack?.({ ok: true });
-  });
 
   socket.on('dev:chat-message', (payload, ack) => {
     if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });

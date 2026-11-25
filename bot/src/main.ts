@@ -125,21 +125,16 @@ if (!config.enabled) {
       showBotMessage(text, { isAnnouncement: true, announceColor }),
   });
 
-  // Начисленный зрителю XP: оверлей (полоса и level-up) и тот же XP стриму
+  // После начисления XP: шапка стрима и сообщения о новых уровнях в чат
   const showXpAward = async (
-    viewer: { twitchId: string; username: string },
-    award: { xp: number; totalXp: number; fromLvl: number; lvl: number; leveledUp: boolean },
+    username: string,
+    award: { lvl: number; leveledUp: boolean },
     reply: (text: string) => Promise<void>,
     stream: Awaited<ReturnType<typeof addStreamXp>> | null,
   ) => {
-    // lvl в xp:gain — уровень до начисления: полоса дойдёт до 100%, а переход покажет level:up
-    emitEvent('xp:gain', { ...viewer, amount: award.xp, totalXp: award.totalXp, lvl: award.fromLvl });
-    if (award.leveledUp) {
-      emitEvent('level:up', { ...viewer, fromLvl: award.fromLvl, toLvl: award.lvl });
-    }
     if (stream) emitEvent('stream:xp-updated', stream.state);
 
-    if (award.leveledUp) await reply(`@${viewer.username} достиг(ла) уровня ${award.lvl}! 🎉`);
+    if (award.leveledUp) await reply(`@${username} достиг(ла) уровня ${award.lvl}! 🎉`);
     if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
   };
 
@@ -157,7 +152,7 @@ if (!config.enabled) {
     awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
       const award = await awardBonusXp(viewer.id, xp);
       const stream = await tryAddStreamXp(xp);
-      return () => showXpAward({ twitchId: viewer.twitchId, username: displayName }, award, reply, stream);
+      return () => showXpAward(displayName, award, reply, stream);
     },
   });
 
@@ -218,12 +213,7 @@ if (!config.enabled) {
             `(всего XP ${result.totalXp}, уровень ${result.lvl})`,
         );
         // Тот же XP идёт стриму
-        await showXpAward(
-          { twitchId: info.userId, username: info.displayName },
-          { ...result, fromLvl: viewer.lvl },
-          reply,
-          await tryAddStreamXp(result.xp),
-        );
+        await showXpAward(info.displayName, result, reply, await tryAddStreamXp(result.xp));
       }
     } catch (error) {
       console.error('[bot] ошибка обработки сообщения:', error);

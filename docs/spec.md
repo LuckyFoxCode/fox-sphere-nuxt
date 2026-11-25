@@ -172,7 +172,7 @@ model TwitchToken {            // без изменений по смыслу
 **Модерация/стример:** `!addvip`, `!removevip`, `!addfounder`, `!removefounder`, `!xpboost` (5–60 мин, ×2), `!timer`, `!stoptimer`.
 
 **Фоновая логика:**
-- XP за сообщение (кулдаун 15с; 1 обычный, 3 саб/стример, 2 фолловер, +1 VIP, +1 founder; аккаунты стримера и бота XP за сообщения не получают), уровни (`getXpThresholdForLevel` в `backend-shared/src/xp.ts`), level-up в чат и на оверлей.
+- XP за сообщение (кулдаун 15с; 1 обычный, 3 саб/стример, 2 фолловер, +1 VIP, +1 founder; аккаунты стримера и бота XP за сообщения не получают), уровни (`getXpThresholdForLevel` в `backend-shared/src/xp.ts`), level-up в чат (на оверлее XP и level-up зрителя не показываются).
 - XP стрима (`SystemState.streamLevel/streamCurrentXp`) + авто-буст 30 мин.
 - Недельная лотерея: 100 XP за неделю = билет; еженедельный сброс `xpThisWeek/hasTicket`.
 - Watch streak: награды на 3, 5, 7, затем каждый 5-й с 10.
@@ -190,7 +190,6 @@ model TwitchToken {            // без изменений по смыслу
 | Событие | Виджет |
 |---|---|
 | `chat:message` | чат в сайдбаре |
-| `user:created`, `user:level-up` | карточка пользователя, уровень |
 | `stream:xp-updated`, `stream:level-up`, `stream:xp-boost`, `stream:jackpot-updated` | шапка: уровень стрима, XP-бар, чип ×2, джекпот |
 | `roulette:spin-result` | рулетка (лента карточек) |
 | `lottery:ticket-earned/started/winner-drawn/finished/participants` | менеджер лотереи |
@@ -199,6 +198,8 @@ model TwitchToken {            // без изменений по смыслу
 | `twitch:follow`, `twitch:raid`, `twitch:reward-redeem`, `twitch:add-vip`, `twitch:watch-streak`, `twitch:golden-beer` | хаб событий (стикеры) |
 | `twitch:timer`, `twitch:timer-stop` | таймер |
 | `music:now-playing` (`null` = скрыть) | карточка «играет сейчас», скрывается через 45с тишины, отбрасывает payload старше 45с |
+
+Карточку зрителя и level-up (`user:created`, `user:level-up` в старом проекте) в новый оверлей не переносим.
 
 Оверлей → сервер (запрос состояния при подключении): `stream:get-system-state`, `twitch:get-timer`, `music:get-current`.
 

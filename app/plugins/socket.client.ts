@@ -18,12 +18,10 @@ export default defineNuxtPlugin(() => {
     reconnectionDelayMax: 5000,
   });
 
-  const xp = useXpStore();
-  socket.on('connect', () => (xp.connection = 'connected'));
-  socket.on('disconnect', () => (xp.connection = 'disconnected'));
-  socket.on('connect_error', () => (xp.connection = 'disconnected'));
-  socket.on('xp:gain', xp.onXpGain);
-  socket.on('level:up', xp.onLevelUp);
+  const app = useAppStore();
+  socket.on('connect', () => (app.connection = 'connected'));
+  socket.on('disconnect', () => (app.connection = 'disconnected'));
+  socket.on('connect_error', () => (app.connection = 'disconnected'));
   socket.on('chat:message', useChatStore().onMessage);
   const stream = useStreamStore();
   socket.on('connect', () => stream.sync(socket));

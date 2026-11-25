@@ -13,7 +13,7 @@ export default defineNuxtConfig({
     '/overlay/**': { ssr: false },
     '/dev/**': { ssr: false },
   },
-  // Компоненты без префикса папки: <StickerFrame>, <XpWidget>
+  // Компоненты без префикса папки: <StickerFrame>, <StreamXpWidget>
   components: [{ path: '~/components', pathPrefix: false }],
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
