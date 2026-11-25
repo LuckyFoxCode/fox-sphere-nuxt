@@ -56,6 +56,13 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
       ['Сундук', (t) => t.fish.bank(NAME, 200)],
     ],
   },
+  {
+    title: 'Алерт сундука на оверлее',
+    rows: [
+      ['Лента', (t) => t.chestAlert.label],
+      ['Сумма в банк', (t) => t.chestAlert.toBank(200)],
+    ],
+  },
 ];
 </script>
 

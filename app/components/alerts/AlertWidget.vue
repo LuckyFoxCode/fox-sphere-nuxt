@@ -11,7 +11,8 @@ import type { AlertKind } from '~/utils/alerts';
 // Громкость из старого fox-sphere; точнее настраивается в микшере OBS
 const VOLUME = 0.5;
 
-const ICONS: Record<AlertKind, Component> = {
+// У сундука своя наклейка (ChestAlert), значок нужен только общей
+const ICONS: Record<Exclude<AlertKind, 'chest'>, Component> = {
   follow: IconPaw,
   raid: IconLightning,
   reward: IconGift,
@@ -27,7 +28,9 @@ watch(
     const audio = new Audio(alert.sound);
     audio.volume = VOLUME;
     // Обычный браузер не даёт играть звук без клика по странице; в OBS ограничения нет
-    audio.play().catch((error) => console.warn(`звук алерта не проигран: ${alert.sound}`, error));
+    const play = () => audio.play().catch((error) => console.warn(`звук алерта не проигран: ${alert.sound}`, error));
+    if (alert.soundDelayMs) setTimeout(play, alert.soundDelayMs);
+    else play();
   },
   { immediate: true },
 );
@@ -35,8 +38,15 @@ watch(
 
 <template>
   <Transition name="sticker-slap" mode="out-in">
+    <ChestAlert
+      v-if="alerts.current?.kind === 'chest'"
+      :key="alerts.current.id"
+      :label="alerts.current.label"
+      :username="alerts.current.title"
+      :amount="alerts.current.detail ?? ''"
+    />
     <EventSticker
-      v-if="alerts.current"
+      v-else-if="alerts.current"
       :key="alerts.current.id"
       :paper="alerts.current.paper"
       :icon="ICONS[alerts.current.kind]"

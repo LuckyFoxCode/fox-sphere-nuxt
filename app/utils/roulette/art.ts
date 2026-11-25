@@ -20,7 +20,7 @@ const WOOD = '#a9654a';
 const WOOD_SHADE = '#7f4636';
 const MUTED = '#8b8394';
 
-const circle = (cx: number, cy: number, r: number): string =>
+export const circle = (cx: number, cy: number, r: number): string =>
   `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${r * 2} 0a${r} ${r} 0 1 0 ${-r * 2} 0Z`;
 
 const ellipse = (cx: number, cy: number, rx: number, ry: number): string =>
@@ -32,7 +32,7 @@ const spark = (cx: number, cy: number, r: number): string => {
   return `M${cx} ${cy - r}L${cx + k} ${cy - k}L${cx + r} ${cy}L${cx + k} ${cy + k}L${cx} ${cy + r}L${cx - k} ${cy + k}L${cx - r} ${cy}L${cx - k} ${cy - k}Z`;
 };
 
-const sparkle = (cx: number, cy: number, r: number, fill = GOLD_LIGHT): ArtShape => ({
+export const sparkle = (cx: number, cy: number, r: number, fill = GOLD_LIGHT): ArtShape => ({
   d: spark(cx, cy, r),
   fill,
   width: 1.5,
@@ -49,7 +49,7 @@ const paw = (cx: number, cy: number, s: number, fill: string): ArtShape[] =>
   ].map((d) => ({ d, fill, solid: false }));
 
 // Монета лицом: гурт, диск, блик и клеймо
-const coin = (cx: number, cy: number, r: number): ArtShape[] => [
+export const coin = (cx: number, cy: number, r: number): ArtShape[] => [
   { d: circle(cx, cy, r), fill: GOLD_SHADE },
   { d: circle(cx, cy, r * 0.74), fill: GOLD, width: 1.5 },
   {
@@ -72,7 +72,7 @@ const disc = (cx: number, cy: number, rx = 17): ArtShape[] => [
   { d: ellipse(cx, cy, rx * 0.55, 2.8), stroke: GOLD_LIGHT, width: 1.5, solid: false },
 ];
 
-const gem = (cx: number, cy: number, s: number, fill: string): ArtShape[] => [
+export const gem = (cx: number, cy: number, s: number, fill: string): ArtShape[] => [
   {
     d: `M${cx - s} ${cy - s * 0.35}L${cx - s * 0.5} ${cy - s}H${cx + s * 0.5}L${cx + s} ${cy - s * 0.35}L${cx} ${cy + s}Z`,
     fill,

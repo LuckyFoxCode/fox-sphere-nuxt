@@ -23,13 +23,14 @@ export const useRouletteStore = defineStore('roulette', () => {
   const phase = ref<SpinPhase>('spinning');
 
   const queue: RouletteSpinResultPayload[] = [];
-  let busy = false;
+  // true, пока идут вращения, включая паузы между ними: этого ждёт алерт сундука
+  const busy = ref(false);
   let seq = 0;
 
   const after = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   const run = async () => {
-    busy = true;
+    busy.value = true;
     for (let next = queue.shift(); next; next = queue.shift()) {
       current.value = { ...next, id: ++seq };
       phase.value = 'spinning';
@@ -46,14 +47,14 @@ export const useRouletteStore = defineStore('roulette', () => {
       // Короче паузы бота: следующее событие застаёт сцену свободной
       await after(ROULETTE_GAP_MS - 100);
     }
-    busy = false;
+    busy.value = false;
   };
 
   const onSpin = (payload: RouletteSpinResultPayload) => {
     if (queue.length >= QUEUE_MAX) queue.shift();
     queue.push(payload);
-    if (!busy) void run();
+    if (!busy.value) void run();
   };
 
-  return { current, phase, onSpin };
+  return { current, phase, busy, onSpin };
 });

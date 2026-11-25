@@ -1,8 +1,18 @@
-// Тексты, цвета, звуки и длительность алертов. Один стикер на всех, события отличаются только данными.
-// follow, raid и reward перенесены из старого fox-sphere как есть; подписок там не было.
-import type { FollowPayload, RaidPayload, RewardRedeemPayload, SubPayload, SubTier } from '#shared/events';
+// Тексты, цвета, звуки и длительность алертов. События отличаются только данными, отдельная
+// наклейка лишь у сундука. follow, raid и reward перенесены из старого fox-sphere как есть;
+// подписок и алерта сундука там не было.
+import type {
+  FishingChestPayload,
+  FollowPayload,
+  RaidPayload,
+  RewardRedeemPayload,
+  SubPayload,
+  SubTier,
+} from '#shared/events';
+import { MESSAGES } from '#shared/i18n';
 
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub';
+// chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest';
 
 export interface AlertView {
   kind: AlertKind;
@@ -16,10 +26,16 @@ export interface AlertView {
   chips?: string[];
   /** Адрес звука из public/; null — алерт без звука */
   sound: string | null;
+  /** Задержка звука от появления наклейки */
+  soundDelayMs?: number;
   durationMs: number;
 }
 
 const ALERT_DURATION_MS = 5000;
+// Чуть дольше обычного: первую секунду занимает открытие сундука
+const CHEST_ALERT_DURATION_MS = 5500;
+// Пик звука приходится на открытие крышки (около 0,9 с)
+const CHEST_SOUND_DELAY_MS = 300;
 
 export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   follow: '/assets/sound/follow.mp3',
@@ -28,6 +44,9 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   // Заглушка: в старом проекте звука подписки не было. Положите файл в public/assets/sound/
   // и впишите его адрес сюда.
   sub: null,
+  // Взят из имеющихся (в старом проекте это звук watch streak, он ещё не перенесён).
+  // jackpot.mp3 и одинаковый с ним add-vip.mp3 не берём: сундук не должен звучать как джекпот.
+  chest: '/assets/sound/streak.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -65,6 +84,20 @@ export const rewardAlert = ({ username, rewardTitle }: RewardRedeemPayload): Ale
   sound: ALERT_SOUNDS.reward,
   durationMs: ALERT_DURATION_MS,
 });
+
+export const chestAlert = ({ username, coinAmount, lang }: FishingChestPayload): AlertView => {
+  const texts = MESSAGES[lang].chestAlert;
+  return {
+    kind: 'chest',
+    paper: 'bg-paper-amber',
+    label: texts.label,
+    title: username,
+    detail: texts.toBank(coinAmount),
+    sound: ALERT_SOUNDS.chest,
+    soundDelayMs: CHEST_SOUND_DELAY_MS,
+    durationMs: CHEST_ALERT_DURATION_MS,
+  };
+};
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {
