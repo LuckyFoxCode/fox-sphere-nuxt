@@ -11,9 +11,17 @@ export default defineNuxtConfig({
   // Оверлей — только клиентский рендер (OBS browser source)
   routeRules: {
     '/overlay/**': { ssr: false },
+    '/dev/**': { ssr: false },
   },
+  // Компоненты без префикса папки: <StickerFrame>, <XpWidget>
+  components: [{ path: '~/components', pathPrefix: false }],
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
     internalSecret: process.env.INTERNAL_SECRET,
+    public: {
+      // Socket.io-сервер бота. Пустой socketUrl → тот же хост страницы + socketPort
+      socketPort: Number(process.env.SOCKET_PORT) || 3002,
+      socketUrl: process.env.SOCKET_URL || '',
+    },
   },
 });

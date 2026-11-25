@@ -1,1 +1,118 @@
 @import 'tailwindcss';
+/* Шрифты локально (пакеты fontsource), чтобы OBS не зависел от сети */
+@import '@fontsource-variable/quicksand';
+@import '@fontsource-variable/rubik';
+
+/* Токены «графитовых наклеек», docs/DESIGN.md, раздел 2 */
+:root {
+  --bg: #09090b;
+  --card: #18181b;
+  --popover: #202024;
+  --line: #27272a;
+  --text-main: #fafafa;
+  --text-second: #a1a1aa;
+  --text-inverse: #09090b;
+  --lime: #a3e635;
+
+  --sticker-body: #2b2630;
+  --sticker-edge: #dccbb2;
+  --sticker-ink: #f2ecf6;
+  --sticker-muted: #a49ab0;
+  --sticker-track: #423b4c;
+  --sticker-well: #201c25;
+  --sticker-rose: #e08aa4;
+  --sticker-mint: #8fc9b8;
+
+  --paper-amber: #f2dfba;
+  --paper-blue: #d8e3f7;
+  --paper-cyan: #cfe9e1;
+  --paper-purple: #e8d9f2;
+  --paper-red: #f7dcd7;
+  --paper-rose: #f8dbe8;
+}
+
+@theme {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-text-main: var(--text-main);
+  --color-text-second: var(--text-second);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-sticker-body: var(--sticker-body);
+  --color-sticker-edge: var(--sticker-edge);
+  --color-sticker-ink: var(--sticker-ink);
+  --color-sticker-muted: var(--sticker-muted);
+  --color-sticker-track: var(--sticker-track);
+  --color-sticker-well: var(--sticker-well);
+  --color-sticker-rose: var(--sticker-rose);
+  --color-sticker-mint: var(--sticker-mint);
+
+  --color-paper-amber: var(--paper-amber);
+  --color-paper-blue: var(--paper-blue);
+  --color-paper-cyan: var(--paper-cyan);
+  --color-paper-purple: var(--paper-purple);
+  --color-paper-red: var(--paper-red);
+  --color-paper-rose: var(--paper-rose);
+
+  --font-rubik: 'Rubik Variable', sans-serif;
+  --font-quicksand: 'Quicksand Variable', sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-rubik);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Вход и выход наклейки: 180 мс / 140 мс (DESIGN.md 2.4). Только Vue <Transition name="sticker-slap"> */
+  .sticker-slap-enter-active {
+    transition:
+      opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sticker-slap-leave-active {
+    transition:
+      opacity 140ms cubic-bezier(0.4, 0, 1, 1),
+      transform 140ms cubic-bezier(0.4, 0, 1, 1);
+  }
+  .sticker-slap-enter-from {
+    opacity: 0;
+    transform: scale(1.06) translateY(-2px);
+  }
+  .sticker-slap-leave-to {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  /* Flip: единственное «моторное» движение HUD, 260 мс; значение подменяется на середине */
+  @keyframes flip {
+    0% {
+      transform: rotateX(0);
+    }
+    50% {
+      transform: rotateX(-90deg);
+    }
+    100% {
+      transform: rotateX(0);
+    }
+  }
+  .flip {
+    animation: flip 260ms ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sticker-slap-enter-active,
+    .sticker-slap-leave-active {
+      transition: opacity 1ms;
+    }
+    .sticker-slap-enter-from,
+    .sticker-slap-leave-to {
+      transform: none;
+    }
+    .flip {
+      animation: none;
+    }
+  }
+}
