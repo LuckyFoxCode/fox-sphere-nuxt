@@ -8,13 +8,11 @@ import {
   FISH_CATCH_WEIGHTS,
   FISH_MESSAGE_VARIANTS,
   FISH_TOTAL_WEIGHT,
-  fishAlreadyMessage,
-  fishCastMessage,
   fishCatchMessage,
-  fishCooldownMessage,
   pickCatch,
   type FishCatchId,
 } from '#shared/fishing';
+import { BOT_LANG, LANGS, MESSAGES, type Lang } from '#shared/i18n';
 import {
   JACKPOT_SEED,
   JACKPOT_SHARE,
@@ -295,6 +293,9 @@ const resetBank = () => {
 // XP — в XP стрима. База не меняется; поклёвка здесь через 3 с вместо 10–30.
 const FISH_DEV_BITE_MS = 3000;
 const fishPick = ref<FishCatchId>('bank200');
+// Язык ответов бота в эмуляции; у настоящего бота — BOT_LANG
+const fishLang = ref<Lang>(BOT_LANG);
+const fishTexts = computed(() => MESSAGES[fishLang.value].fish);
 
 const fishLabel = (id: FishCatchId) => {
   const { catchType, coinAmount, xpAmount, bankAmount } = FISH_CATCHES[id];
@@ -334,14 +335,16 @@ const botSay = (text: string) =>
   );
 
 const fish = (id: FishCatchId, name = username.value) => {
-  botSay(fishCastMessage(name));
+  // Оба ответа одного заброса — на одном языке, даже если его переключили во время ожидания
+  const texts = fishTexts.value;
+  botSay(texts.cast(name));
   setTimeout(() => {
     const caught = FISH_CATCHES[id];
     if (caught.bankAmount > 0) {
       send('dev:jackpot', { jackpotTotal: (bank.total ?? JACKPOT_SEED) + caught.bankAmount });
     }
     if (caught.xpAmount > 0 && stream.state) sendStreamXp(stream.state.newXp + caught.xpAmount, stream.state.lvl);
-    botSay(fishCatchMessage(caught, name, Math.floor(Math.random() * FISH_MESSAGE_VARIANTS)));
+    botSay(fishCatchMessage(texts, caught, name, Math.floor(Math.random() * FISH_MESSAGE_VARIANTS)));
   }, FISH_DEV_BITE_MS);
 };
 
@@ -508,7 +511,14 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <p class="text-sm text-sticker-muted">
           Ник берётся из поля «Ник», поклёвка через 3 с. Ответы бота видны в превью «Чат», банк и XP стрима — в превью
           «Шапка». База не меняется.
+          <NuxtLink class="underline" to="/dev/messages">Все фразы на трёх языках</NuxtLink>
         </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Язык ответов
+          <select v-model="fishLang" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="lang in LANGS" :key="lang" :value="lang">{{ lang }}</option>
+          </select>
+        </label>
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
           Что поймается
           <select v-model="fishPick" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
@@ -517,8 +527,8 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         </label>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="fish(fishPick)">Забросить удочку</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="fishRandom">Случайный улов (по шансам)</button>
-        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishCooldownMessage(username, 42))">Повтор во время кулдауна</button>
-        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishAlreadyMessage(username))">«Ты уже рыбачишь»</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.cooldown(username, 42))">Повтор во время кулдауна</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.already(username))">«Ты уже рыбачишь»</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
       </section>
 

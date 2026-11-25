@@ -1,5 +1,6 @@
 import { getLevelRange } from '../../../shared/xp';
 import { prisma } from '../db';
+import { messages } from '../language';
 import { registerFishCommand } from './fish';
 import { CommandRegistry } from './registry';
 import { registerSpinCommands, type SpinDeps } from './spin';
@@ -15,7 +16,7 @@ export const createRegistry = (deps: SpinDeps) => {
     aliases: ['balance', 'монеты'],
     cooldownMs: 5000,
     run: async ({ viewer, displayName, reply }) => {
-      await reply(`@${displayName}, у тебя ${viewer.coins} монет`);
+      await reply(messages().coins(displayName, viewer.coins));
     },
   });
 
@@ -28,8 +29,13 @@ export const createRegistry = (deps: SpinDeps) => {
       const rank =
         (await prisma.viewer.count({ where: { xp: { gt: viewer.xp } } })) + 1;
       await reply(
-        `@${displayName}: уровень ${viewer.lvl}, XP ${viewer.xp - startXp}/${maxXp - startXp} ` +
-          `до следующего, монет ${viewer.coins}, место в топе #${rank}`,
+        messages().profile(displayName, {
+          lvl: viewer.lvl,
+          xp: viewer.xp - startXp,
+          xpToNext: maxXp - startXp,
+          coins: viewer.coins,
+          rank,
+        }),
       );
     },
   });

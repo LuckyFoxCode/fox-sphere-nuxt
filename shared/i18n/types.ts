@@ -1,0 +1,49 @@
+// Все фразы, которые бот пишет в чат. Новая фраза сначала появляется здесь, и TypeScript
+// не даст забыть её ни в одном языке.
+
+type NameMessage = (name: string) => string;
+type CoinsMessage = (name: string, coins: number) => string;
+// Столько вариантов у «сорвалась» и у улова монет, во всех языках поровну
+type Three<T> = [T, T, T];
+
+export type ProfileStats = {
+  lvl: number;
+  // XP внутри текущего уровня и сколько его нужно до следующего
+  xp: number;
+  xpToNext: number;
+  coins: number;
+  rank: number;
+};
+
+export type FishMessages = {
+  cast: NameMessage;
+  already: NameMessage;
+  cooldown: (name: string, secondsLeft: number) => string;
+  empty: Three<NameMessage>;
+  coins: Three<CoinsMessage>;
+  xp: (name: string, xp: number) => string;
+  // Сундук не платит игроку: текст не должен читаться как личная выплата
+  bank: (name: string, coins: number) => string;
+};
+
+export type SpinMessages = {
+  cooldown: (name: string, secondsLeft: number, prefix: string) => string;
+  notEnough: (name: string, price: number, have: number) => string;
+  coins: CoinsMessage;
+  xp: (name: string, xp: number) => string;
+  jackpotAnnounce: NameMessage;
+  jackpotResult: (name: string, coins: number, bank: number) => string;
+  statsNone: (name: string, prefix: string) => string;
+  stats: (name: string, spins: number, win: number, loss: number) => string;
+};
+
+export type BotMessages = {
+  levelUp: (name: string, lvl: number) => string;
+  streamLevelUp: (lvl: number) => string;
+  follow: NameMessage;
+  raid: (name: string, viewers: number) => string;
+  coins: CoinsMessage;
+  profile: (name: string, stats: ProfileStats) => string;
+  spin: SpinMessages;
+  fish: FishMessages;
+};

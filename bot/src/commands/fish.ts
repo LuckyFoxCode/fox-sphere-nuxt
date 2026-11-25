@@ -1,4 +1,4 @@
-// Рыбалка: !fish. Тексты, алиасы, кулдаун и тайминг поклёвки — из старого fox-sphere.
+// Рыбалка: !fish. Алиасы, кулдаун и тайминг поклёвки — из старого fox-sphere.
 import { randomInt } from 'node:crypto';
 import {
   FISH_BITE_DELAY_MAX_MS,
@@ -6,13 +6,11 @@ import {
   FISH_CATCHES,
   FISH_COOLDOWN_MS,
   FISH_MESSAGE_VARIANTS,
-  fishAlreadyMessage,
-  fishCastMessage,
   fishCatchMessage,
-  fishCooldownMessage,
   pickCatch,
 } from '../../../shared/fishing';
 import { grantCatch } from '../fishing';
+import { messages } from '../language';
 import type { CommandRegistry } from './registry';
 import type { SpinDeps } from './spin';
 import type { CommandContext } from './types';
@@ -38,20 +36,20 @@ export const registerFishCommand = (registry: CommandRegistry, deps: FishDeps): 
     );
     // Как в старом боте: сообщение о новом уровне идёт раньше сообщения об улове
     await showXp?.().catch((error: unknown) => console.error(`[fish] XP ${displayName} не показан:`, error));
-    await reply(fishCatchMessage(caught, displayName, random(FISH_MESSAGE_VARIANTS)));
+    await reply(fishCatchMessage(messages().fish, caught, displayName, random(FISH_MESSAGE_VARIANTS)));
   };
 
   registry.register({
     name: 'fish',
     aliases: ['рыбачить', 'рыбалка'],
     cooldownMs: FISH_COOLDOWN_MS,
-    cooldownMessage: fishCooldownMessage,
+    cooldownMessage: (name, seconds) => messages().fish.cooldown(name, seconds),
     run: async (ctx) => {
       const { viewer, displayName, reply, releaseCooldown } = ctx;
       const { twitchId } = viewer;
       if (pending.has(twitchId)) {
         releaseCooldown();
-        await reply(fishAlreadyMessage(displayName));
+        await reply(messages().fish.already(displayName));
         return;
       }
 
@@ -64,7 +62,7 @@ export const registerFishCommand = (registry: CommandRegistry, deps: FishDeps): 
           .finally(() => pending.delete(twitchId));
       }, delay).unref();
 
-      await reply(fishCastMessage(displayName));
+      await reply(messages().fish.cast(displayName));
     },
   });
 };

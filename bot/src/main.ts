@@ -8,6 +8,7 @@ import { createRegistry } from './commands';
 import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
+import { messages } from './language';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { createSpinStage } from './spinStage';
@@ -111,8 +112,7 @@ if (!config.enabled) {
     console.log(`[stream] стрим достиг уровня ${lvl}`);
     // Как в старом боте: в dev только лог
     if (!config.isProduction) return;
-    // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.LEVEL_UP_STREAM)
-    const text = `⚡ STREAM LEVEL UP! We are now Level ${lvl}! Keep spamming those messages! 🚀`;
+    const text = messages().streamLevelUp(lvl);
     await chat.say(channel, text);
     await showBotMessage(text);
   };
@@ -131,7 +131,7 @@ if (!config.enabled) {
       console.log(`[xp] dev: ${username} достиг(ла) уровня ${lvl}, в чат не отправляется`);
       return;
     }
-    await reply(`@${username} достиг(ла) уровня ${lvl}! 🎉`);
+    await reply(messages().levelUp(username, lvl));
   };
 
   // После начисления XP: шапка стрима и сообщения о новых уровнях в чат
@@ -242,8 +242,7 @@ if (!config.enabled) {
         console.log('[follow] dev: благодарность в чат не отправляется');
         return;
       }
-      // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.FOLLOW)
-      const text = `🎉 Thanks for the follow, @${follow.username}! Welcome to the Foxsphere family! 🚀`;
+      const text = messages().follow(follow.username);
       await chat.say(channel, text);
       await showBotMessage(text);
     },
@@ -255,11 +254,7 @@ if (!config.enabled) {
         console.log('[raid] dev: анонс и шаутаут не отправляются');
         return;
       }
-      // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.RAID)
-      await announcer.announce(
-        `⚡ @${raid.raiderName} just raided with ${raid.viewers} viewers! Welcome to the Sphere! 🦊🌐✨`,
-        'purple',
-      );
+      await announcer.announce(messages().raid(raid.raiderName, raid.viewers), 'purple');
       await announcer.shoutout(raid.raiderId);
     },
     onRewardRedeem: (reward) => {

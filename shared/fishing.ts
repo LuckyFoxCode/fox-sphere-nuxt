@@ -1,6 +1,7 @@
 // Рыбалка, перенесена из старого fox-sphere без изменений: веса и уловы
-// (packages/backend-shared/src/fishing.ts), тайминги и тексты (modules/fishing/fishing.constants.ts).
-// Исход определяет только бот. Эмулятор (/dev/events) берёт отсюда те же уловы и тексты.
+// (packages/backend-shared/src/fishing.ts), тайминги (modules/fishing/fishing.constants.ts).
+// Исход определяет только бот. Эмулятор (/dev/events) берёт отсюда те же уловы.
+import type { FishMessages } from './i18n/types';
 
 export const FISH_COOLDOWN_MS = 60_000;
 // Поклёвка приходит сама, через случайное время в этих пределах (включительно)
@@ -55,43 +56,26 @@ export const pickCatch = (rng: (maxExclusive: number) => number): FishCatchId =>
   return 'bank200';
 };
 
-// Сколько вариантов у текстов улова и «сорвалась»
+// Сколько вариантов у текстов улова монет и «сорвалась» (сами фразы — shared/i18n)
 export const FISH_MESSAGE_VARIANTS = 3;
 
-type Variants = [(name: string) => string, ...((name: string) => string)[]];
-type CoinVariants = [(name: string, coins: number) => string, ...((name: string, coins: number) => string)[]];
-
-// «Сорвалась» — отдельный исход, а не промах зрителя
-const BITE_EMPTY: Variants = [
-  (name) => `🎣 @${name} — клюёт, и тут сорвалась с крючка!`,
-  (name) => `🎣 @${name} — клюёт было, да на крючке оказалось пусто…`,
-  (name) => `🎣 @${name} — дёрнуло, леска порвалась, улов ушёл`,
-];
-
-const BITE_COINS: CoinVariants = [
-  (name, coins) => `🎣 @${name} — клюёт и вылавливает! +${coins} монет`,
-  (name, coins) => `🎣 @${name} — вытащил рыбу на +${coins} монет!`,
-  (name, coins) => `🎣 @${name} — на крючке рыба, +${coins} монет 🎉`,
-];
-
-export const fishCastMessage = (name: string): string => `@${name} забросил удочку…`;
-
-export const fishAlreadyMessage = (name: string): string => `@${name}, ты уже рыбачишь`;
-
-export const fishCooldownMessage = (name: string, secondsLeft: number): string =>
-  `⏳ @${name}, удочка не готова — через ${secondsLeft}s`;
-
 // `variant` выбирает фразу для монет и «сорвалась»; у XP и сундука фраза одна
-export const fishCatchMessage = (caught: FishCatch, name: string, variant: number): string => {
+export const fishCatchMessage = (
+  texts: FishMessages,
+  caught: FishCatch,
+  name: string,
+  variant: number,
+): string => {
+  const index = variant % FISH_MESSAGE_VARIANTS;
   switch (caught.catchType) {
     case 'coins':
-      return (BITE_COINS[variant % BITE_COINS.length] ?? BITE_COINS[0])(name, caught.coinAmount);
+      return (texts.coins[index] ?? texts.coins[0])(name, caught.coinAmount);
     case 'xp':
-      return `⚡ @${name} — клюёт! Выловил +${caught.xpAmount} XP`;
-    // Сундук не платит игроку: текст не должен читаться как личная выплата
+      return texts.xp(name, caught.xpAmount);
     case 'bank':
-      return `🎣 @${name} — клюёт! Вытащил сундук: ${caught.bankAmount} монет ушли в джекпот`;
+      return texts.bank(name, caught.bankAmount);
+    // «Сорвалась» — отдельный исход, а не промах зрителя
     case 'empty':
-      return (BITE_EMPTY[variant % BITE_EMPTY.length] ?? BITE_EMPTY[0])(name);
+      return (texts.empty[index] ?? texts.empty[0])(name);
   }
 };

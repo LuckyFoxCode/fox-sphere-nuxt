@@ -1,7 +1,8 @@
-// Команды рулетки: !spin и !spinstats. Тексты, алиасы и кулдауны — из старого fox-sphere.
+// Команды рулетки: !spin и !spinstats. Алиасы и кулдауны — из старого fox-sphere, тексты — shared/i18n.
 import type { ChatAnnounceColor, RouletteSpinResultPayload } from '../../../shared/events';
 import { ROULETTE_PRICE, SPIN_COOLDOWN_MS, SPIN_STATS_COOLDOWN_MS } from '../../../shared/roulette';
 import { getJackpot } from '../bank';
+import { messages } from '../language';
 import { emitEvent } from '../socket';
 import { NotEnoughCoinsError, runSpin } from '../roulette';
 import type { PlaySpin } from '../spinStage';
@@ -21,9 +22,9 @@ export type SpinDeps = {
 const resultMessage = (name: string, result: RouletteSpinResultPayload): string | null => {
   switch (result.prizeType) {
     case 'coins':
-      return `💰 @${name} fished out ${result.coinAmount} coins!`;
+      return messages().spin.coins(name, result.coinAmount);
     case 'xp':
-      return `⚡ @${name} grabbed ${result.xpAmount} XP!`;
+      return messages().spin.xp(name, result.xpAmount);
     // Пустой результат в чат не идёт: его показывает лента на оверлее
     case 'empty':
     case 'jackpot':
@@ -47,10 +48,10 @@ export const registerSpinCommands = (registry: CommandRegistry, deps: SpinDeps):
     }
 
     if (result.jackpotWon) {
-      const headline = `👑 @${ctx.displayName} HITS THE JACKPOT!`;
+      const headline = messages().spin.jackpotAnnounce(ctx.displayName);
       if (!(await announce(headline, 'blue'))) await ctx.reply(headline);
       await ctx.reply(
-        `🎰 @${ctx.displayName} takes ${result.coinAmount} jackpot coins! Bank updated: ${result.jackpotTotalAfter}`,
+        messages().spin.jackpotResult(ctx.displayName, result.coinAmount, result.jackpotTotalAfter),
       );
       return;
     }
@@ -64,12 +65,12 @@ export const registerSpinCommands = (registry: CommandRegistry, deps: SpinDeps):
     name: 'spin',
     aliases: ['roll', 'спин', 'лудка'],
     cooldownMs: SPIN_COOLDOWN_MS,
-    cooldownMessage: (name, seconds) => `⏳ @${name}, not so fast! ${prefix}spin again in ${seconds}s`,
+    cooldownMessage: (name, seconds) => messages().spin.cooldown(name, seconds, prefix),
     run: async (ctx) => {
       const { viewer, displayName, reply, releaseCooldown } = ctx;
       if (viewer.coins < ROULETTE_PRICE) {
         releaseCooldown();
-        await reply(`@${displayName}, not enough coins: you need ${ROULETTE_PRICE}, you have ${viewer.coins}`);
+        await reply(messages().spin.notEnough(displayName, ROULETTE_PRICE, viewer.coins));
         return;
       }
 
@@ -107,12 +108,10 @@ export const registerSpinCommands = (registry: CommandRegistry, deps: SpinDeps):
     cooldownMs: SPIN_STATS_COOLDOWN_MS,
     run: async ({ viewer, displayName, reply }) => {
       if (viewer.spinsCount === 0) {
-        await reply(`@${displayName}, you haven't spun yet — hit ${prefix}spin! 🎰`);
+        await reply(messages().spin.statsNone(displayName, prefix));
         return;
       }
-      await reply(
-        `🎰 @${displayName}: spun ${viewer.spinsCount} times, won ${viewer.totalWin}, lost ${viewer.totalLoss}`,
-      );
+      await reply(messages().spin.stats(displayName, viewer.spinsCount, viewer.totalWin, viewer.totalLoss));
     },
   });
 };
