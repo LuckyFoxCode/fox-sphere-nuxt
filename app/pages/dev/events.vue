@@ -2,15 +2,25 @@
 // Эмулятор событий без Twitch: кнопки шлют dev-события на сервер бота, он рассылает их оверлеям
 // как настоящие. Справа — превью оверлеев. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
 import type { ChatAnnounceColor, ChatMessagePayload, SubPayload, SubTier } from '#shared/events';
+import {
+  JACKPOT_SEED,
+  JACKPOT_SHARE,
+  ROULETTE_PRIZES,
+  ROULETTE_SEGMENT_IDS,
+  type RouletteSegmentId,
+} from '#shared/roulette';
 import { buildStreamState, getStreamLevel, getXpThresholdForLevel } from '#shared/xp';
+import { segmentView } from '~/utils/roulette/rarity';
 
 const { $socket } = useNuxtApp();
 const xp = useXpStore();
 const stream = useStreamStore();
+const bank = useBankStore();
 
 // Какой оверлей показывать в превью справа
 const previews = [
   { path: '/overlay/stream', label: 'Шапка' },
+  { path: '/overlay/roulette', label: 'Рулетка' },
   { path: '/overlay/xp', label: 'XP' },
   { path: '/overlay/chat', label: 'Чат' },
   { path: '/overlay/alerts', label: 'Алерты' },
@@ -30,7 +40,9 @@ type DevEvent =
   | 'dev:follow'
   | 'dev:raid'
   | 'dev:reward-redeem'
-  | 'dev:sub';
+  | 'dev:sub'
+  | 'dev:roulette-spin'
+  | 'dev:jackpot';
 
 const send = (event: DevEvent, payload: unknown) => {
   $socket.emit(event, payload, (result) => {
@@ -251,6 +263,61 @@ const allAlerts = () => {
   giftSubs(username.value);
 };
 
+// --- Рулетка и банк --------------------------------------------------------------------
+// Выплата и банк считаются от того, что показывает шапка, по тем же правилам, что в боте. База не меняется.
+const spinSegment = ref<RouletteSegmentId>('coins250');
+const bankInput = ref(11540);
+// Банк после уже отправленных, но ещё не доигранных вращений: очередь не должна считать от старого
+let pendingBank: number | null = null;
+watch(
+  () => bank.total,
+  (total) => {
+    if (total === pendingBank) pendingBank = null;
+  },
+);
+
+const spinLabel = (id: RouletteSegmentId) => {
+  const view = segmentView(id);
+  return `${view.value === '—' ? '' : `${view.value} `}${view.unit} (${view.style.label})`;
+};
+
+const spin = (segment: RouletteSegmentId, name = username.value) => {
+  const prize = ROULETTE_PRIZES[segment];
+  const jackpotWon = segment === 'jackpot';
+  const after = (pendingBank ?? bank.total ?? JACKPOT_SEED) + JACKPOT_SHARE;
+  pendingBank = jackpotWon ? JACKPOT_SEED : after;
+  send('dev:roulette-spin', {
+    userId: `dev-${name.toLowerCase()}`,
+    username: name,
+    ...prize,
+    coinAmount: jackpotWon ? after : prize.coinAmount,
+    jackpotWon,
+    jackpotTotalAfter: pendingBank,
+  });
+};
+
+const spinRandom = () =>
+  spin(ROULETTE_SEGMENT_IDS[Math.floor(Math.random() * ROULETTE_SEGMENT_IDS.length)] ?? 'empty');
+
+// Три подряд: на оверлее они должны идти по одному
+const spinQueue = () => {
+  spin('empty', 'Fox');
+  spin('coins500', 'Lynx');
+  spin('xp100', 'Wolf');
+};
+
+const setBank = (jackpotTotal: number) => {
+  pendingBank = null;
+  send('dev:jackpot', { jackpotTotal });
+};
+
+const resetBank = () => {
+  pendingBank = null;
+  $socket.emit('dev:jackpot-reset', (result) => {
+    status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
+  });
+};
+
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
 
@@ -389,6 +456,37 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="giftSubs(username)">Подарок подписок</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="giftSubs(null)">Анонимный подарок</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="allAlerts">Все подряд (очередь)</button>
+      </section>
+
+      <section class="flex w-80 flex-col gap-y-3">
+        <h2 class="text-lg font-bold">Рулетка</h2>
+        <p class="text-sm text-sticker-muted">
+          Ник берётся из поля «Ник». Откройте превью «Рулетка».
+          <NuxtLink class="underline" to="/dev/roulette">Все карточки</NuxtLink>
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Что выпадет
+          <select v-model="spinSegment" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="id in ROULETTE_SEGMENT_IDS" :key="id" :value="id">{{ spinLabel(id) }}</option>
+          </select>
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="spin(spinSegment)">Запустить вращение</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="spin('jackpot')">Джекпот</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="spinRandom">Случайный слот</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="spinQueue">Три подряд (очередь)</button>
+
+        <h2 class="mt-4 text-lg font-bold">Банк</h2>
+        <p class="text-sm text-sticker-muted tabular-nums">
+          {{ bank.total === null ? 'Банк ещё не получен' : `Сейчас в шапке: ${bank.total}` }}. База не меняется.
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Сумма
+          <input v-model.number="bankInput" type="number" min="0" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="setBank(bankInput)">Показать эту сумму</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="setBank((bank.total ?? 0) + 55)">+55 в банк</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetBank">Вернуть банк из базы</button>
+        <p class="text-sm text-sticker-muted">{{ status }}</p>
       </section>
 
       <section class="min-w-[24rem] flex-1">

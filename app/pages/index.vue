@@ -67,6 +67,10 @@ onBeforeUnmount(() => clearTimeout(resetTimer));
           <NuxtLink class="text-link hover:underline" to="/dev/events">Эмулятор событий</NuxtLink>
           — проверка виджетов без Twitch. Нужен запущенный бот, в prod по умолчанию выключен. События видит и OBS.
         </p>
+        <p class="mt-2 text-sm text-text-second">
+          <NuxtLink class="text-link hover:underline" to="/dev/roulette">Карточки рулетки</NuxtLink>
+          — превью всех призов и экрана джекпота, на стрим не влияет.
+        </p>
       </section>
     </main>
   </div>

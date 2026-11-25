@@ -10,7 +10,8 @@ onBeforeUnmount(() => $socket.disconnect());
   <div class="relative h-screen w-screen overflow-hidden bg-transparent">
     <header class="flex w-full justify-end">
       <div class="flex items-center gap-x-2 pt-2 pr-3">
-        <!-- Здесь, слева от XP, встанет банк монет рулетки. Ряд прижат вправо, XP не сдвинется. -->
+        <!-- Банк слева от XP. Ряд прижат вправо, поэтому XP не сдвигается -->
+        <RouletteTicker />
         <StreamXpWidget />
       </div>
     </header>

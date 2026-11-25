@@ -28,6 +28,10 @@ export default defineNuxtPlugin(() => {
   const stream = useStreamStore();
   socket.on('connect', () => stream.sync(socket));
   socket.on('stream:xp-updated', stream.onUpdate);
+  const bank = useBankStore();
+  socket.on('connect', () => bank.sync(socket));
+  socket.on('stream:jackpot-updated', bank.onUpdate);
+  socket.on('roulette:spin-result', useRouletteStore().onSpin);
   const alerts = useAlertsStore();
   socket.on('twitch:follow', alerts.onFollow);
   socket.on('twitch:raid', alerts.onRaid);
