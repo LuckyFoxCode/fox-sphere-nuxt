@@ -76,8 +76,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0 && value.length <= 64;
 
-const isInt = (value: unknown, min: number): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= min && value <= 1_000_000_000;
+const isInt = (value: unknown, min: number, max = 1_000_000_000): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 
 export const isXpGainPayload = (value: unknown): value is XpGainPayload =>
   isRecord(value) &&
@@ -119,7 +119,9 @@ export const isChatMessagePayload = (value: unknown): value is ChatMessagePayloa
   if (!isNonEmptyString(value.username) || !isNonEmptyString(value.displayName)) return false;
   if (typeof value.color !== 'string' || value.color.length > 16) return false;
   if (typeof value.text !== 'string' || value.text.length > 500) return false;
-  if (!isStringArray(value.badges, 10) || !isInt(value.timestamp, 0) || !isInt(value.userLvl, 1)) return false;
+  if (!isStringArray(value.badges, 10) || !isInt(value.userLvl, 1)) return false;
+  // timestamp — миллисекунды (Date.now()), они не помещаются в общий лимит isInt
+  if (!isInt(value.timestamp, 0, Number.MAX_SAFE_INTEGER)) return false;
   if (!CHAT_FLAGS.every((flag) => typeof value[flag] === 'boolean')) return false;
   if (!isRecord(value.emotes) || !Object.values(value.emotes).every((positions) => isStringArray(positions, 50))) {
     return false;
