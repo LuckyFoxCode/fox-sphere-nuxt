@@ -3,6 +3,19 @@
 // как настоящие. Справа — превью оверлеев. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
 import type { ChatAnnounceColor, ChatMessagePayload, SubPayload, SubTier } from '#shared/events';
 import {
+  FISH_CATCHES,
+  FISH_CATCH_IDS,
+  FISH_CATCH_WEIGHTS,
+  FISH_MESSAGE_VARIANTS,
+  FISH_TOTAL_WEIGHT,
+  fishAlreadyMessage,
+  fishCastMessage,
+  fishCatchMessage,
+  fishCooldownMessage,
+  pickCatch,
+  type FishCatchId,
+} from '#shared/fishing';
+import {
   JACKPOT_SEED,
   JACKPOT_SHARE,
   ROULETTE_PRIZES,
@@ -277,6 +290,63 @@ const resetBank = () => {
   });
 };
 
+// --- Рыбалка ---------------------------------------------------------------------------
+// Своего оверлея у рыбалки нет: ответы бота видны в чате оверлея, сундук — в банке шапки,
+// XP — в XP стрима. База не меняется; поклёвка здесь через 3 с вместо 10–30.
+const FISH_DEV_BITE_MS = 3000;
+const fishPick = ref<FishCatchId>('bank200');
+
+const fishLabel = (id: FishCatchId) => {
+  const { catchType, coinAmount, xpAmount, bankAmount } = FISH_CATCHES[id];
+  const name = {
+    empty: 'Сорвалась',
+    coins: `+${coinAmount} монет`,
+    xp: `+${xpAmount} XP`,
+    bank: `Сундук: ${bankAmount} в банк`,
+  }[catchType];
+  const chance = (FISH_CATCH_WEIGHTS[id] / FISH_TOTAL_WEIGHT) * 100;
+  return `${name} (${chance.toLocaleString('ru-RU')}%)`;
+};
+
+const botSay = (text: string) =>
+  send(
+    'dev:chat-message',
+    chatMessage({
+      userId: 'dev-bot',
+      username: 'sysbot',
+      displayName: 'SysBot',
+      color: '#94A3B8',
+      text,
+      emotes: {},
+      userLvl: 1,
+      isMod: false,
+      isVip: false,
+      isSubscriber: false,
+      isFollower: false,
+      isBroadcaster: false,
+      isBot: true,
+      isHighlight: false,
+      isAction: false,
+      isAnnouncement: false,
+      announceColor: undefined,
+      watchStreak: undefined,
+    }),
+  );
+
+const fish = (id: FishCatchId, name = username.value) => {
+  botSay(fishCastMessage(name));
+  setTimeout(() => {
+    const caught = FISH_CATCHES[id];
+    if (caught.bankAmount > 0) {
+      send('dev:jackpot', { jackpotTotal: (bank.total ?? JACKPOT_SEED) + caught.bankAmount });
+    }
+    if (caught.xpAmount > 0 && stream.state) sendStreamXp(stream.state.newXp + caught.xpAmount, stream.state.lvl);
+    botSay(fishCatchMessage(caught, name, Math.floor(Math.random() * FISH_MESSAGE_VARIANTS)));
+  }, FISH_DEV_BITE_MS);
+};
+
+const fishRandom = () => fish(pickCatch((max) => Math.floor(Math.random() * max)));
+
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
 
@@ -433,6 +503,22 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="setBank(bankInput)">Показать эту сумму</button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="setBank((bank.total ?? 0) + 55)">+55 в банк</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetBank">Вернуть банк из базы</button>
+
+        <h2 class="mt-4 text-lg font-bold">Рыбалка</h2>
+        <p class="text-sm text-sticker-muted">
+          Ник берётся из поля «Ник», поклёвка через 3 с. Ответы бота видны в превью «Чат», банк и XP стрима — в превью
+          «Шапка». База не меняется.
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Что поймается
+          <select v-model="fishPick" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="id in FISH_CATCH_IDS" :key="id" :value="id">{{ fishLabel(id) }}</option>
+          </select>
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="fish(fishPick)">Забросить удочку</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="fishRandom">Случайный улов (по шансам)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishCooldownMessage(username, 42))">Повтор во время кулдауна</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishAlreadyMessage(username))">«Ты уже рыбачишь»</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
       </section>
 
