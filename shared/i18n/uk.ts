@@ -42,4 +42,8 @@ export const uk: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — клює! Улов: +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — клює! На гачку скриня: ${coinsText(coins)} — у джекпот`,
   },
+  chestAlert: {
+    label: 'скриня зі скарбом',
+    toBank: (coins) => `+${coinsText(coins)} у банк`,
+  },
 };

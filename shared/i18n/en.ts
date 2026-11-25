@@ -37,4 +37,8 @@ export const en: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — a bite! Caught +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — a bite! Pulled out a chest: ${coins} coins went to the jackpot`,
   },
+  chestAlert: {
+    label: 'treasure chest',
+    toBank: (coins) => `+${coins} coins to the bank`,
+  },
 };

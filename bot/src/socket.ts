@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import {
   isChatMessagePayload,
+  isFishingChestPayload,
   isFollowPayload,
   isJackpotPayload,
   isRaidPayload,
@@ -122,6 +123,7 @@ io.on('connection', (socket) => {
     relayDev(isRewardRedeemPayload, (payload) => emitEvent('twitch:reward-redeem', payload)),
   );
   socket.on('dev:sub', relayDev(isSubPayload, (payload) => emitEvent('twitch:sub', payload)));
+  socket.on('dev:fishing-chest', relayDev(isFishingChestPayload, (payload) => emitEvent('fishing:chest', payload)));
 
   // Рулетка и банк
   socket.on('stream:get-jackpot', async (ack) => {

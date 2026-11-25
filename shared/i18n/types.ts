@@ -1,5 +1,5 @@
-// Все фразы, которые бот пишет в чат. Новая фраза сначала появляется здесь, и TypeScript
-// не даст забыть её ни в одном языке.
+// Все фразы, которые бот пишет в чат, и надписи алерта сундука. Новая фраза сначала появляется
+// здесь, и TypeScript не даст забыть её ни в одном языке.
 
 type NameMessage = (name: string) => string;
 type CoinsMessage = (name: string, coins: number) => string;
@@ -26,6 +26,12 @@ export type FishMessages = {
   bank: (name: string, coins: number) => string;
 };
 
+// Надписи алерта «сундук» на оверлее; ник на нём печатается отдельной строкой
+export type ChestAlertMessages = {
+  label: string;
+  toBank: (coins: number) => string;
+};
+
 export type SpinMessages = {
   cooldown: (name: string, secondsLeft: number, prefix: string) => string;
   notEnough: (name: string, price: number, have: number) => string;
@@ -46,4 +52,5 @@ export type BotMessages = {
   profile: (name: string, stats: ProfileStats) => string;
   spin: SpinMessages;
   fish: FishMessages;
+  chestAlert: ChestAlertMessages;
 };

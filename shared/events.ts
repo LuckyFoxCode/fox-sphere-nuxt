@@ -1,3 +1,4 @@
+import { LANGS, type Lang } from './i18n';
 import type { RoulettePrizeType } from './roulette';
 
 // Контракты событий Socket.io: один файл для бота (сервер) и Nuxt (клиент).
@@ -74,6 +75,15 @@ export type SubPayload =
   | { kind: 'resub'; userId: string; username: string; tier: SubTier; months: number }
   | { kind: 'gift'; username: string | null; tier: SubTier; amount: number };
 
+// Сундук из рыбалки: `coinAmount` монет ушли в банк рулетки, сам банк приходит отдельно
+// (`stream:jackpot-updated`). `lang` — язык бота, на нём подписи алерта.
+export type FishingChestPayload = {
+  userId: string;
+  username: string;
+  coinAmount: number;
+  lang: Lang;
+};
+
 // Рулетка. Поля те же, что у `roulette:spin-result` в старом fox-sphere. Приходит в момент старта
 // ленты; через ROULETTE_SPIN_ANIMATION_MS лента встаёт на этом призе. `coinAmount` у джекпота — весь
 // забранный банк, `jackpotTotalAfter` — банк после спина.
@@ -102,6 +112,7 @@ export type ServerToClientEvents = {
   'twitch:raid': (payload: RaidPayload) => void;
   'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
   'twitch:sub': (payload: SubPayload) => void;
+  'fishing:chest': (payload: FishingChestPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -126,6 +137,7 @@ export type ClientToServerEvents = {
   'dev:raid': (payload: unknown, ack?: DevAck) => void;
   'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
   'dev:sub': (payload: unknown, ack?: DevAck) => void;
+  'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -212,6 +224,15 @@ export const isSubPayload = (value: unknown): value is SubPayload => {
   if (!isNonEmptyString(value.userId) || !isNonEmptyString(value.username)) return false;
   return value.kind === 'new' || (value.kind === 'resub' && isInt(value.months, 1));
 };
+
+const KNOWN_LANGS: readonly unknown[] = LANGS;
+
+export const isFishingChestPayload = (value: unknown): value is FishingChestPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.coinAmount, 1) &&
+  KNOWN_LANGS.includes(value.lang);
 
 const PRIZE_TYPES: readonly unknown[] = ['empty', 'coins', 'xp', 'jackpot'];
 

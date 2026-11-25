@@ -1,10 +1,10 @@
-// Языки ответов бота в чате. Оверлеи сюда не входят.
+// Языки ответов бота в чате. Из надписей оверлеев переводится только алерт сундука.
 import { en } from './en';
 import { ru } from './ru';
 import type { BotMessages } from './types';
 import { uk } from './uk';
 
-export type { BotMessages, FishMessages, ProfileStats } from './types';
+export type { BotMessages, ChestAlertMessages, FishMessages, ProfileStats } from './types';
 
 // Порядок — по важности: en основной, uk второй, ru дополнительный
 export const LANGS = ['en', 'uk', 'ru'] as const;

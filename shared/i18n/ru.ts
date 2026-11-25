@@ -41,4 +41,8 @@ export const ru: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — клюёт! Выловил +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — клюёт! Вытащил сундук: ${coins} монет ушли в джекпот`,
   },
+  chestAlert: {
+    label: 'сундук с сокровищем',
+    toBank: (coins) => `+${coinsText(coins)} в банк`,
+  },
 };

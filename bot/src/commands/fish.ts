@@ -10,7 +10,8 @@ import {
   pickCatch,
 } from '../../../shared/fishing';
 import { grantCatch } from '../fishing';
-import { messages } from '../language';
+import { language, messages } from '../language';
+import { emitEvent } from '../socket';
 import type { CommandRegistry } from './registry';
 import type { SpinDeps } from './spin';
 import type { CommandContext } from './types';
@@ -34,6 +35,15 @@ export const registerFishCommand = (registry: CommandRegistry, deps: FishDeps): 
       `[fish] ${displayName}: ${caught.catchType}, монет ${caught.coinAmount}, XP ${caught.xpAmount}, ` +
         `в банк ${caught.bankAmount}`,
     );
+    // Сундук — заметное событие: алерт на оверлее. Банк в шапке уже пополнил grantCatch
+    if (caught.catchType === 'bank') {
+      emitEvent('fishing:chest', {
+        userId: viewer.twitchId,
+        username: displayName,
+        coinAmount: caught.bankAmount,
+        lang: language(),
+      });
+    }
     // Как в старом боте: сообщение о новом уровне идёт раньше сообщения об улове
     await showXp?.().catch((error: unknown) => console.error(`[fish] XP ${displayName} не показан:`, error));
     await reply(fishCatchMessage(messages().fish, caught, displayName, random(FISH_MESSAGE_VARIANTS)));
