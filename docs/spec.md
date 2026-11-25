@@ -172,7 +172,7 @@ model TwitchToken {            // без изменений по смыслу
 **Модерация/стример:** `!addvip`, `!removevip`, `!addfounder`, `!removefounder`, `!xpboost` (5–60 мин, ×2), `!timer`, `!stoptimer`.
 
 **Фоновая логика:**
-- XP за сообщение (кулдаун 15с; 1 обычный, 3 саб/стример, 2 фолловер, +1 VIP, +1 founder), уровни (`getXpThresholdForLevel` в `backend-shared/src/xp.ts`), level-up в чат и на оверлей.
+- XP за сообщение (кулдаун 15с; 1 обычный, 3 саб/стример, 2 фолловер, +1 VIP, +1 founder; аккаунты стримера и бота XP за сообщения не получают), уровни (`getXpThresholdForLevel` в `backend-shared/src/xp.ts`), level-up в чат и на оверлей.
 - XP стрима (`SystemState.streamLevel/streamCurrentXp`) + авто-буст 30 мин.
 - Недельная лотерея: 100 XP за неделю = билет; еженедельный сброс `xpThisWeek/hasTicket`.
 - Watch streak: награды на 3, 5, 7, затем каждый 5-й с 10.

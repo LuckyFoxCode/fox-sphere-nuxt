@@ -40,6 +40,9 @@ if (!config.enabled) {
       `префикс команд: "${config.prefix}"`,
   );
 
+  // Как в старом боте: аккаунты стримера и бота не получают XP за сообщения
+  const noXpIds = new Set([config.streamerId, config.botId, botUserId].filter(Boolean));
+
   // Общая часть payload `chat:message`; роли и бейджи дописываются по месту
   const baseChatPayload = (
     msg: ChatMessage,
@@ -137,6 +140,9 @@ if (!config.enabled) {
         reply,
       }));
       if (isCommand) console.log(`[bot] команда от ${info.displayName} обработана`);
+
+      // msg.channelId — id канала из самого сообщения: стример отсеется и без TWITCH_USER_ID
+      if (info.userId === msg.channelId || noXpIds.has(info.userId)) return;
 
       const result = await awardMessageXp(viewer, roles);
       if (result.status === 'cooldown') {
