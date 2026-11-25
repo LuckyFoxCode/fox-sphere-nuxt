@@ -2,11 +2,16 @@ import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import {
   isChatMessagePayload,
+  isFollowPayload,
   isLevelUpPayload,
+  isRaidPayload,
+  isRewardRedeemPayload,
   isStreamStatePayload,
+  isSubPayload,
   isXpGainPayload,
   resolveSocketPort,
   type ClientToServerEvents,
+  type DevAck,
   type ServerToClientEvents,
   type StreamStatePayload,
 } from '../../shared/events';
@@ -44,6 +49,16 @@ export const emitEvent = <E extends keyof ServerToClientEvents>(
 ): void => {
   io.emit(event, ...args);
 };
+
+// Обработчик dev-события, которое просто пересылается оверлеям после проверки payload
+const relayDev =
+  <T>(isValid: (value: unknown) => value is T, send: (payload: T) => void) =>
+  (payload: unknown, ack?: DevAck): void => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    if (!isValid(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
+    send(payload);
+    ack?.({ ok: true });
+  };
 
 // Откуда брать состояние стрима, задаётся при запуске: сам сервер базу не читает
 let readStreamState: () => Promise<StreamStatePayload>;
@@ -102,6 +117,15 @@ io.on('connection', (socket) => {
     emitEvent('stream:xp-updated', state);
     ack?.({ ok: true });
   });
+
+  // Алерты
+  socket.on('dev:follow', relayDev(isFollowPayload, (payload) => emitEvent('twitch:follow', payload)));
+  socket.on('dev:raid', relayDev(isRaidPayload, (payload) => emitEvent('twitch:raid', payload)));
+  socket.on(
+    'dev:reward-redeem',
+    relayDev(isRewardRedeemPayload, (payload) => emitEvent('twitch:reward-redeem', payload)),
+  );
+  socket.on('dev:sub', relayDev(isSubPayload, (payload) => emitEvent('twitch:sub', payload)));
 });
 
 export const startSocketServer = (options: {

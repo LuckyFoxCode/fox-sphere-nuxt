@@ -28,6 +28,11 @@ export default defineNuxtPlugin(() => {
   const stream = useStreamStore();
   socket.on('connect', () => stream.sync(socket));
   socket.on('stream:xp-updated', stream.onUpdate);
+  const alerts = useAlertsStore();
+  socket.on('twitch:follow', alerts.onFollow);
+  socket.on('twitch:raid', alerts.onRaid);
+  socket.on('twitch:reward-redeem', alerts.onRewardRedeem);
+  socket.on('twitch:sub', alerts.onSub);
 
   return { provide: { socket } };
 });

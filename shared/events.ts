@@ -62,12 +62,46 @@ export type StreamStatePayload = {
   startXp: number;
 };
 
+// Алерты (/overlay/alerts). Имена событий и поля follow, raid и reward — как в старом fox-sphere.
+export type FollowPayload = {
+  userId: string;
+  username: string;
+};
+
+export type RaidPayload = {
+  raiderId: string;
+  raiderName: string;
+  viewers: number;
+};
+
+export type RewardRedeemPayload = {
+  userId: string;
+  username: string;
+  rewardTitle: string;
+  redemptionId: string;
+};
+
+// Уровень подписки в обозначениях Twitch: 1000 — первый, 2000 — второй, 3000 — третий
+export type SubTier = '1000' | '2000' | '3000';
+
+// Подписки (в старом проекте таких алертов не было). `new` — первая подписка, `resub` — продление,
+// которым зритель поделился в чате (`months` — всего месяцев), `gift` — подарок `amount` подписок,
+// `username: null` — анонимный. Получатели подарка отдельных событий не дают.
+export type SubPayload =
+  | { kind: 'new'; userId: string; username: string; tier: SubTier }
+  | { kind: 'resub'; userId: string; username: string; tier: SubTier; months: number }
+  | { kind: 'gift'; username: string | null; tier: SubTier; amount: number };
+
 // Сервер → оверлей
 export type ServerToClientEvents = {
   'xp:gain': (payload: XpGainPayload) => void;
   'level:up': (payload: LevelUpPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
   'stream:xp-updated': (payload: StreamStatePayload) => void;
+  'twitch:follow': (payload: FollowPayload) => void;
+  'twitch:raid': (payload: RaidPayload) => void;
+  'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
+  'twitch:sub': (payload: SubPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -84,6 +118,10 @@ export type ClientToServerEvents = {
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-state': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-reset': (ack?: DevAck) => void;
+  'dev:follow': (payload: unknown, ack?: DevAck) => void;
+  'dev:raid': (payload: unknown, ack?: DevAck) => void;
+  'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
+  'dev:sub': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -158,6 +196,33 @@ export const isChatMessagePayload = (value: unknown): value is ChatMessagePayloa
     }
   }
   return true;
+};
+
+export const isFollowPayload = (value: unknown): value is FollowPayload =>
+  isRecord(value) && isNonEmptyString(value.userId) && isNonEmptyString(value.username);
+
+export const isRaidPayload = (value: unknown): value is RaidPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.raiderId) &&
+  isNonEmptyString(value.raiderName) &&
+  isInt(value.viewers, 0);
+
+export const isRewardRedeemPayload = (value: unknown): value is RewardRedeemPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isNonEmptyString(value.rewardTitle) &&
+  isNonEmptyString(value.redemptionId);
+
+const SUB_TIERS: readonly unknown[] = ['1000', '2000', '3000'];
+
+export const isSubPayload = (value: unknown): value is SubPayload => {
+  if (!isRecord(value) || !SUB_TIERS.includes(value.tier)) return false;
+  if (value.kind === 'gift') {
+    return (value.username === null || isNonEmptyString(value.username)) && isInt(value.amount, 1);
+  }
+  if (!isNonEmptyString(value.userId) || !isNonEmptyString(value.username)) return false;
+  return value.kind === 'new' || (value.kind === 'resub' && isInt(value.months, 1));
 };
 
 // Порт Socket.io-сервера бота. Один на dev и prod, если не задан SOCKET_PORT:

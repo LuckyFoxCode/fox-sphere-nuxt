@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Эмулятор событий без Twitch: кнопки шлют dev-события на сервер бота, он рассылает их оверлеям
 // как настоящие. Справа — превью оверлеев. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
-import type { ChatAnnounceColor, ChatMessagePayload } from '#shared/events';
+import type { ChatAnnounceColor, ChatMessagePayload, SubPayload, SubTier } from '#shared/events';
 import { buildStreamState, getStreamLevel, getXpThresholdForLevel } from '#shared/xp';
 
 const { $socket } = useNuxtApp();
@@ -13,6 +13,7 @@ const previews = [
   { path: '/overlay/stream', label: 'Шапка' },
   { path: '/overlay/xp', label: 'XP' },
   { path: '/overlay/chat', label: 'Чат' },
+  { path: '/overlay/alerts', label: 'Алерты' },
 ] as const;
 const previewPath = ref<(typeof previews)[number]['path']>('/overlay/stream');
 
@@ -21,10 +22,17 @@ const lvl = ref(3);
 const amount = ref(3);
 const status = ref('');
 
-const send = (
-  event: 'dev:xp-gain' | 'dev:level-up' | 'dev:chat-message' | 'dev:stream-state',
-  payload: unknown,
-) => {
+type DevEvent =
+  | 'dev:xp-gain'
+  | 'dev:level-up'
+  | 'dev:chat-message'
+  | 'dev:stream-state'
+  | 'dev:follow'
+  | 'dev:raid'
+  | 'dev:reward-redeem'
+  | 'dev:sub';
+
+const send = (event: DevEvent, payload: unknown) => {
   $socket.emit(event, payload, (result) => {
     status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
   });
@@ -205,6 +213,44 @@ const chatLongLink = () =>
     chatMessage({ text: 'Смотрите https://github.com/LuckyFoxCode/fox-sphere-nuxt, очень_длинное_слово_без_пробелов_чтобы_проверить_перенос_строки' , emotes: {} }),
   );
 
+// --- Алерты ----------------------------------------------------------------------------
+const raidViewers = ref(42);
+const rewardTitle = ref('Check My Stats');
+const subTier = ref<SubTier>('1000');
+const subMonths = ref(6);
+const giftAmount = ref(5);
+
+const alertUser = () => ({ userId: `dev-${username.value.toLowerCase()}`, username: username.value });
+
+const follow = () => send('dev:follow', alertUser());
+const raid = () =>
+  send('dev:raid', {
+    raiderId: `dev-${username.value.toLowerCase()}`,
+    raiderName: username.value,
+    viewers: raidViewers.value,
+  });
+const reward = () =>
+  send('dev:reward-redeem', {
+    ...alertUser(),
+    rewardTitle: rewardTitle.value,
+    redemptionId: `dev-redemption-${Date.now()}`,
+  });
+const sendSub = (payload: SubPayload) => send('dev:sub', payload);
+const subNew = () => sendSub({ kind: 'new', ...alertUser(), tier: subTier.value });
+const resub = () => sendSub({ kind: 'resub', ...alertUser(), tier: subTier.value, months: subMonths.value });
+const giftSubs = (gifter: string | null) =>
+  sendSub({ kind: 'gift', username: gifter, tier: subTier.value, amount: giftAmount.value });
+
+// Все сразу: на оверлее они должны идти по одному
+const allAlerts = () => {
+  follow();
+  raid();
+  reward();
+  subNew();
+  resub();
+  giftSubs(username.value);
+};
+
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
 
@@ -301,6 +347,48 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatSpam">Семь подряд (лимит 5)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatLongLink">Ссылка и длинное слово</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
+      </section>
+
+      <section class="flex w-80 flex-col gap-y-3">
+        <h2 class="text-lg font-bold">Алерты</h2>
+        <p class="text-sm text-sticker-muted">Ник берётся из поля «Ник». Откройте превью «Алерты».</p>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="follow">Follow</button>
+
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Зрителей в рейде
+          <input v-model.number="raidViewers" type="number" min="0" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="raid">Рейд</button>
+
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Название награды
+          <input v-model="rewardTitle" maxlength="45" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="reward">Награда за баллы</button>
+
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Tier
+            <select v-model="subTier" class="h-10 rounded-lg bg-sticker-track px-2 text-base text-sticker-ink">
+              <option value="1000">1</option>
+              <option value="2000">2</option>
+              <option value="3000">3</option>
+            </select>
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Месяцев
+            <input v-model.number="subMonths" type="number" min="1" class="w-full rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Подарков
+            <input v-model.number="giftAmount" type="number" min="1" class="w-full rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="subNew">Новая подписка</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="resub">Продление (resub)</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="giftSubs(username)">Подарок подписок</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="giftSubs(null)">Анонимный подарок</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="allAlerts">Все подряд (очередь)</button>
       </section>
 
       <section class="min-w-[24rem] flex-1">

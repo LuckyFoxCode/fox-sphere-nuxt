@@ -5,9 +5,9 @@ import { createBadgeResolver } from './badges';
 import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
 import { config } from './config';
+import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
 import { prisma } from './db';
-import { startRaidListener } from './raids';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { addStreamXp, getStreamState } from './stream';
 import type { ChatMessagePayload } from '../../shared/events';
@@ -198,13 +198,27 @@ if (!config.enabled) {
       showBotMessage(text, { isAnnouncement: true, announceColor }),
   });
 
-  const raids = startRaidListener({
+  // Алерты: в оверлей событие уходит всегда, а в чат отвечает только prod
+  const eventSub = startEventSub({
     api,
     streamerId: config.streamerId,
     ensureBroadcaster,
-    onRaid: async (event) => {
-      const raider = event.raidingBroadcasterDisplayName;
-      console.log(`[raid] ${raider}, зрителей: ${event.viewers}`);
+    onFollow: async (follow) => {
+      console.log(`[follow] ${follow.username}`);
+      emitEvent('twitch:follow', follow);
+      // В dev только лог: на тот же follow уже отвечает боевой бот
+      if (!config.isProduction) {
+        console.log('[follow] dev: благодарность в чат не отправляется');
+        return;
+      }
+      // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.FOLLOW)
+      const text = `🎉 Thanks for the follow, @${follow.username}! Welcome to the Foxsphere family! 🚀`;
+      await chat.say(channel, text);
+      await showBotMessage(text);
+    },
+    onRaid: async (raid) => {
+      console.log(`[raid] ${raid.raiderName}, зрителей: ${raid.viewers}`);
+      emitEvent('twitch:raid', raid);
       // В dev только лог: на тот же рейд уже отвечает боевой бот
       if (!config.isProduction) {
         console.log('[raid] dev: анонс и шаутаут не отправляются');
@@ -212,17 +226,25 @@ if (!config.enabled) {
       }
       // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.RAID)
       await announcer.announce(
-        `⚡ @${raider} just raided with ${event.viewers} viewers! Welcome to the Sphere! 🦊🌐✨`,
+        `⚡ @${raid.raiderName} just raided with ${raid.viewers} viewers! Welcome to the Sphere! 🦊🌐✨`,
         'purple',
       );
-      await announcer.shoutout(event.raidingBroadcasterId);
+      await announcer.shoutout(raid.raiderId);
+    },
+    onRewardRedeem: (reward) => {
+      console.log(`[reward] ${reward.username}: ${reward.rewardTitle}`);
+      emitEvent('twitch:reward-redeem', reward);
+    },
+    onSub: (sub) => {
+      console.log(`[sub] ${sub.kind}: ${sub.username ?? 'аноним'}`);
+      emitEvent('twitch:sub', sub);
     },
   });
 
   await chat.connect();
 
   const shutdown = async () => {
-    raids.stop();
+    eventSub.stop();
     chat.quit();
     await stopSocketServer();
     await prisma.$disconnect();
