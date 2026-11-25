@@ -10,7 +10,7 @@
     "build": "dotenv -e .env.production -- nuxt build",
     "start": "concurrently -n web,bot -c cyan,magenta \"pnpm start:web\" \"pnpm start:bot\"",
     "start:web": "dotenv -e .env.production -- node .output/server/index.mjs",
-    "start:bot": "dotenv -e .env.production -- pnpm --filter bot start",
+    "start:bot": "dotenv -e .env.production -v NODE_ENV=production -- pnpm --filter bot start",
     "prisma:generate": "prisma generate",
     "db:push:dev": "dotenv -e .env.development -- prisma db push",
     "db:push:prod": "dotenv -e .env.production -- prisma db push",
@@ -19,11 +19,14 @@
     "postinstall": "nuxt prepare && prisma generate"
   },
   "dependencies": {
+    "@fontsource-variable/quicksand": "^5.3.0",
+    "@fontsource-variable/rubik": "^5.3.0",
     "@pinia/nuxt": "^1.0.3",
     "@prisma/adapter-libsql": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "nuxt": "^4.7.0",
     "pinia": "^4.1.0",
+    "socket.io-client": "^4.8.4",
     "vue": "latest",
     "vue-router": "latest"
   },
@@ -37,7 +40,13 @@
     "vue-tsc": "latest"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/engines", "prisma", "esbuild"],
-    "ignoredBuiltDependencies": ["better-sqlite3"]
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

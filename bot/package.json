@@ -13,7 +13,8 @@
     "@twurple/api": "^8.1.4",
     "@twurple/auth": "^8.1.4",
     "@twurple/chat": "^8.1.4",
-    "@twurple/eventsub-ws": "^8.1.4"
+    "@twurple/eventsub-ws": "^8.1.4",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
