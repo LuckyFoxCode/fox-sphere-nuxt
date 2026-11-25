@@ -4,11 +4,16 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
-    "start": "tsx src/main.ts"
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@prisma/adapter-libsql": "^7.10.1",
-    "@prisma/client": "^7.10.1"
+    "@prisma/client": "^7.10.1",
+    "@twurple/api": "^8.1.4",
+    "@twurple/auth": "^8.1.4",
+    "@twurple/chat": "^8.1.4",
+    "@twurple/eventsub-ws": "^8.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,0 +1,71 @@
+import { COOLDOWNS, XP_REWARDS } from '../../shared/economy';
+import { getXpThresholdForLevel } from '../../shared/xp';
+import type { Viewer } from '../../generated/prisma/client';
+import { prisma } from './db';
+
+// Роли приходят бейджами сообщения (без прав Helix); isFollower считается отдельно (followers.ts)
+export type ChatRoles = {
+  isMod: boolean;
+  isSubscriber: boolean;
+  isBroadcaster: boolean;
+  isVip: boolean;
+  isFollower: boolean;
+};
+
+// Зритель создаётся при первом сообщении; ник и роли обновляются на каждом.
+// lastXpAt у новичка — начало эпохи, чтобы первое сообщение уже дало XP.
+export const ensureViewer = (twitchId: string, username: string, roles: ChatRoles): Promise<Viewer> =>
+  prisma.viewer.upsert({
+    where: { twitchId },
+    create: {
+      twitchId,
+      username,
+      isMod: roles.isMod,
+      isSubscriber: roles.isSubscriber,
+      lastXpAt: new Date(0),
+    },
+    update: { username, isMod: roles.isMod, isSubscriber: roles.isSubscriber },
+  });
+
+export const xpForMessage = (viewer: Viewer, roles: ChatRoles): number => {
+  // Как в старом боте: стример и сабы 3, фолловер 2, остальные 1
+  const base = roles.isBroadcaster
+    ? XP_REWARDS.BROADCASTER
+    : roles.isSubscriber
+      ? XP_REWARDS.SUBSCRIBER
+      : roles.isFollower
+        ? XP_REWARDS.FOLLOWER
+        : XP_REWARDS.DEFAULT;
+  // VIP: бейдж Twitch или ручные флаги в БД
+  const vip = roles.isVip || viewer.isPermanentVip || viewer.isLuckyVip ? XP_REWARDS.VIP_BONUS : 0;
+  const founder = viewer.isFounder ? XP_REWARDS.FOUNDER_BONUS : 0;
+  return base + vip + founder;
+};
+
+export type XpResult =
+  | { status: 'cooldown'; waitMs: number }
+  | { status: 'awarded'; xp: number; totalXp: number; lvl: number; leveledUp: boolean };
+
+// Кулдаун хранится в БД (lastXpAt), поэтому переживает перезапуск бота.
+export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<XpResult> => {
+  const now = Date.now();
+  const waitMs = COOLDOWNS.XP_MESSAGE_COOLDOWN - (now - viewer.lastXpAt.getTime());
+  if (waitMs > 0) return { status: 'cooldown', waitMs };
+
+  const xp = xpForMessage(viewer, roles);
+  const updated = await prisma.viewer.update({
+    where: { id: viewer.id },
+    data: {
+      xp: { increment: xp },
+      xpThisWeek: { increment: xp },
+      lastXpAt: new Date(now),
+    },
+  });
+
+  let lvl = updated.lvl;
+  while (updated.xp >= getXpThresholdForLevel(lvl)) lvl++;
+  if (lvl !== updated.lvl) {
+    await prisma.viewer.update({ where: { id: viewer.id }, data: { lvl } });
+  }
+  return { status: 'awarded', xp, totalXp: updated.xp, lvl, leveledUp: lvl !== updated.lvl };
+};
