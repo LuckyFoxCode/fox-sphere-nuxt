@@ -8,7 +8,7 @@
 - Nuxt 4 + Pinia + Tailwind 4 (CSS-first, `@tailwindcss/vite`), страница оверлея `/overlay` с `ssr: false`
 - Prisma 7 + SQLite через `@prisma/adapter-libsql` (готовые бинарники, без компиляции)
 - Бот — отдельный процесс на Node + TypeScript в `bot/` (отдельный pnpm-пакет), общий файл БД с Nuxt (WAL)
-- Связь бот → оверлей: Socket.io в Nitro (`server/`), бот подключается клиентом с секретом `INTERNAL_SECRET`
+- Связь бот → оверлей: Socket.io-сервер живёт в боте (`bot/src/socket.ts`, встроенный HTTP Node без Express, порт `SOCKET_PORT`), оверлей подключается клиентом (плагин `app/plugins/socket.client.ts`); контракты событий — `shared/events.ts`
 
 ## Как запускать
 
