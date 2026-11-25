@@ -98,6 +98,8 @@ export default defineEventHandler(async (event) => {
       (role === 'bot' && !botId && !userId
         ? `Если это ваш основной аккаунт, впишите в .env <code>TWITCH_USER_ID=${who.user_id}</code>; если отдельный бот — <code>TWITCH_BOT_ID=${who.user_id}</code>. `
         : '') +
-      (role === 'broadcaster' ? 'Бот подхватит токен сам, перезапуск не нужен.' : 'Запустите бота с BOT_ENABLED=true.'),
+      (role === 'broadcaster'
+        ? 'Первый токен стримера бот подхватит сам; после повторного входа перезапустите бота.'
+        : 'Запустите (или перезапустите) бота с BOT_ENABLED=true.'),
   );
 });

@@ -7,6 +7,8 @@ const need = (name: string): string => {
 
 export const config = {
   enabled: process.env.BOT_ENABLED === 'true',
+  // pnpm start:bot задаёт NODE_ENV=production
+  isProduction: process.env.NODE_ENV === 'production',
   channelName: () => need('TWITCH_CHANNEL_NAME').toLowerCase(),
   clientId: () => need('TWITCH_CLIENT_ID'),
   clientSecret: () => need('TWITCH_CLIENT_SECRET'),

@@ -1,4 +1,5 @@
 import { ChatClient, type ChatMessage } from '@twurple/chat';
+import { createAnnouncer } from './announcements';
 import { createAuth } from './auth';
 import { createBadgeResolver } from './badges';
 import { createBotOverlayChat } from './botMessages';
@@ -6,6 +7,7 @@ import { createRegistry } from './commands';
 import { config } from './config';
 import { createFollowerChecker } from './followers';
 import { prisma } from './db';
+import { startRaidListener } from './raids';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import type { ChatMessagePayload } from '../../shared/events';
 import { awardMessageXp, ensureViewer } from './viewers';
@@ -169,9 +171,39 @@ if (!config.enabled) {
     }
   });
 
+  const announcer = createAnnouncer({
+    api,
+    botUserId,
+    broadcasterId: config.streamerId,
+    onAnnouncementSent: (text, announceColor) =>
+      showBotMessage(text, { isAnnouncement: true, announceColor }),
+  });
+
+  const raids = startRaidListener({
+    api,
+    streamerId: config.streamerId,
+    ensureBroadcaster,
+    onRaid: async (event) => {
+      const raider = event.raidingBroadcasterDisplayName;
+      console.log(`[raid] ${raider}, зрителей: ${event.viewers}`);
+      // В dev только лог: на тот же рейд уже отвечает боевой бот
+      if (!config.isProduction) {
+        console.log('[raid] dev: анонс и шаутаут не отправляются');
+        return;
+      }
+      // Текст из старого fox-sphere (BOT_MESSAGES.ALERTS.RAID)
+      await announcer.announce(
+        `⚡ @${raider} just raided with ${event.viewers} viewers! Welcome to the Sphere! 🦊🌐✨`,
+        'purple',
+      );
+      await announcer.shoutout(event.raidingBroadcasterId);
+    },
+  });
+
   await chat.connect();
 
   const shutdown = async () => {
+    raids.stop();
     chat.quit();
     await stopSocketServer();
     await prisma.$disconnect();
