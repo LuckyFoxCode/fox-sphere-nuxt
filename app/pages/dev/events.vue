@@ -58,6 +58,36 @@ const preview = shallowRef<(typeof previews)[number]>(previews[0]);
 const username = ref('TestViewer');
 const status = ref('');
 
+// Левая часть — табы по разделам; сцена справа от выбора таба не зависит. Выбор помнится в localStorage
+const tabs = [
+  { id: 'stream', label: 'Стрим' },
+  { id: 'chat', label: 'Чат' },
+  { id: 'alerts', label: 'Алерты' },
+  { id: 'roulette', label: 'Рулетка' },
+  { id: 'fishing', label: 'Рыбалка' },
+  { id: 'pivo', label: 'Пиво' },
+  { id: 'music', label: 'Музыка' },
+] as const;
+type TabId = (typeof tabs)[number]['id'];
+const TAB_KEY = 'dev-events-tab';
+const tab = ref<TabId>('stream');
+const selectTab = (id: TabId) => {
+  tab.value = id;
+  try {
+    localStorage.setItem(TAB_KEY, id);
+  } catch {
+    // localStorage недоступен — просто не запоминаем
+  }
+};
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(TAB_KEY);
+    if (tabs.some((item) => item.id === saved)) tab.value = saved as TabId;
+  } catch {
+    // нет доступа к localStorage — остаёмся на первом табе
+  }
+});
+
 type DevEvent =
   | 'dev:chat-message'
   | 'dev:stream-state'
@@ -489,9 +519,28 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
       Сокет: {{ connectionLabel[app.connection] }}. Бот должен быть запущен (<code>pnpm dev</code>).
     </p>
 
-    <div class="mt-5 flex flex-wrap gap-x-8 gap-y-6">
-      <section class="flex w-80 flex-col gap-y-3">
-        <h2 class="text-lg font-bold">Стрим</h2>
+    <div class="mt-5 flex flex-col gap-6 xl:flex-row xl:items-start">
+      <div class="flex w-full shrink-0 flex-col gap-y-3 xl:w-96">
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Ник зрителя (для всех разделов)
+          <input v-model="username" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+        </label>
+        <div class="flex flex-wrap gap-2" role="tablist">
+          <button
+            v-for="item in tabs"
+            :key="item.id"
+            role="tab"
+            :aria-selected="tab === item.id"
+            class="rounded-lg px-3 py-1 text-sm font-bold"
+            :class="tab === item.id ? 'bg-sticker-edge text-sticker-body' : 'bg-sticker-track'"
+            @click="selectTab(item.id)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+        <p class="min-h-5 text-sm text-sticker-muted">{{ status }}</p>
+
+      <section v-show="tab === 'stream'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted tabular-nums">
           {{ stream.state ? `Уровень ${stream.state.lvl}, ${stream.state.newXp} / ${stream.state.maxXp} XP` : 'Состояние ещё не получено' }}.
           База не меняется.
@@ -503,14 +552,9 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="addStreamXp">Добавить XP стрима</button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="streamLevelUp">Повысить уровень стрима</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetStream">Вернуть значения из базы</button>
+      </section>
 
-        <h2 class="mt-4 text-lg font-bold">Зритель</h2>
-        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
-          Ник
-          <input v-model="username" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
-        </label>
-
-        <h2 class="mt-4 text-lg font-bold">Чат</h2>
+      <section v-show="tab === 'chat'" class="flex flex-col gap-y-3">
         <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
           Текст (Kappa, LUL, PogChamp станут смайлами)
           <input v-model="chatText" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
@@ -548,11 +592,9 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst">По сообщению от каждой роли</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatSpam">Семь подряд (лимит 5)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatLongLink">Ссылка и длинное слово</button>
-        <p class="text-sm text-sticker-muted">{{ status }}</p>
       </section>
 
-      <section class="flex w-80 flex-col gap-y-3">
-        <h2 class="text-lg font-bold">Алерты</h2>
+      <section v-show="tab === 'alerts'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted">Ник берётся из поля «Ник». Откройте превью «Алерты» или «Сцена».</p>
         <button class="rounded-lg bg-[#ffd066] px-3 py-2 font-bold text-sticker-body" @click="chest()">
           Сундук из рыбалки (+{{ CHEST_COINS }} в банк)
@@ -596,8 +638,7 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="allAlerts">Все подряд (очередь)</button>
       </section>
 
-      <section class="flex w-80 flex-col gap-y-3">
-        <h2 class="text-lg font-bold">Рулетка</h2>
+      <section v-show="tab === 'roulette'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted">
           Ник берётся из поля «Ник». Откройте превью «Рулетка».
           <NuxtLink class="underline" to="/dev/roulette">Все карточки</NuxtLink>
@@ -625,7 +666,9 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="setBank((bank.total ?? 0) + 55)">+55 в банк</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetBank">Вернуть банк из базы</button>
 
-        <h2 class="mt-4 text-lg font-bold">Рыбалка</h2>
+      </section>
+
+      <section v-show="tab === 'fishing'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted">
           Ник берётся из поля «Ник», поклёвка через 3 с. Ответы бота видны в превью «Чат», банк и XP стрима — в «Шапке»,
           алерт сундука — в «Алертах», всё вместе — в «Сцене». База не меняется.
@@ -647,9 +690,9 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="fishRandom">Случайный улов (по шансам)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.cooldown(username, 42))">Повтор во время кулдауна</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.already(username))">«Ты уже рыбачишь»</button>
-        <p class="text-sm text-sticker-muted">{{ status }}</p>
+      </section>
 
-        <h2 class="mt-4 text-lg font-bold">Пиво</h2>
+      <section v-show="tab === 'pivo'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted">
           Ник берётся из поля «Ник». Шанс золота {{ pivoGoldenChance }}%, кулдаун 60 с. Фраза — в «Чате», золотое
           пиво — в «Алертах» (7 с, без звука). База не меняется.
@@ -685,8 +728,7 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="pivoRoll">Бросок по шансам</button>
       </section>
 
-      <section class="flex w-80 flex-col gap-y-3">
-        <h2 class="text-lg font-bold">Музыка</h2>
+      <section v-show="tab === 'music'" class="flex flex-col gap-y-3">
         <p class="text-sm text-sticker-muted">Эмулятор не трогает настоящий плеер: после перезагрузки сцены вернётся реальное состояние.</p>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendMusic({})">Играет трек</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic({ isPlaying: false })">Пауза</button>
@@ -695,8 +737,9 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic(null)">Скрыть виджет</button>
         <p class="text-sm text-sticker-muted">Эмулятор шлёт одно состояние: через 45 секунд без новых виджет сам погаснет, как при остановке плеера.</p>
       </section>
+      </div>
 
-      <section class="min-w-[24rem] flex-1">
+      <section class="min-w-0 flex-1 xl:sticky xl:top-6">
         <div class="mb-2 flex gap-x-2">
           <button
             v-for="item in previews"
