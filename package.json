@@ -18,6 +18,7 @@
     "db:seed:dev": "dotenv -e .env.development -- pnpm --filter bot exec tsx ../scripts/seed-commands.ts",
     "db:seed:prod": "dotenv -e .env.production -- pnpm --filter bot exec tsx ../scripts/seed-commands.ts",
     "db:copy-prod-to-dev": "node scripts/copy-prod-db.mjs",
+    "db:sync-old": "dotenv -e .env.production -- node scripts/sync-from-old.mjs",
     "db:import": "dotenv -e .env.development -- pnpm --filter bot exec tsx ../scripts/import-from-postgres.ts",
     "typecheck": "nuxt typecheck",
     "postinstall": "nuxt prepare && prisma generate"
