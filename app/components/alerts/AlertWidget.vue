@@ -2,6 +2,7 @@
 // Показывает текущий алерт из очереди и играет его звук.
 // Звук живёт здесь, а не в сторе: он нужен только там, где алерт виден.
 import type { Component } from 'vue';
+import IconCrown from '~/components/icons/IconCrown.vue';
 import IconGift from '~/components/icons/IconGift.vue';
 import IconLightning from '~/components/icons/IconLightning.vue';
 import IconPaw from '~/components/icons/IconPaw.vue';
@@ -17,6 +18,7 @@ const ICONS: Record<Exclude<AlertKind, 'chest' | 'beer'>, Component> = {
   raid: IconLightning,
   reward: IconGift,
   sub: IconStar,
+  vip: IconCrown,
 };
 
 const alerts = useAlertsStore();

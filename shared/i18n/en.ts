@@ -47,6 +47,14 @@ export const en: BotMessages = {
     ],
     golden: (name) => `👑✨ GOLDEN BEER! @${name} found the legendary brew! 🍺`,
   },
+  vip: {
+    added: (mod, name) => `🎉 NEW VIP ALERT! 🎉 @${mod} has just made @${name} a VIP! Drop some hype in the chat! 💎✨`,
+    removed: (mod, name) => `✨ VIP status removed: @${mod} has updated @${name}'s permissions.`,
+    usage: (name, prefix, command) => `@${name}, please specify a username: ${prefix}${command} <username>`,
+    notFound: (name) => `User @${name} not found on Twitch.`,
+    denied: (name) => `@${name}, you don't have permission to use this command!`,
+    failed: (name) => `⚠️ @${name}, Twitch didn't accept the change. Try again later.`,
+  },
   chestAlert: {
     label: 'treasure chest',
     toBank: (coins) => `+${coins} coins to the bank`,

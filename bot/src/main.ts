@@ -163,6 +163,9 @@ if (!config.enabled) {
   const registry = createRegistry({
     prefix: config.prefix,
     playSpin,
+    api,
+    streamerId: config.streamerId,
+    ensureBroadcaster,
     announce: announcer.announce,
     awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
       const award = await awardBonusXp(viewer.id, xp);
@@ -210,6 +213,7 @@ if (!config.enabled) {
       const isCommand = await registry.dispatch(text, (args) => ({
         viewer,
         displayName: info.displayName,
+        roles,
         args,
         reply,
       }));

@@ -68,6 +68,18 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
+    title: 'VIP (!addvip, !removevip)',
+    rows: [
+      ['Выдан', (t) => t.vip.added('ModMike', NAME)],
+      ['Снят', (t) => t.vip.removed('ModMike', NAME)],
+      ['Без ника: !addvip', (t) => t.vip.usage(NAME, PREFIX, 'addvip')],
+      ['Без ника: !removevip', (t) => t.vip.usage(NAME, PREFIX, 'removevip')],
+      ['Ник не найден', (t) => t.vip.notFound('nobody')],
+      ['Нет прав', (t) => t.vip.denied(NAME)],
+      ['Twitch не принял', (t) => t.vip.failed(NAME)],
+    ],
+  },
+  {
     title: 'Алерт сундука на оверлее',
     rows: [
       ['Лента', (t) => t.chestAlert.label],

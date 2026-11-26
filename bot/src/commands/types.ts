@@ -1,8 +1,11 @@
 import type { Viewer } from '../../../generated/prisma/client';
+import type { ChatRoles } from '../viewers';
 
 export type CommandContext = {
   viewer: Viewer; // свежая строка из БД на момент сообщения
   displayName: string;
+  // Роли из бейджей этого сообщения (права команд проверяются по ним, а не по базе)
+  roles: ChatRoles;
   args: string[];
   reply: (text: string) => Promise<void>;
   // Вернуть зрителю кулдаун: команда не состоялась (например, не хватило монет)

@@ -32,6 +32,18 @@ export type PivoMessages = {
   golden: NameMessage;
 };
 
+// Команды выдачи и снятия VIP (!addvip, !removevip). `mod` — кто выдал, `name` — кому
+export type VipMessages = {
+  added: (mod: string, name: string) => string;
+  removed: (mod: string, name: string) => string;
+  // Подсказка при команде без ника: `prefix` — префикс команд, `command` — addvip или removevip
+  usage: (name: string, prefix: string, command: string) => string;
+  notFound: (name: string) => string;
+  denied: (name: string) => string;
+  // Twitch отказал или у бота нет токена стримера: подробности только в логе бота
+  failed: (name: string) => string;
+};
+
 // Надписи алерта «сундук» на оверлее; ник на нём печатается отдельной строкой
 export type ChestAlertMessages = {
   label: string;
@@ -59,5 +71,6 @@ export type BotMessages = {
   spin: SpinMessages;
   fish: FishMessages;
   pivo: PivoMessages;
+  vip: VipMessages;
   chestAlert: ChestAlertMessages;
 };

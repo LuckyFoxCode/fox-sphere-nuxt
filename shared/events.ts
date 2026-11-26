@@ -87,6 +87,13 @@ export type FishingChestPayload = {
   lang: Lang;
 };
 
+// VIP, выданный командой `!addvip`. Поля те же, что у `twitch:add-vip` в старом fox-sphere, но
+// `twitchId` назван `userId`, как у остальных алертов. Снятие VIP алерта не даёт.
+export type AddVipPayload = {
+  userId: string;
+  username: string;
+};
+
 // Золотое пиво из `!pivo` (5%). Поля те же, что у `twitch:golden-beer` в старом fox-sphere, без
 // `displayName`: ник один, как у остальных алертов. `goldenBeers` — счётчик за всё время,
 // `tier` — ступень 1..5 по нему (shared/pivo.ts), `isNewTier` — этим пивом ступень выросла.
@@ -146,6 +153,7 @@ export type ServerToClientEvents = {
   'twitch:sub': (payload: SubPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
+  'twitch:add-vip': (payload: AddVipPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -174,6 +182,7 @@ export type ClientToServerEvents = {
   'dev:sub': (payload: unknown, ack?: DevAck) => void;
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
+  'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -269,6 +278,9 @@ export const isFishingChestPayload = (value: unknown): value is FishingChestPayl
   isNonEmptyString(value.username) &&
   isInt(value.coinAmount, 1) &&
   KNOWN_LANGS.includes(value.lang);
+
+export const isAddVipPayload = (value: unknown): value is AddVipPayload =>
+  isRecord(value) && isNonEmptyString(value.userId) && isNonEmptyString(value.username);
 
 export const isGoldenBeerPayload = (value: unknown): value is GoldenBeerPayload =>
   isRecord(value) &&

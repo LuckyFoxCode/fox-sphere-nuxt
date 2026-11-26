@@ -51,6 +51,14 @@ export const ru: BotMessages = {
     ],
     golden: (name) => `👑✨ ЗОЛОТОЕ ПИВО! @${name} находит легендарный напиток! 🍺`,
   },
+  vip: {
+    added: (mod, name) => `🎉 НОВЫЙ VIP! 🎉 @${mod} только что сделал(а) @${name} VIP! Поддержим громко в чате! 💎✨`,
+    removed: (mod, name) => `✨ VIP-статус снят: @${mod} изменил(а) права @${name}.`,
+    usage: (name, prefix, command) => `@${name}, укажи ник: ${prefix}${command} <ник>`,
+    notFound: (name) => `Пользователь @${name} не найден в Twitch.`,
+    denied: (name) => `@${name}, у тебя нет прав на эту команду!`,
+    failed: (name) => `⚠️ @${name}, Twitch не принял изменение. Попробуй позже.`,
+  },
   chestAlert: {
     label: 'сундук с сокровищем',
     toBank: (coins) => `+${coinsText(coins)} в банк`,

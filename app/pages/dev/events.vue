@@ -66,6 +66,7 @@ const tabs = [
   { id: 'roulette', label: 'Рулетка' },
   { id: 'fishing', label: 'Рыбалка' },
   { id: 'pivo', label: 'Пиво' },
+  { id: 'vip', label: 'VIP' },
   { id: 'music', label: 'Музыка' },
 ] as const;
 type TabId = (typeof tabs)[number]['id'];
@@ -97,6 +98,7 @@ type DevEvent =
   | 'dev:sub'
   | 'dev:fishing-chest'
   | 'dev:golden-beer'
+  | 'dev:add-vip'
   | 'dev:music'
   | 'dev:roulette-spin'
   | 'dev:jackpot';
@@ -160,6 +162,7 @@ const chatRoles = reactive({
   isBot: false,
   isMod: false,
   isVip: false,
+  isPermanentVip: false,
   isSubscriber: false,
   isFollower: false,
   isHighlight: false,
@@ -169,7 +172,8 @@ const chatRoleLabels: Record<keyof typeof chatRoles, string> = {
   isBroadcaster: 'стример',
   isBot: 'бот',
   isMod: 'модератор',
-  isVip: 'VIP',
+  isVip: 'VIP (бейдж Twitch)',
+  isPermanentVip: 'VIP из базы (!addvip)',
   isSubscriber: 'саб',
   isFollower: 'фолловер',
   isHighlight: 'highlight',
@@ -196,7 +200,7 @@ const chatMessage = (over: Partial<ChatMessagePayload> = {}): ChatMessagePayload
   isFounder: false,
   isSubscriber: chatRoles.isSubscriber,
   isVip: chatRoles.isVip,
-  isPermanentVip: false,
+  isPermanentVip: chatRoles.isPermanentVip,
   isBroadcaster: chatRoles.isBroadcaster,
   isBot: chatRoles.isBot,
   isHighlight: chatRoles.isHighlight,
@@ -225,6 +229,7 @@ const ROLE_SAMPLES: [string, number, Partial<ChatMessagePayload>][] = [
   ['SysBot', 1, { isBot: true }],
   ['ModMike', 45, { isMod: true }],
   ['VipVera', 33, { isVip: true }],
+  ['PermVipPit', 28, { isPermanentVip: true }],
   ['SubSam', 22, { isSubscriber: true }],
   ['FollowFin', 8, { isFollower: true }],
   ['Viewer', 2, {}],
@@ -244,6 +249,7 @@ const chatRolesBurst = () => {
           emotes: emotesFor(`Сообщение роли ${name} Kappa`),
           isMod: false,
           isVip: false,
+          isPermanentVip: false,
           isSubscriber: false,
           isFollower: false,
           isBroadcaster: false,
@@ -332,6 +338,7 @@ const allAlerts = () => {
   giftSubs(username.value);
   chest();
   goldenBeer();
+  vipUnlocked();
 };
 
 // --- Рулетка и банк --------------------------------------------------------------------
@@ -481,6 +488,24 @@ const pivoGolden = (name = username.value, count = pivoCount.value) => {
 
 const pivoRoll = () =>
   pickPivoOutcome((max) => Math.floor(Math.random() * max)) === 'golden' ? pivoGolden() : pivoRegular();
+
+// --- VIP -------------------------------------------------------------------------------
+// !addvip / !removevip: фраза бота — в «Чате», алерт «vip unlocked» — в «Алертах» (5 с, add-vip.mp3).
+// База и Twitch не меняются. Права: стример или модератор; ник цели — из поля ниже.
+const vipLang = ref<Lang>(BOT_LANG);
+const vipTexts = computed(() => MESSAGES[vipLang.value].vip);
+const vipModerator = ref('ModMike');
+const vipTarget = ref('VipVera');
+const vipPrefix = '!';
+
+const vipUnlocked = (name = vipTarget.value) =>
+  send('dev:add-vip', { userId: `dev-${name.toLowerCase()}`, username: name });
+
+const vipAdd = () => {
+  botSay(vipTexts.value.added(vipModerator.value, vipTarget.value));
+  vipUnlocked();
+};
+const vipRemove = () => botSay(vipTexts.value.removed(vipModerator.value, vipTarget.value));
 
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
@@ -726,6 +751,39 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         </div>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="goldenBeer()">Только алерт, без фразы</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="pivoRoll">Бросок по шансам</button>
+      </section>
+
+      <section v-show="tab === 'vip'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">
+          Команды: <code>{{ vipPrefix }}addvip ник</code> (алиас <code>{{ vipPrefix }}vip</code>) и
+          <code>{{ vipPrefix }}removevip ник</code> (алиас <code>{{ vipPrefix }}rvip</code>), только стример и
+          модератор, кулдаун 10 с. Роль «VIP» в чате — бейдж Twitch или флаг из базы; видно в «Чате». База не меняется.
+          <NuxtLink class="underline" to="/dev/messages">Все фразы на трёх языках</NuxtLink>
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Язык ответов
+          <select v-model="vipLang" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="lang in LANGS" :key="lang" :value="lang">{{ lang }}</option>
+          </select>
+        </label>
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Кто выдаёт
+            <input v-model="vipModerator" maxlength="25" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Кому
+            <input v-model="vipTarget" maxlength="25" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="vipAdd">!addvip: фраза и алерт</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="vipRemove">!removevip: фраза</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="vipUnlocked()">Только алерт «vip unlocked»</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.usage(username, vipPrefix, 'addvip'))">Без ника (!addvip)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.usage(username, vipPrefix, 'removevip'))">Без ника (!removevip)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.notFound(vipTarget))">Ник не найден</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.denied(username))">Нет прав</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.failed(username))">Twitch не принял</button>
       </section>
 
       <section v-show="tab === 'music'" class="flex flex-col gap-y-3">

@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
 import {
+  isAddVipPayload,
   isChatMessagePayload,
   isFishingChestPayload,
   isFollowPayload,
@@ -128,6 +129,7 @@ io.on('connection', (socket) => {
   );
   socket.on('dev:sub', relayDev(isSubPayload, (payload) => emitEvent('twitch:sub', payload)));
   socket.on('dev:fishing-chest', relayDev(isFishingChestPayload, (payload) => emitEvent('fishing:chest', payload)));
+  socket.on('dev:add-vip', relayDev(isAddVipPayload, (payload) => emitEvent('twitch:add-vip', payload)));
   socket.on('dev:golden-beer', relayDev(isGoldenBeerPayload, (payload) => emitEvent('twitch:golden-beer', payload)));
 
   // Музыка. Состояние лежит в памяти бота, поэтому ответ мгновенный; оверлей сам отбросит устаревшее

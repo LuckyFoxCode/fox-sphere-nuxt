@@ -2,6 +2,7 @@
 // наклейка лишь у сундука. follow, raid и reward перенесены из старого fox-sphere как есть;
 // подписок и алерта сундука там не было.
 import type {
+  AddVipPayload,
   FishingChestPayload,
   FollowPayload,
   GoldenBeerPayload,
@@ -15,7 +16,7 @@ import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
 // chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
 // beer — золотое пиво: на пластине не значок, а арт ступени
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer';
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip';
 
 export interface AlertView {
   kind: AlertKind;
@@ -58,6 +59,8 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   chest: '/assets/sound/streak.mp3',
   // В старом проекте золотое пиво шло без звука
   beer: null,
+  // Тот же файл, что в старом проекте у add-vip
+  vip: '/assets/sound/add-vip.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -125,6 +128,17 @@ export const goldenBeerAlert = ({ username, goldenBeers, tier, isNewTier }: Gold
     durationMs: BEER_ALERT_DURATION_MS,
   };
 };
+
+// «vip unlocked»: розовая бумага, 5 с, add-vip.mp3 и тексты — как в старом проекте
+export const addVipAlert = ({ username }: AddVipPayload): AlertView => ({
+  kind: 'vip',
+  paper: 'bg-paper-rose',
+  label: 'vip unlocked',
+  title: username,
+  detail: 'elite presence activated',
+  sound: ALERT_SOUNDS.vip,
+  durationMs: ALERT_DURATION_MS,
+});
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {

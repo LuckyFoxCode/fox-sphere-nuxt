@@ -52,6 +52,14 @@ export const uk: BotMessages = {
     ],
     golden: (name) => `👑✨ ЗОЛОТЕ ПИВО! @${name} знаходить легендарний напій! 🍺`,
   },
+  vip: {
+    added: (mod, name) => `🎉 НОВИЙ VIP! 🎉 @${mod} щойно зробив(ла) @${name} VIP! Підтримайте гучно в чаті! 💎✨`,
+    removed: (mod, name) => `✨ VIP-статус знято: @${mod} змінив(ла) права @${name}.`,
+    usage: (name, prefix, command) => `@${name}, вкажи нік: ${prefix}${command} <нік>`,
+    notFound: (name) => `Користувача @${name} не знайдено в Twitch.`,
+    denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
+    failed: (name) => `⚠️ @${name}, Twitch не прийняв зміну. Спробуй пізніше.`,
+  },
   chestAlert: {
     label: 'скриня зі скарбом',
     toBank: (coins) => `+${coinsText(coins)} у банк`,
