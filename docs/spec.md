@@ -182,7 +182,7 @@ model TwitchToken {            // без изменений по смыслу
 - Награды за баллы канала: Flex Leaderboard, Check My Stats, обмен баллов на монеты (Coin Pouch 1000→1000, Coin Chest 3000→3900, Poke Master's Hoard 5000→7500).
 - EventSub: follow, raid, redemption; приветствия follow/raid в чат.
 - Очередь анонсов (интервал 2с), токен Twitch с автообновлением, роли из бейджей.
-- Music: HTTP `POST /api/music/state` от Windows-агента (`tools/music-agent/`) с bearer-токеном.
+- Music: бот сам запускает читателя системного плеера Windows (`bot/src/music/reader.ps1`, дочерний процесс `powershell.exe`) и получает состояние из его stdout. Отдельной программы, планировщика, токена и HTTP-роута нет: бот и плеер на одной машине. Только Windows (на Mac виджет не оживёт); `MUSIC_ENABLED=false` выключает.
 
 Что **не переносить**: multi-tenant заготовки, `channel-context`, backfill-скрипт, `User`-кеши, `/api/internal/events` (в новом проекте бот и Nuxt в одном репо — см. раздел 4).
 
@@ -204,7 +204,7 @@ model TwitchToken {            // без изменений по смыслу
 
 Карточку зрителя и level-up (`user:created`, `user:level-up` в старом проекте) в новый оверлей не переносим.
 
-Оверлей → сервер (запрос состояния при подключении): `stream:get-system-state`, `twitch:get-timer`, `music:get-current`.
+Оверлей → сервер (запрос состояния при подключении): `stream:get-system-state`, `twitch:get-timer`, `music:get-current` (состояние в памяти бота; оверлей отбрасывает старше 45 с).
 
 Правило: в новом проекте **не использовать глобальный `io.emit` для всего подряд** — но каналов нет, поэтому один namespace и все эмитят в него; контракты событий держать в одном файле типов, общем для бота и Nuxt.
 
@@ -231,7 +231,6 @@ my-project/
     src/db.ts               # один PrismaClient (better-sqlite3 adapter)
   scripts/
     import-from-postgres.ts
-  tools/music-agent/        # копия как есть
 ```
 Связь бот → оверлей: проще всего, чтобы **Socket.io-сервер жил в Nitro** (`server/plugins/socket.ts`), а бот подключался к нему как клиент и слал события (с общим секретом в `auth`). Так нет второго HTTP-порта и неавторизованного `/api/internal/events`.
 

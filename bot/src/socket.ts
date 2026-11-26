@@ -5,6 +5,7 @@ import {
   isFishingChestPayload,
   isFollowPayload,
   isJackpotPayload,
+  isMusicPayloadOrNull,
   isRaidPayload,
   isRewardRedeemPayload,
   isRouletteSpinPayload,
@@ -14,6 +15,7 @@ import {
   type ClientToServerEvents,
   type DevAck,
   type JackpotPayload,
+  type MusicNowPlayingPayload,
   type RouletteSpinResultPayload,
   type ServerToClientEvents,
   type StreamStatePayload,
@@ -67,6 +69,7 @@ const relayDev =
 type SocketSources = {
   getStreamState: () => Promise<StreamStatePayload>;
   getJackpot: () => Promise<JackpotPayload>;
+  getMusic: () => MusicNowPlayingPayload | null;
   playDevSpin: (result: RouletteSpinResultPayload) => void;
 };
 let sources: SocketSources;
@@ -124,6 +127,19 @@ io.on('connection', (socket) => {
   );
   socket.on('dev:sub', relayDev(isSubPayload, (payload) => emitEvent('twitch:sub', payload)));
   socket.on('dev:fishing-chest', relayDev(isFishingChestPayload, (payload) => emitEvent('fishing:chest', payload)));
+
+  // Музыка. Состояние лежит в памяти бота, поэтому ответ мгновенный; оверлей сам отбросит устаревшее
+  socket.on('music:get-current', (ack) => {
+    if (typeof ack !== 'function') return;
+    ack(sources.getMusic());
+  });
+  // null - «скрыть виджет»; в память бота эмулятор ничего не пишет
+  socket.on('dev:music', (payload, ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    if (!isMusicPayloadOrNull(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
+    emitEvent('music:now-playing', payload);
+    ack?.({ ok: true });
+  });
 
   // Рулетка и банк
   socket.on('stream:get-jackpot', async (ack) => {

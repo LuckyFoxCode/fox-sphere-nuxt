@@ -95,7 +95,7 @@
 ## Остальное
 
 - ✅ Языки ответов бота: `en` (по умолчанию), `uk`, `ru` — `shared/i18n/`, константа `BOT_LANG`, все фразы на `/dev/messages`
-- ⬜ Музыкальный виджет и `POST /api/music/state` (Windows-агент из `tools/music-agent/`)
+- ✅ Музыкальный виджет «сейчас играет»: читатель `bot/src/music/reader.ps1` запускает сам бот (системный плеер Windows, без Premium), оверлей `/overlay/music`, кнопки в `/dev/events`. Проверка с живым Brave на Windows — вручную
 - ⬜ Деплой: два процесса (Nuxt + бот), `prod.db` на сервере, бэкап файла БД по cron
 
 ## Открытые вопросы

@@ -29,6 +29,9 @@ export default defineNuxtPlugin(() => {
   const bank = useBankStore();
   socket.on('connect', () => bank.sync(socket));
   socket.on('stream:jackpot-updated', bank.onUpdate);
+  const music = useMusicStore();
+  socket.on('connect', () => music.sync(socket));
+  socket.on('music:now-playing', music.onUpdate);
   socket.on('roulette:spin-result', useRouletteStore().onSpin);
   const alerts = useAlertsStore();
   socket.on('twitch:follow', alerts.onFollow);

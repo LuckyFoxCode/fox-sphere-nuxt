@@ -9,6 +9,7 @@ import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
 import { messages } from './language';
+import { getNowPlaying, startMusicReader } from './music';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { createSpinStage } from './spinStage';
@@ -22,6 +23,7 @@ const playSpin = createSpinStage();
 await startSocketServer({
   getStreamState,
   getJackpot,
+  getMusic: getNowPlaying,
   playDevSpin: (result) => {
     // Эмулятор базу не трогает: банк в конце — тот, что пришёл в событии
     void playSpin(
@@ -31,10 +33,14 @@ await startSocketServer({
   },
 });
 
+// Виджет «сейчас играет» не зависит от Twitch: читатель работает и при BOT_ENABLED=false
+const musicReader = startMusicReader({ onState: (state) => emitEvent('music:now-playing', state) });
+
 if (!config.enabled) {
   console.log('[bot] BOT_ENABLED != true — бот выключен (так задумано для dev).');
   // Процесс жив за счёт Socket.io-сервера (эмулятор событий работает и без Twitch)
   const shutdownIdle = async () => {
+    musicReader.stop();
     await stopSocketServer();
     process.exit(0);
   };
@@ -272,6 +278,7 @@ if (!config.enabled) {
   const shutdown = async () => {
     eventSub.stop();
     chat.quit();
+    musicReader.stop();
     await stopSocketServer();
     await prisma.$disconnect();
     process.exit(0);

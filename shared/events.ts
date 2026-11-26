@@ -102,8 +102,26 @@ export type JackpotPayload = {
   jackpotTotal: number;
 };
 
+// «Сейчас играет» (/overlay/music). Бот читает системную медиасессию Windows и шлёт состояние.
+// `positionMs` уже посчитана читателем (Brave обновляет позицию в системе только на старте трека
+// и при перемотке), `sentAt` — Date.now() на момент отправки: по нему оверлей добирает дорогу
+// и отбрасывает устаревшее состояние. `artwork` — data URL, и приходит только при смене трека:
+// у повторных состояний того же трека он `null`, бот возвращает прежнюю картинку (`mergeNowPlaying`).
+// `durationMs = 0` — поток без таймлайна (радио): полоски нет. `null` в событии = скрыть виджет.
+export type MusicNowPlayingPayload = {
+  title: string;
+  artist: string;
+  album: string | null;
+  artwork: string | null;
+  durationMs: number;
+  positionMs: number;
+  isPlaying: boolean;
+  sentAt: number;
+};
+
 // Сервер → оверлей
 export type ServerToClientEvents = {
+  'music:now-playing': (payload: MusicNowPlayingPayload | null) => void;
   'roulette:spin-result': (payload: RouletteSpinResultPayload) => void;
   'stream:jackpot-updated': (payload: JackpotPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
@@ -127,6 +145,8 @@ export type DevAck = (result: { ok: boolean; reason?: string }) => void;
 export type ClientToServerEvents = {
   'stream:get-system-state': (ack: (state: StreamStatePayload | null) => void) => void;
   'stream:get-jackpot': (ack: (state: JackpotPayload | null) => void) => void;
+  'music:get-current': (ack: (state: MusicNowPlayingPayload | null) => void) => void;
+  'dev:music': (payload: unknown, ack?: DevAck) => void;
   'dev:roulette-spin': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot-reset': (ack?: DevAck) => void;
@@ -248,6 +268,30 @@ export const isRouletteSpinPayload = (value: unknown): value is RouletteSpinResu
 
 export const isJackpotPayload = (value: unknown): value is JackpotPayload =>
   isRecord(value) && isInt(value.jackpotTotal, 0);
+
+// `payload === null` — «ничего не играет»: так же проверяется и строка от читателя, и эмулятор.
+const MAX_ARTWORK_LENGTH = 400_000;
+const MAX_MUSIC_MS = 7 * 24 * 3600 * 1000;
+
+export const isMusicNowPlayingPayload = (value: unknown): value is MusicNowPlayingPayload =>
+  isRecord(value) &&
+  typeof value.title === 'string' &&
+  value.title.length > 0 &&
+  value.title.length <= 300 &&
+  typeof value.artist === 'string' &&
+  value.artist.length <= 300 &&
+  (value.album === null || (typeof value.album === 'string' && value.album.length <= 300)) &&
+  (value.artwork === null ||
+    (typeof value.artwork === 'string' &&
+      value.artwork.startsWith('data:image/') &&
+      value.artwork.length <= MAX_ARTWORK_LENGTH)) &&
+  isInt(value.durationMs, 0, MAX_MUSIC_MS) &&
+  isInt(value.positionMs, 0, MAX_MUSIC_MS) &&
+  typeof value.isPlaying === 'boolean' &&
+  isInt(value.sentAt, 0, Number.MAX_SAFE_INTEGER);
+
+export const isMusicPayloadOrNull = (value: unknown): value is MusicNowPlayingPayload | null =>
+  value === null || isMusicNowPlayingPayload(value);
 
 // Порт Socket.io-сервера бота. Один на dev и prod, если не задан SOCKET_PORT:
 // чтобы запускать оба окружения на одной машине, разведите порты в .env.*.

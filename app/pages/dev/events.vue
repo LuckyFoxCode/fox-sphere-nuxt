@@ -1,7 +1,13 @@
 <script setup lang="ts">
 // Эмулятор событий без Twitch: кнопки шлют dev-события на сервер бота, он рассылает их оверлеям
 // как настоящие. Справа — превью оверлеев. Нужен запущенный бот (pnpm dev) и DEV_EVENTS != false.
-import type { ChatAnnounceColor, ChatMessagePayload, SubPayload, SubTier } from '#shared/events';
+import type {
+  ChatAnnounceColor,
+  ChatMessagePayload,
+  MusicNowPlayingPayload,
+  SubPayload,
+  SubTier,
+} from '#shared/events';
 import {
   FISH_CATCHES,
   FISH_CATCH_IDS,
@@ -31,10 +37,11 @@ const roulette = useRouletteStore();
 
 // Что показывать в превью справа: слои снизу вверх. «Сцена» — все оверлеи друг на друге, как в OBS
 const previews = [
-  { label: 'Сцена', paths: ['/overlay/chat', '/overlay/stream', '/overlay/roulette', '/overlay/alerts'] },
+  { label: 'Сцена', paths: ['/overlay/chat', '/overlay/stream', '/overlay/music', '/overlay/roulette', '/overlay/alerts'] },
   { label: 'Шапка', paths: ['/overlay/stream'] },
   { label: 'Рулетка', paths: ['/overlay/roulette'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
+  { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
 ] as const;
 const preview = shallowRef<(typeof previews)[number]>(previews[0]);
@@ -50,8 +57,31 @@ type DevEvent =
   | 'dev:reward-redeem'
   | 'dev:sub'
   | 'dev:fishing-chest'
+  | 'dev:music'
   | 'dev:roulette-spin'
   | 'dev:jackpot';
+
+// Музыка. Обложка рисуется на лету (SVG в data URL), чтобы кнопки работали без файлов и без плеера
+const demoArtwork = `data:image/svg+xml;utf8,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="#e08aa4"/><circle cx="64" cy="64" r="34" fill="#8fc9b8"/><circle cx="64" cy="64" r="8" fill="#2b2630"/></svg>',
+)}`;
+
+const sendMusic = (patch: Partial<MusicNowPlayingPayload> | null) => {
+  send(
+    'dev:music',
+    patch && {
+      title: 'Black Friday (pretty like the sun)',
+      artist: 'Lost Frequencies, Tom Odell',
+      album: null,
+      artwork: demoArtwork,
+      durationMs: 205_000,
+      positionMs: 62_000,
+      isPlaying: true,
+      sentAt: Date.now(),
+      ...patch,
+    },
+  );
+};
 
 const send = (event: DevEvent, payload: unknown) => {
   $socket.emit(event, payload, (result) => {
@@ -562,6 +592,17 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.cooldown(username, 42))">Повтор во время кулдауна</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.already(username))">«Ты уже рыбачишь»</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
+      </section>
+
+      <section class="flex w-80 flex-col gap-y-3">
+        <h2 class="text-lg font-bold">Музыка</h2>
+        <p class="text-sm text-sticker-muted">Эмулятор не трогает настоящий плеер: после перезагрузки сцены вернётся реальное состояние.</p>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendMusic({})">Играет трек</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic({ isPlaying: false })">Пауза</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic({ title: 'A very long track title that cannot possibly fit into the card (extended radio edit, 2026 remaster)', positionMs: 5_000 })">Длинное название (бегущая строка)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic({ title: 'Lofi Radio', artist: 'Live stream', durationMs: 0, positionMs: 0, artwork: null })">Радио (без полоски и обложки)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendMusic(null)">Скрыть виджет</button>
+        <p class="text-sm text-sticker-muted">Эмулятор шлёт одно состояние: через 45 секунд без новых виджет сам погаснет, как при остановке плеера.</p>
       </section>
 
       <section class="min-w-[24rem] flex-1">
