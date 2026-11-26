@@ -80,6 +80,27 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
+    title: 'Буст XP (!xpboost)',
+    rows: [
+      ['Включён', (t) => t.xpBoost.started(NAME, 30, 2)],
+      ['Включён на 1 минуту', (t) => t.xpBoost.started(NAME, 1, 2)],
+      ['Неверная длительность', (t) => t.xpBoost.usage(NAME, PREFIX, 5, 60)],
+      ['Отменён', (t) => t.xpBoost.cancelled(NAME)],
+      ['Нечего отменять', (t) => t.xpBoost.noActive(NAME)],
+      ['Нет прав', (t) => t.denied(NAME)],
+    ],
+  },
+  {
+    title: 'Таймер (!timer, !stoptimer)',
+    rows: [
+      ['Запущен', (t) => t.timer.started(NAME, 60, 'Скоро вернусь')],
+      ['Запущен на 1 минуту', (t) => t.timer.started(NAME, 1, 'BRB')],
+      ['Неверное время', (t) => t.timer.usage(NAME, PREFIX)],
+      ['Остановлен', (t) => t.timer.stopped(NAME)],
+      ['Нет прав', (t) => t.denied(NAME)],
+    ],
+  },
+  {
     title: 'Алерт сундука на оверлее',
     rows: [
       ['Лента', (t) => t.chestAlert.label],

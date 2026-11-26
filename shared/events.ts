@@ -123,6 +123,27 @@ export type JackpotPayload = {
   jackpotTotal: number;
 };
 
+// Буст XP стрима: `multiplier` раз больше XP за сообщение (зрителю и стриму) до `expiresAt`
+// (epoch мс, абсолютный момент: оверлей считает остаток сам). `null` в событии = буста нет
+// (отменён командой). Ответ на `stream:get-xp-boost` — тот же формат, `null` = буста нет.
+export type XpBoostPayload = {
+  multiplier: number;
+  expiresAt: number;
+};
+
+// Цвета бумаги таймера (`!timer 5 red BRB`); по умолчанию blue. Те же шесть, что в DESIGN.md.
+export const TIMER_COLORS = ['amber', 'blue', 'cyan', 'purple', 'red', 'rose'] as const;
+export type TimerColor = (typeof TIMER_COLORS)[number];
+
+// Идущий `!timer`. `endsAt` — абсолютный момент окончания (epoch мс), а не остаток: так таймер
+// переживает перезагрузку сцены OBS, второй открытый оверлей и рестарт бота. Остаток каждая
+// копия оверлея считает сама от часов машины.
+export type TimerPayload = {
+  title: string;
+  color: TimerColor;
+  endsAt: number;
+};
+
 // «Сейчас играет» (/overlay/music). Бот читает системную медиасессию Windows и шлёт состояние.
 // `positionMs` уже посчитана читателем (Brave обновляет позицию в системе только на старте трека
 // и при перемотке), `sentAt` — Date.now() на момент отправки: по нему оверлей добирает дорогу
@@ -147,6 +168,9 @@ export type ServerToClientEvents = {
   'stream:jackpot-updated': (payload: JackpotPayload) => void;
   'chat:message': (payload: ChatMessagePayload) => void;
   'stream:xp-updated': (payload: StreamStatePayload) => void;
+  'stream:xp-boost': (payload: XpBoostPayload | null) => void;
+  'twitch:timer': (payload: TimerPayload) => void;
+  'twitch:timer-stop': () => void;
   'twitch:follow': (payload: FollowPayload) => void;
   'twitch:raid': (payload: RaidPayload) => void;
   'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
@@ -168,6 +192,8 @@ export type DevAck = (result: { ok: boolean; reason?: string }) => void;
 export type ClientToServerEvents = {
   'stream:get-system-state': (ack: (state: StreamStatePayload | null) => void) => void;
   'stream:get-jackpot': (ack: (state: JackpotPayload | null) => void) => void;
+  'stream:get-xp-boost': (ack: (state: XpBoostPayload | null) => void) => void;
+  'twitch:get-timer': (ack: (state: TimerPayload | null) => void) => void;
   'music:get-current': (ack: (state: MusicNowPlayingPayload | null) => void) => void;
   'dev:music': (payload: unknown, ack?: DevAck) => void;
   'dev:roulette-spin': (payload: unknown, ack?: DevAck) => void;
@@ -176,6 +202,11 @@ export type ClientToServerEvents = {
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-state': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-reset': (ack?: DevAck) => void;
+  'dev:xp-boost': (payload: unknown, ack?: DevAck) => void;
+  'dev:xp-boost-reset': (ack?: DevAck) => void;
+  'dev:timer': (payload: unknown, ack?: DevAck) => void;
+  'dev:timer-stop': (ack?: DevAck) => void;
+  'dev:timer-reset': (ack?: DevAck) => void;
   'dev:follow': (payload: unknown, ack?: DevAck) => void;
   'dev:raid': (payload: unknown, ack?: DevAck) => void;
   'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
@@ -201,6 +232,24 @@ export const isStreamStatePayload = (value: unknown): value is StreamStatePayloa
   isInt(value.startXp, 0) &&
   isInt(value.maxXp, 1) &&
   value.maxXp > value.startXp;
+
+export const isXpBoostPayload = (value: unknown): value is XpBoostPayload =>
+  isRecord(value) && isInt(value.multiplier, 2, 100) && isInt(value.expiresAt, 0, Number.MAX_SAFE_INTEGER);
+
+// `null` — «буста нет»: так проверяется и строка из эмулятора, и ответ базы
+export const isXpBoostOrNull = (value: unknown): value is XpBoostPayload | null =>
+  value === null || isXpBoostPayload(value);
+
+export const TIMER_TITLE_MAX = 60;
+const TIMER_COLOR_LIST: readonly unknown[] = TIMER_COLORS;
+
+export const isTimerPayload = (value: unknown): value is TimerPayload =>
+  isRecord(value) &&
+  typeof value.title === 'string' &&
+  value.title.length > 0 &&
+  value.title.length <= TIMER_TITLE_MAX &&
+  TIMER_COLOR_LIST.includes(value.color) &&
+  isInt(value.endsAt, 0, Number.MAX_SAFE_INTEGER);
 
 const ANNOUNCE_COLORS: readonly string[] = ['blue', 'green', 'orange', 'purple'];
 const CHAT_FLAGS = [

@@ -15,5 +15,6 @@ onBeforeUnmount(() => $socket.disconnect());
         <StreamXpWidget />
       </div>
     </header>
+    <StreamXpBoost />
   </div>
 </template>

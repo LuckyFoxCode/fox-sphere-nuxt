@@ -55,6 +55,18 @@ export const en: BotMessages = {
     denied: (name) => `@${name}, you don't have permission to use this command!`,
     failed: (name) => `⚠️ @${name}, Twitch didn't accept the change. Try again later.`,
   },
+  denied: (name) => `@${name}, you don't have permission to use this command!`,
+  xpBoost: {
+    started: (name, minutes, multiplier) => `⚡ @${name} activated an XP ×${multiplier} boost for ${minutes} minutes! 🚀`,
+    usage: (name, prefix, min, max) => `@${name}, usage: ${prefix}xpboost <${min}-${max}> — duration in minutes, or ${prefix}xpboost off.`,
+    cancelled: (name) => `⚡ @${name} cancelled the XP boost! 🛑`,
+    noActive: (name) => `@${name}, there is no active XP boost to cancel.`,
+  },
+  timer: {
+    started: (name, minutes, title) => `@${name}, timer "${title}" started for ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}! ⏳`,
+    usage: (name, prefix) => `@${name}, time must be a number! Example: ${prefix}timer 60 cyan My cool timer`,
+    stopped: (name) => `@${name}, timer stopped. ⏹️`,
+  },
   chestAlert: {
     label: 'treasure chest',
     toBank: (coins) => `+${coins} coins to the bank`,

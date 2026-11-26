@@ -34,6 +34,7 @@ import {
   ROULETTE_SEGMENT_IDS,
   type RouletteSegmentId,
 } from '#shared/roulette';
+import { TIMER_COLORS, type TimerColor } from '#shared/events';
 import { buildStreamState, getStreamLevel } from '#shared/xp';
 import { segmentView } from '~/utils/roulette/rarity';
 
@@ -52,6 +53,7 @@ const previews = [
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
+  { label: 'Таймер', paths: ['/overlay/timer'] },
 ] as const;
 const preview = shallowRef<(typeof previews)[number]>(previews[0]);
 
@@ -61,6 +63,7 @@ const status = ref('');
 // Левая часть — табы по разделам; сцена справа от выбора таба не зависит. Выбор помнится в localStorage
 const tabs = [
   { id: 'stream', label: 'Стрим' },
+  { id: 'timer', label: 'Таймер' },
   { id: 'chat', label: 'Чат' },
   { id: 'alerts', label: 'Алерты' },
   { id: 'roulette', label: 'Рулетка' },
@@ -92,6 +95,8 @@ onMounted(() => {
 type DevEvent =
   | 'dev:chat-message'
   | 'dev:stream-state'
+  | 'dev:xp-boost'
+  | 'dev:timer'
   | 'dev:follow'
   | 'dev:raid'
   | 'dev:reward-redeem'
@@ -149,6 +154,43 @@ const streamLevelUp = () => {
 
 const resetStream = () => {
   $socket.emit('dev:stream-reset', (result) => {
+    status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
+  });
+};
+
+// --- Буст XP ---------------------------------------------------------------------------
+// Показывает чип на оверлее; в базу и в XP зрителей ничего не пишется
+const boostMinutes = ref(30);
+const boostMultiplier = ref(2);
+
+const sendBoost = (seconds: number) =>
+  send('dev:xp-boost', { multiplier: boostMultiplier.value, expiresAt: Date.now() + seconds * 1000 });
+const removeBoost = () => send('dev:xp-boost', null);
+const resetBoost = () => {
+  $socket.emit('dev:xp-boost-reset', (result) => {
+    status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
+  });
+};
+
+// --- Таймер ----------------------------------------------------------------------------
+// Как `!timer`: показывается на оверлее, в базу не пишется. Короткий запуск — проверить конец и звук
+const timerMinutes = ref(5);
+const timerColor = ref<TimerColor>('blue');
+const timerTitle = ref('Скоро вернусь');
+
+const sendTimer = (seconds: number) =>
+  send('dev:timer', {
+    title: timerTitle.value.trim() || 'Timer',
+    color: timerColor.value,
+    endsAt: Date.now() + seconds * 1000,
+  });
+const stopTimer = () => {
+  $socket.emit('dev:timer-stop', (result) => {
+    status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
+  });
+};
+const resetTimer = () => {
+  $socket.emit('dev:timer-reset', (result) => {
     status.value = result.ok ? 'отправлено' : `отклонено: ${result.reason ?? '?'}`;
   });
 };
@@ -577,6 +619,47 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="addStreamXp">Добавить XP стрима</button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="streamLevelUp">Повысить уровень стрима</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetStream">Вернуть значения из базы</button>
+
+        <h3 class="mt-3 text-xs font-bold tracking-widest text-sticker-muted uppercase">Буст XP</h3>
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Минут
+            <input v-model.number="boostMinutes" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Множитель
+            <input v-model.number="boostMultiplier" type="number" min="2" max="100" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendBoost(boostMinutes * 60)">Включить буст</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendBoost(10)">Буст на 10 секунд (проверить конец)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="removeBoost">Убрать буст</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetBoost">Вернуть значение из базы</button>
+      </section>
+
+      <section v-show="tab === 'timer'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">Таймер показывается над чатом. База не меняется; в чате те же вещи делают <code>!timer</code> и <code>!stoptimer</code>.</p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Название
+          <input v-model="timerTitle" maxlength="60" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
+        </label>
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Минут
+            <input v-model.number="timerMinutes" type="number" min="0.1" step="any" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Цвет
+            <select v-model="timerColor" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+              <option v-for="color in TIMER_COLORS" :key="color" :value="color">{{ color }}</option>
+            </select>
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendTimer(timerMinutes * 60)">Запустить таймер</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendTimer(10)">Таймер на 10 секунд (проверить конец и звук)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendTimer(3725)">Таймер на 1 ч 2 мин (формат ЧЧ:ММ)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="stopTimer">Остановить таймер</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="resetTimer">Вернуть значение из базы</button>
       </section>
 
       <section v-show="tab === 'chat'" class="flex flex-col gap-y-3">

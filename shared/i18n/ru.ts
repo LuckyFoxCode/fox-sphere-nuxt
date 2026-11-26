@@ -59,6 +59,18 @@ export const ru: BotMessages = {
     denied: (name) => `@${name}, у тебя нет прав на эту команду!`,
     failed: (name) => `⚠️ @${name}, Twitch не принял изменение. Попробуй позже.`,
   },
+  denied: (name) => `@${name}, у тебя нет прав на эту команду!`,
+  xpBoost: {
+    started: (name, minutes, multiplier) => `⚡ @${name} включает буст XP ×${multiplier} на ${count(minutes, 'минуту', 'минуты', 'минут')}! 🚀`,
+    usage: (name, prefix, min, max) => `@${name}, использование: ${prefix}xpboost <${min}-${max}> — длительность в минутах, или ${prefix}xpboost off.`,
+    cancelled: (name) => `⚡ @${name} отменяет буст XP! 🛑`,
+    noActive: (name) => `@${name}, сейчас нет активного буста XP, который можно отменить.`,
+  },
+  timer: {
+    started: (name, minutes, title) => `@${name}, таймер "${title}" запущен на ${count(minutes, 'минуту', 'минуты', 'минут')}! ⏳`,
+    usage: (name, prefix) => `@${name}, время должно быть числом! Пример: ${prefix}timer 60 cyan Мой таймер`,
+    stopped: (name) => `@${name}, таймер остановлен. ⏹️`,
+  },
   chestAlert: {
     label: 'сундук с сокровищем',
     toBank: (coins) => `+${coinsText(coins)} в банк`,

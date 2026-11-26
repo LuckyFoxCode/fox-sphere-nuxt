@@ -26,6 +26,13 @@ export default defineNuxtPlugin(() => {
   const stream = useStreamStore();
   socket.on('connect', () => stream.sync(socket));
   socket.on('stream:xp-updated', stream.onUpdate);
+  const boost = useBoostStore();
+  socket.on('connect', () => boost.sync(socket));
+  socket.on('stream:xp-boost', boost.onUpdate);
+  const timer = useTimerStore();
+  socket.on('connect', () => timer.sync(socket));
+  socket.on('twitch:timer', timer.onStart);
+  socket.on('twitch:timer-stop', timer.onStop);
   const bank = useBankStore();
   socket.on('connect', () => bank.sync(socket));
   socket.on('stream:jackpot-updated', bank.onUpdate);

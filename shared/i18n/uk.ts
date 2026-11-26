@@ -60,6 +60,18 @@ export const uk: BotMessages = {
     denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
     failed: (name) => `⚠️ @${name}, Twitch не прийняв зміну. Спробуй пізніше.`,
   },
+  denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
+  xpBoost: {
+    started: (name, minutes, multiplier) => `⚡ @${name} вмикає буст XP ×${multiplier} на ${count(minutes, 'хвилину', 'хвилини', 'хвилин')}! 🚀`,
+    usage: (name, prefix, min, max) => `@${name}, використання: ${prefix}xpboost <${min}-${max}> — тривалість у хвилинах, або ${prefix}xpboost off.`,
+    cancelled: (name) => `⚡ @${name} скасовує буст XP! 🛑`,
+    noActive: (name) => `@${name}, зараз немає активного буста XP, який можна скасувати.`,
+  },
+  timer: {
+    started: (name, minutes, title) => `@${name}, таймер "${title}" запущено на ${count(minutes, 'хвилину', 'хвилини', 'хвилин')}! ⏳`,
+    usage: (name, prefix) => `@${name}, час має бути числом! Приклад: ${prefix}timer 60 cyan Мій таймер`,
+    stopped: (name) => `@${name}, таймер зупинено. ⏹️`,
+  },
   chestAlert: {
     label: 'скриня зі скарбом',
     toBank: (coins) => `+${coinsText(coins)} у банк`,

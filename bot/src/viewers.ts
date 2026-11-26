@@ -2,6 +2,7 @@ import { COOLDOWNS, XP_REWARDS } from '../../shared/economy';
 import { getXpThresholdForLevel } from '../../shared/xp';
 import type { Viewer } from '../../generated/prisma/client';
 import { prisma } from './db';
+import { getActiveXpBoost } from './xpBoost';
 
 // Роли приходят бейджами сообщения (без прав Helix); isFollower считается отдельно (followers.ts)
 export type ChatRoles = {
@@ -52,7 +53,10 @@ export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<
   const waitMs = COOLDOWNS.XP_MESSAGE_COOLDOWN - (now - viewer.lastXpAt.getTime());
   if (waitMs > 0) return { status: 'cooldown', waitMs };
 
-  const xp = xpForMessage(viewer, roles);
+  // Буст множит итог целиком (роль + VIP + founder), как в старом боте; в `xp` ниже уже итог,
+  // его же main отдаёт стриму
+  const boost = await getActiveXpBoost();
+  const xp = xpForMessage(viewer, roles) * (boost?.multiplier ?? 1);
   const updated = await prisma.viewer.update({
     where: { id: viewer.id },
     data: {

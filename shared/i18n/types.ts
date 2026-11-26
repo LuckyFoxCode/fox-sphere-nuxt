@@ -44,6 +44,22 @@ export type VipMessages = {
   failed: (name: string) => string;
 };
 
+// Буст XP (!xpboost). `minutes` — на сколько включён, `multiplier` — во сколько раз больше XP
+export type XpBoostMessages = {
+  started: (name: string, minutes: number, multiplier: number) => string;
+  // Подсказка при неверной длительности: допустимый диапазон в минутах
+  usage: (name: string, prefix: string, min: number, max: number) => string;
+  cancelled: NameMessage;
+  noActive: NameMessage;
+};
+
+// Таймер на оверлее (!timer, !stoptimer). `title` печатается как набрал стример
+export type TimerMessages = {
+  started: (name: string, minutes: number, title: string) => string;
+  usage: (name: string, prefix: string) => string;
+  stopped: NameMessage;
+};
+
 // Надписи алерта «сундук» на оверлее; ник на нём печатается отдельной строкой
 export type ChestAlertMessages = {
   label: string;
@@ -72,5 +88,9 @@ export type BotMessages = {
   fish: FishMessages;
   pivo: PivoMessages;
   vip: VipMessages;
+  // Отказ командам для стримера и модераторов (!xpboost, !timer, !stoptimer)
+  denied: NameMessage;
+  xpBoost: XpBoostMessages;
+  timer: TimerMessages;
   chestAlert: ChestAlertMessages;
 };

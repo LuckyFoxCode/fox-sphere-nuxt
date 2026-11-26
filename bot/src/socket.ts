@@ -12,6 +12,8 @@ import {
   isRewardRedeemPayload,
   isRouletteSpinPayload,
   isStreamStatePayload,
+  isTimerPayload,
+  isXpBoostOrNull,
   isSubPayload,
   resolveSocketPort,
   type ClientToServerEvents,
@@ -21,6 +23,8 @@ import {
   type RouletteSpinResultPayload,
   type ServerToClientEvents,
   type StreamStatePayload,
+  type TimerPayload,
+  type XpBoostPayload,
 } from '../../shared/events';
 
 // Socket.io на встроенном HTTP-сервере Node (без Express). Оверлей в OBS подключается сюда.
@@ -71,6 +75,8 @@ const relayDev =
 type SocketSources = {
   getStreamState: () => Promise<StreamStatePayload>;
   getJackpot: () => Promise<JackpotPayload>;
+  getXpBoost: () => Promise<XpBoostPayload | null>;
+  getTimer: () => Promise<TimerPayload | null>;
   getMusic: () => MusicNowPlayingPayload | null;
   playDevSpin: (result: RouletteSpinResultPayload) => void;
 };
@@ -87,6 +93,8 @@ const load = async <T>(what: string, read: () => Promise<T>): Promise<T | null> 
 };
 const loadStreamState = () => load('состояние стрима', () => sources.getStreamState());
 const loadJackpot = () => load('банк рулетки', () => sources.getJackpot());
+const loadXpBoost = () => load('буст XP', () => sources.getXpBoost());
+const loadTimer = () => load('таймер', () => sources.getTimer());
 
 io.on('connection', (socket) => {
   console.log(`[socket] клиент подключился (${io.engine.clientsCount})`);
@@ -117,6 +125,42 @@ io.on('connection', (socket) => {
     const state = await loadStreamState();
     if (!state) return ack?.({ ok: false, reason: 'не удалось прочитать базу' });
     emitEvent('stream:xp-updated', state);
+    ack?.({ ok: true });
+  });
+
+  // Буст XP и таймер: оверлей спрашивает состояние при подключении, база не прочиталась - null.
+  // Эмулятор в базу ничего не пишет, `*-reset` возвращает оверлеям то, что лежит в базе.
+  socket.on('stream:get-xp-boost', async (ack) => {
+    if (typeof ack !== 'function') return;
+    ack(await loadXpBoost());
+  });
+  socket.on('dev:xp-boost', (payload, ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    if (!isXpBoostOrNull(payload)) return ack?.({ ok: false, reason: 'неверный payload' });
+    emitEvent('stream:xp-boost', payload);
+    ack?.({ ok: true });
+  });
+  socket.on('dev:xp-boost-reset', async (ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    emitEvent('stream:xp-boost', await loadXpBoost());
+    ack?.({ ok: true });
+  });
+
+  socket.on('twitch:get-timer', async (ack) => {
+    if (typeof ack !== 'function') return;
+    ack(await loadTimer());
+  });
+  socket.on('dev:timer', relayDev(isTimerPayload, (payload) => emitEvent('twitch:timer', payload)));
+  socket.on('dev:timer-stop', (ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    emitEvent('twitch:timer-stop');
+    ack?.({ ok: true });
+  });
+  socket.on('dev:timer-reset', async (ack) => {
+    if (!devEvents) return ack?.({ ok: false, reason: 'эмулятор выключен (DEV_EVENTS)' });
+    const timer = await loadTimer();
+    if (timer) emitEvent('twitch:timer', timer);
+    else emitEvent('twitch:timer-stop');
     ack?.({ ok: true });
   });
 

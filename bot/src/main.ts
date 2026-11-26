@@ -14,6 +14,8 @@ import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { createSpinStage } from './spinStage';
 import { addStreamXp, getStreamState } from './stream';
+import { getActiveTimer } from './streamTimer';
+import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
 import type { ChatMessagePayload } from '../../shared/events';
 import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 
@@ -23,6 +25,8 @@ const playSpin = createSpinStage();
 await startSocketServer({
   getStreamState,
   getJackpot,
+  getXpBoost: getActiveXpBoost,
+  getTimer: getActiveTimer,
   getMusic: getNowPlaying,
   playDevSpin: (result) => {
     // Эмулятор базу не трогает: банк в конце — тот, что пришёл в событии
@@ -150,7 +154,13 @@ if (!config.enabled) {
     if (stream) emitEvent('stream:xp-updated', stream.state);
 
     if (award.leveledUp) await announceViewerLevel(username, award.lvl, reply);
-    if (stream?.leveledUp) await announceStreamLevel(stream.state.lvl);
+    if (stream?.leveledUp) {
+      // Как в старом боте: новый уровень стрима включает буст на 30 минут, если другого нет
+      await startAutoXpBoost().catch((error: unknown) =>
+        console.error('[xpboost] авто-буст не включился:', error),
+      );
+      await announceStreamLevel(stream.state.lvl);
+    }
   };
 
   // Ошибка XP стрима не должна съедать сообщение о level-up зрителя
