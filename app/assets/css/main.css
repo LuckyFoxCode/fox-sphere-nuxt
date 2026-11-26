@@ -119,3 +119,13 @@
     }
   }
 }
+
+/* Облачко над героем: появление и исчезновение (как у старого fox-sphere) */
+.bubble-fade-enter-active,
+.bubble-fade-leave-active {
+  transition: opacity 200ms ease;
+}
+.bubble-fade-enter-from,
+.bubble-fade-leave-to {
+  opacity: 0;
+}

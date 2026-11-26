@@ -2,7 +2,8 @@ import type Phaser from 'phaser';
 import { getHeroById } from '#shared/heroes';
 import { WanderController } from './WanderController';
 
-const LABEL_GAP_PX = 8;
+// Отрицательный: в кадре 480 px над головой пустое место, и плашка иначе висит отдельно от героя
+const LABEL_GAP_PX = -14;
 // Подпись не стоит записи стиля, пока герой сдвинулся меньше этого; стоящий герой не пишет ничего
 const LABEL_MOVE_EPSILON_PX = 0.5;
 

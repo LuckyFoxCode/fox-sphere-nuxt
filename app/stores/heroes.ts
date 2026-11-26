@@ -10,6 +10,11 @@ export type ActiveHero = {
   lvl: number;
   isBroadcaster: boolean;
   isBot: boolean;
+  isMod: boolean;
+  isVip: boolean;
+  isSubscriber: boolean;
+  isFounder: boolean;
+  isFollower: boolean;
   message?: string;
   emotes?: Record<string, string[]>;
 };
@@ -45,6 +50,11 @@ export const useHeroesStore = defineStore('heroes', () => {
       lvl: payload.userLvl,
       isBroadcaster: payload.isBroadcaster,
       isBot: payload.isBot,
+      isMod: payload.isMod,
+      isVip: payload.isVip || payload.isPermanentVip,
+      isSubscriber: payload.isSubscriber,
+      isFounder: payload.isFounder,
+      isFollower: payload.isFollower,
     };
     const existing = heroes.value.get(userId);
     if (existing) Object.assign(existing, fields);

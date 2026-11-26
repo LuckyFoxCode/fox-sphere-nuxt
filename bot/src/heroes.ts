@@ -12,6 +12,7 @@ const activeCache = new Map<number, string>();
 export const getActiveHeroId = async (viewerId: number): Promise<string> => {
   const cached = activeCache.get(viewerId);
   if (cached) return cached;
+  console.log(`[hero] зритель ${viewerId}: читаю героя из базы`);
 
   const active = await prisma.viewerHero.findFirst({ where: { viewerId, isActive: true } });
   if (active) {

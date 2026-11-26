@@ -62,17 +62,17 @@ export const CHAT_ROLE_RULES: readonly ChatRoleRule[] = [
 export const CHAT_ROLE_STYLES = {
   broadcaster: {
     label: 'streamer',
-    chip: 'border-sky-500 bg-sky-950 text-sky-300',
-    frame: 'border-sky-500',
-    header: 'border-slate-800 from-sky-400 to-sky-900',
-    body: 'from-sky-50 to-sky-200',
+    chip: 'border-red-500 bg-red-950 text-red-300',
+    frame: 'border-red-500',
+    header: 'border-slate-800 from-red-400 to-rose-900',
+    body: 'from-red-50 to-rose-200',
   },
   bot: {
     label: 'bot',
-    chip: 'border-cyan-500 bg-cyan-950 text-cyan-300',
-    frame: 'border-cyan-500',
-    header: 'border-slate-800 from-cyan-400 to-cyan-900',
-    body: 'from-cyan-50 to-cyan-200',
+    chip: 'border-lime-500 bg-lime-950 text-lime-300',
+    frame: 'border-lime-500',
+    header: 'border-slate-800 from-lime-400 to-lime-800',
+    body: 'from-lime-50 to-lime-200',
   },
   mod: {
     label: 'mod',
@@ -97,10 +97,10 @@ export const CHAT_ROLE_STYLES = {
   },
   follower: {
     label: 'follower',
-    chip: 'border-emerald-500 bg-emerald-950 text-emerald-300',
-    frame: 'border-emerald-500',
-    header: 'border-slate-800 from-emerald-400 to-emerald-900',
-    body: 'from-emerald-50 to-emerald-200',
+    chip: 'border-cyan-500 bg-cyan-950 text-cyan-300',
+    frame: 'border-cyan-500',
+    header: 'border-slate-800 from-cyan-400 to-cyan-900',
+    body: 'from-cyan-50 to-cyan-200',
   },
   viewer: {
     label: 'viewer',

@@ -20,6 +20,7 @@ import { getActiveTimer } from './streamTimer';
 import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
 import type { ChatMessagePayload } from '../../shared/events';
 import type { Viewer } from '../../generated/prisma/client';
+import { DEFAULT_HERO_ID } from '../../shared/heroes';
 import { getActiveHeroId } from './heroes';
 import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 
@@ -242,14 +243,13 @@ if (!config.enabled) {
         isPermanentVip: viewer.isPermanentVip || viewer.isLuckyVip,
         isBroadcaster: roles.isBroadcaster,
         isBot: config.botId !== '' && info.userId === config.botId,
-        // Сбой героя не должен убирать сообщение из чата: без поля оверлей просто не покажет спрайт
-        hero: await getActiveHeroId(viewer.id).then(
-          (heroId) => ({ heroId }),
-          (error: unknown) => {
-            console.error(`[hero] герой ${info.displayName} не определён:`, error);
-            return undefined;
-          },
-        ),
+        // Сбой базы не должен убирать героя с экрана: при ошибке берём бесплатного, а ошибку пишем в лог
+        hero: {
+          heroId: await getActiveHeroId(viewer.id).catch((error: unknown) => {
+            console.error(`[hero] герой ${info.displayName} не определён, беру ${DEFAULT_HERO_ID}:`, error);
+            return DEFAULT_HERO_ID;
+          }),
+        },
       });
       const reply = async (answer: string) => {
         console.log(`[bot] ответ: ${answer}`);
