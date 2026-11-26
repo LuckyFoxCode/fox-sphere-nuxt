@@ -37,6 +37,23 @@ export const en: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — a bite! Caught +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — a bite! Pulled out a chest: ${coins} coins went to the jackpot`,
   },
+  hero: {
+    buyUsage: (name, prefix) => `@${name}, type: ${prefix}buy hero <hero name>`,
+    useUsage: (name, prefix) => `@${name}, type: ${prefix}use hero <hero name>`,
+    unknown: (name, heroes) => `@${name}, no such hero. Available: ${heroes}`,
+    alreadyOwned: (name, hero) => `@${name}, you already own ${hero}`,
+    notEnough: (name, hero, price, have, shortfall) =>
+      `@${name}, ${hero} costs ${price}, you have ${have}: ${shortfall} short`,
+    bought: (name, hero, price, coinsAfter, prefix) =>
+      price === 0
+        ? `🎁 @${name} got the hero ${hero}! Equip it: ${prefix}use hero ${hero.toLowerCase()}`
+        : `🛒 @${name} bought the hero ${hero} for ${price}, ${coinsAfter} left. Equip it: ${prefix}use hero ${hero.toLowerCase()}`,
+    notOwned: (name, hero, prefix) => `@${name}, you don't own ${hero} yet: ${prefix}buy hero ${hero.toLowerCase()}`,
+    alreadyActive: (name, hero) => `@${name}, ${hero} is already your hero`,
+    equipped: (name, hero) => `⚔️ @${name} now plays as ${hero}`,
+    shop: (name, items, prefix) =>
+      `🛒 @${name}, heroes: ${items.map((item) => `${item.name} — ${item.price === 0 ? 'free' : item.price}`).join(', ')}. Buy: ${prefix}buy hero <name>`,
+  },
   pivo: {
     regular: [
       (name) => `🍺 @${name} cracks open a cold one. Cheers!`,

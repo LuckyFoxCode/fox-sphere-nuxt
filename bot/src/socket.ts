@@ -6,6 +6,7 @@ import {
   isFishingChestPayload,
   isFollowPayload,
   isGoldenBeerPayload,
+  isHeroChangedPayload,
   isJackpotPayload,
   isLotteryDrawPayload,
   isLotteryParticipantsPayload,
@@ -114,6 +115,8 @@ io.on('connection', (socket) => {
     emitEvent('chat:message', payload);
     ack?.({ ok: true });
   });
+
+  socket.on('dev:hero-changed', relayDev(isHeroChangedPayload, (payload) => emitEvent('hero:changed', payload)));
 
   // Ack ждёт оверлей: отвечаем всегда, при ошибке — null
   socket.on('stream:get-system-state', async (ack) => {

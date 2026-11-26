@@ -20,6 +20,7 @@ import { getActiveTimer } from './streamTimer';
 import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
 import type { ChatMessagePayload } from '../../shared/events';
 import type { Viewer } from '../../generated/prisma/client';
+import { getActiveHeroId } from './heroes';
 import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 
 // Одна очередь вращений на настоящие спины и эмулятор
@@ -241,6 +242,14 @@ if (!config.enabled) {
         isPermanentVip: viewer.isPermanentVip || viewer.isLuckyVip,
         isBroadcaster: roles.isBroadcaster,
         isBot: config.botId !== '' && info.userId === config.botId,
+        // Сбой героя не должен убирать сообщение из чата: без поля оверлей просто не покажет спрайт
+        hero: await getActiveHeroId(viewer.id).then(
+          (heroId) => ({ heroId }),
+          (error: unknown) => {
+            console.error(`[hero] герой ${info.displayName} не определён:`, error);
+            return undefined;
+          },
+        ),
       });
       const reply = async (answer: string) => {
         console.log(`[bot] ответ: ${answer}`);

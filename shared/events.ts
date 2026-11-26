@@ -1,3 +1,4 @@
+import { isKnownHeroId } from './heroes';
 import { LANGS, type Lang } from './i18n';
 import { LOTTERY_CONFIG, LOTTERY_ENTRIES_MAX } from './lottery';
 import { PIVO_TIER_THRESHOLDS } from './pivo';
@@ -11,8 +12,8 @@ const PIVO_TIER_COUNT = PIVO_TIER_THRESHOLDS.length;
 
 export type ChatAnnounceColor = 'blue' | 'green' | 'orange' | 'purple';
 
-// Сообщение в чате канала. Поля те же, что у `chat:message` в старом fox-sphere, кроме `hero`
-// (герои ещё не перенесены). `badges` — готовые адреса картинок, `emotes` — как в теге Twitch:
+// Сообщение в чате канала. Поля те же, что у `chat:message` в старом fox-sphere. `hero` — активный
+// герой зрителя (оверлей ставит его на полосу героев; без поля героя нет). `badges` — готовые адреса картинок, `emotes` — как в теге Twitch:
 // id смайла → позиции «начало-конец» в тексте (в символах, а не в байтах).
 export type ChatMessagePayload = {
   id: string;
@@ -38,6 +39,13 @@ export type ChatMessagePayload = {
   isAnnouncement?: boolean;
   announceColor?: ChatAnnounceColor;
   watchStreak?: { value: number; reward: number };
+  hero?: { heroId: string };
+};
+
+// Зритель надел другого героя (!use): оверлей меняет спрайт на полосе, не дожидаясь его следующего сообщения
+export type HeroChangedPayload = {
+  userId: string;
+  heroId: string;
 };
 
 // Состояние стрима для шапки. Поля те же, что у `stream:xp-updated` в старом fox-sphere:
@@ -236,6 +244,7 @@ export type ServerToClientEvents = {
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
   'profile:show': (payload: ProfileShowPayload) => void;
+  'hero:changed': (payload: HeroChangedPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -261,6 +270,7 @@ export type ClientToServerEvents = {
   'dev:jackpot': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot-reset': (ack?: DevAck) => void;
   'dev:chat-message': (payload: unknown, ack?: DevAck) => void;
+  'dev:hero-changed': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-state': (payload: unknown, ack?: DevAck) => void;
   'dev:stream-reset': (ack?: DevAck) => void;
   'dev:xp-boost': (payload: unknown, ack?: DevAck) => void;
@@ -351,8 +361,19 @@ export const isChatMessagePayload = (value: unknown): value is ChatMessagePayloa
       return false;
     }
   }
+  if (value.hero !== undefined) {
+    if (!isRecord(value.hero) || typeof value.hero.heroId !== 'string' || !isKnownHeroId(value.hero.heroId)) {
+      return false;
+    }
+  }
   return true;
 };
+
+export const isHeroChangedPayload = (value: unknown): value is HeroChangedPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  typeof value.heroId === 'string' &&
+  isKnownHeroId(value.heroId);
 
 export const isFollowPayload = (value: unknown): value is FollowPayload =>
   isRecord(value) && isNonEmptyString(value.userId) && isNonEmptyString(value.username);

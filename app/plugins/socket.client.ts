@@ -23,6 +23,9 @@ export default defineNuxtPlugin(() => {
   socket.on('disconnect', () => (app.connection = 'disconnected'));
   socket.on('connect_error', () => (app.connection = 'disconnected'));
   socket.on('chat:message', useChatStore().onMessage);
+  const heroes = useHeroesStore();
+  socket.on('chat:message', heroes.onMessage);
+  socket.on('hero:changed', heroes.onHeroChanged);
   const stream = useStreamStore();
   socket.on('connect', () => stream.sync(socket));
   socket.on('stream:xp-updated', stream.onUpdate);

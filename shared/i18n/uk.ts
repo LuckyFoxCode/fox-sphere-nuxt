@@ -42,6 +42,23 @@ export const uk: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — клює! Улов: +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — клює! На гачку скриня: ${coinsText(coins)} — у джекпот`,
   },
+  hero: {
+    buyUsage: (name, prefix) => `@${name}, пиши: ${prefix}buy hero <ім'я героя>`,
+    useUsage: (name, prefix) => `@${name}, пиши: ${prefix}use hero <ім'я героя>`,
+    unknown: (name, heroes) => `@${name}, такого героя немає. Є: ${heroes}`,
+    alreadyOwned: (name, hero) => `@${name}, ${hero} у тебе вже є`,
+    notEnough: (name, hero, price, have, shortfall) =>
+      `@${name}, ${hero} коштує ${price}, у тебе ${have}: не вистачає ${shortfall}`,
+    bought: (name, hero, price, coinsAfter, prefix) =>
+      price === 0
+        ? `🎁 @${name} отримав героя ${hero}! Одягнути: ${prefix}use hero ${hero.toLowerCase()}`
+        : `🛒 @${name} купив героя ${hero} за ${price}, лишилось ${coinsAfter}. Одягнути: ${prefix}use hero ${hero.toLowerCase()}`,
+    notOwned: (name, hero, prefix) => `@${name}, ${hero} ще не куплений: ${prefix}buy hero ${hero.toLowerCase()}`,
+    alreadyActive: (name, hero) => `@${name}, ${hero} вже з тобою`,
+    equipped: (name, hero) => `⚔️ @${name} тепер грає за героя ${hero}`,
+    shop: (name, items, prefix) =>
+      `🛒 @${name}, герої: ${items.map((item) => `${item.name} — ${item.price === 0 ? 'безкоштовно' : item.price}`).join(', ')}. Купити: ${prefix}buy hero <ім'я>`,
+  },
   pivo: {
     regular: [
       (name) => `🍺 @${name} відкриває холодненьке. Будьмо!`,

@@ -40,6 +40,7 @@ import {
   ROULETTE_SEGMENT_IDS,
   type RouletteSegmentId,
 } from '#shared/roulette';
+import { DEFAULT_HERO_ID, HEROES } from '#shared/heroes';
 import { TIMER_COLORS, type TimerColor } from '#shared/events';
 import { buildStreamState, getStreamLevel } from '#shared/xp';
 import { segmentView } from '~/utils/roulette/rarity';
@@ -58,6 +59,7 @@ const previews = [
   { label: 'Шапка', paths: ['/overlay/stream'] },
   { label: 'Рулетка', paths: ['/overlay/roulette'] },
   { label: 'Лотерея', paths: ['/overlay/lottery'] },
+  { label: 'Герои', paths: ['/overlay/heroes'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
@@ -103,6 +105,7 @@ onMounted(() => {
 
 type DevEvent =
   | 'dev:chat-message'
+  | 'dev:hero-changed'
   | 'dev:stream-state'
   | 'dev:xp-boost'
   | 'dev:timer'
@@ -235,6 +238,7 @@ const chatRoleLabels: Record<keyof typeof chatRoles, string> = {
 };
 const chatAnnounce = ref<ChatAnnounceColor | ''>('');
 const chatStreak = ref(false);
+const chatHero = ref(DEFAULT_HERO_ID);
 
 let chatSeq = 0;
 const chatMessage = (over: Partial<ChatMessagePayload> = {}): ChatMessagePayload => ({
@@ -261,6 +265,7 @@ const chatMessage = (over: Partial<ChatMessagePayload> = {}): ChatMessagePayload
   isAction: chatRoles.isAction,
   ...(chatAnnounce.value ? { isAnnouncement: true, announceColor: chatAnnounce.value } : {}),
   ...(chatStreak.value ? { watchStreak: { value: 5, reward: 500 } } : {}),
+  hero: { heroId: chatHero.value },
   ...over,
 });
 
@@ -276,6 +281,9 @@ const emotesFor = (text: string): Record<string, string[]> => {
 };
 
 const sendChat = () => send('dev:chat-message', chatMessage());
+
+// Как `!use` в чате: зритель уже на полосе, спрайт меняется сразу, без нового сообщения
+const changeHero = () => send('dev:hero-changed', { userId: `dev-${username.value.toLowerCase()}`, heroId: chatHero.value });
 
 // По одному сообщению от каждой роли: видно рамку, медаль и плашку каждого типа
 const ROLE_SAMPLES: [string, number, Partial<ChatMessagePayload>][] = [
@@ -300,6 +308,8 @@ const chatRolesBurst = () => {
           displayName: name,
           userLvl: lvl,
           text: `Сообщение роли ${name} Kappa`,
+          // Герои по кругу: на полосе видно все три спрайта сразу
+          hero: { heroId: HEROES[index % HEROES.length]!.id },
           emotes: emotesFor(`Сообщение роли ${name} Kappa`),
           isMod: false,
           isVip: false,
@@ -792,6 +802,13 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
           <label class="flex items-center gap-x-1.5"><input v-model="chatStreak" type="checkbox" /> watch streak</label>
         </div>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendChat">Отправить сообщение</button>
+        <label class="flex flex-col gap-y-1 text-sm">
+          Герой (полоса героев)
+          <select v-model="chatHero" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="hero in HEROES" :key="hero.id" :value="hero.id">{{ hero.name }}</option>
+          </select>
+        </label>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="changeHero">Сменить героя у этого зрителя (как !use)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst">По сообщению от каждой роли</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatSpam">Семь подряд (лимит 5)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatLongLink">Ссылка и длинное слово</button>

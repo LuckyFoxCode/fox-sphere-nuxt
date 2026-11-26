@@ -29,6 +29,7 @@
     "@prisma/adapter-libsql": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "nuxt": "^4.7.0",
+    "phaser": "^4.2.1",
     "pinia": "^4.1.0",
     "socket.io-client": "^4.8.4",
     "vue": "latest",

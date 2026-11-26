@@ -27,6 +27,21 @@ export type FishMessages = {
   bank: (name: string, coins: number) => string;
 };
 
+export type HeroMessages = {
+  buyUsage: (name: string, prefix: string) => string;
+  useUsage: (name: string, prefix: string) => string;
+  // Список названий через запятую
+  unknown: (name: string, heroes: string) => string;
+  alreadyOwned: (name: string, hero: string) => string;
+  notEnough: (name: string, hero: string, price: number, have: number, shortfall: number) => string;
+  bought: (name: string, hero: string, price: number, coinsAfter: number, prefix: string) => string;
+  notOwned: (name: string, hero: string, prefix: string) => string;
+  alreadyActive: (name: string, hero: string) => string;
+  equipped: (name: string, hero: string) => string;
+  // Витрина в чат: каждый герой с ценой (0 — бесплатный)
+  shop: (name: string, items: { name: string; price: number }[], prefix: string) => string;
+};
+
 export type PivoMessages = {
   regular: Five<NameMessage>;
   golden: NameMessage;
@@ -120,6 +135,7 @@ export type BotMessages = {
   profile: (name: string, stats: ProfileStats) => string;
   spin: SpinMessages;
   fish: FishMessages;
+  hero: HeroMessages;
   pivo: PivoMessages;
   vip: VipMessages;
   // Отказ командам для стримера и модераторов (!xpboost, !timer, !stoptimer)

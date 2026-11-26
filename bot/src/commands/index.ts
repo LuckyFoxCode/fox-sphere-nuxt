@@ -6,6 +6,7 @@ import { messages } from '../language';
 import { emitEvent } from '../socket';
 import { registerXpBoostCommand } from './boost';
 import { registerFishCommand } from './fish';
+import { registerHeroCommands } from './hero';
 import { registerLotteryCommands, type LotteryDeps } from './lottery';
 import { registerPivoCommand } from './pivo';
 import { registerVipCommands, type VipDeps } from './vip';
@@ -20,6 +21,7 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & Omit<L
   registerSpinCommands(registry, deps);
   registerFishCommand(registry, deps);
   registerPivoCommand(registry);
+  registerHeroCommands(registry, deps.prefix);
   registerVipCommands(registry, deps);
   registerLotteryCommands(registry, deps);
   registerXpBoostCommand(registry, deps.prefix);
