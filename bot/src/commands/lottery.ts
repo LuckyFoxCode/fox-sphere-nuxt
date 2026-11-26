@@ -25,7 +25,6 @@ import type { CommandRegistry } from './registry';
 const TICKET_COOLDOWN_MS = 10_000;
 const RUN_COOLDOWN_MS = 5000;
 // Между строками «Place #N» в чате: Twitch не любит очередь из пяти сообщений за один миг
-const CHAT_PAUSE_MS = 800;
 
 export type LotteryDeps = {
   prefix: string;
@@ -143,24 +142,19 @@ export const registerLotteryCommands = (registry: CommandRegistry, deps: Lottery
 
     await sleep(LOTTERY_REVEAL_AT_MS - (Date.now() - startedAt));
     const failed = await rotation;
-    await announceWinners(outcome, failed);
-    await announceOrSay(t.final);
+    await announceFailures(outcome, failed);
 
-    await sleep(LOTTERY_SCENE_MS + LOTTERY_GAP_MS - (Date.now() - startedAt));
+    // Итог в чат — когда сцена закончилась, чтобы не раскрывать победителей раньше экрана
+    await sleep(LOTTERY_SCENE_MS - (Date.now() - startedAt));
+    await announceOrSay(t.final);
+    await sleep(LOTTERY_GAP_MS);
   };
 
-  const announceWinners = async (outcome: Drawn, failed: Set<string>) => {
+  // Победителей показывает оверлей, в чат идут только старт, итог и сбои выдачи VIP
+  const announceFailures = async (outcome: Drawn, failed: Set<string>) => {
     const t = messages().lottery;
-    for (const [index, winner] of outcome.winners.entries()) {
-      const place = index + 1;
-      const left = outcome.winners.length - place;
-      const text = failed.has(winner.twitchId)
-        ? t.vipFailed(winner.username)
-        : winner.returning
-          ? t.repeatedWinner(place, winner.username, left)
-          : t.newWinner(place, winner.username, left);
-      await say(text);
-      if (left > 0) await sleep(CHAT_PAUSE_MS);
+    for (const winner of outcome.winners) {
+      if (failed.has(winner.twitchId)) await say(t.vipFailed(winner.username));
     }
   };
 

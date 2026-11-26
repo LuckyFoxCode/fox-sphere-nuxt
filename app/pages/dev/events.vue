@@ -23,7 +23,6 @@ import {
   LOTTERY_CONFIG,
   LOTTERY_ENTRIES_MAX,
   LOTTERY_LIST_MIN,
-  LOTTERY_REVEAL_AT_MS,
   LOTTERY_SCENE_MS,
 } from '#shared/lottery';
 import {
@@ -592,7 +591,7 @@ const lotteryShuffle = <T,>(items: readonly T[]): T[] => {
   return result;
 };
 
-// Фразы бота для сцены, которые идут в момент её показа: старт — сразу, места — когда встал последний барабан
+// Фразы бота для сцены, которые идут в момент её показа: старт — сразу, итог — когда сцена закончилась
 const lotteryChatPlans = new Map<string, { winners: { username: string; returning: boolean }[]; lang: Lang }>();
 
 const lotteryDraw = (total: number, name = username.value) => {
@@ -627,15 +626,7 @@ watch(
     lotteryChatPlans.delete(shown.payload.id);
     const t = MESSAGES[plan.lang].lottery;
     botSay(t.start);
-    plan.winners.forEach((winner, index) => {
-      const place = index + 1;
-      const left = plan.winners.length - place;
-      setTimeout(
-        () => botSay(winner.returning ? t.repeatedWinner(place, winner.username, left) : t.newWinner(place, winner.username, left)),
-        LOTTERY_REVEAL_AT_MS + index * 800,
-      );
-    });
-    setTimeout(() => botSay(t.final), LOTTERY_REVEAL_AT_MS + plan.winners.length * 800);
+    setTimeout(() => botSay(t.final), LOTTERY_SCENE_MS);
   },
 );
 
