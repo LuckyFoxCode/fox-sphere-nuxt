@@ -71,8 +71,7 @@ const watchStreakSummary = computed(() => {
           </span>
           <span
             v-if="message.watchStreak"
-            class="rounded-full border-2 px-1.5 py-0.5 text-xs font-bold tracking-wide uppercase"
-            :style="{ borderColor: message.color, color: message.color }"
+            class="rounded-full border-2 border-amber-500 bg-slate-900 px-1.5 py-0.5 text-xs font-bold tracking-wide text-amber-500 uppercase"
           >
             Watch Streak
           </span>
@@ -111,7 +110,7 @@ const watchStreakSummary = computed(() => {
 
         <p
           v-if="watchStreakSummary"
-          class="text-text-main text-sm leading-snug font-medium"
+          class="text-sm leading-snug font-semibold text-amber-900"
         >
           {{ watchStreakSummary }}
         </p>
@@ -119,7 +118,7 @@ const watchStreakSummary = computed(() => {
         <p
           v-if="message.text"
           class="text-bg leading-snug wrap-break-word"
-          :class="{ 'italic opacity-80': message.watchStreak, italic: message.isAction }"
+          :class="{ italic: message.watchStreak || message.isAction }"
         >
           <span v-if="message.watchStreak">💬&nbsp;</span>
           <template
