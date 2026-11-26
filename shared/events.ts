@@ -114,8 +114,11 @@ export type GoldenBeerPayload = {
   isNewTier: boolean;
 };
 
-// Карточка профиля из `!profile`: уровень, XP до следующего, монеты, место и самые редкие ачивки
-// (shared/achievements.ts, не больше PROFILE_BADGE_SLOTS). `earned` — сколько ачивок всего получено.
+// Карточка профиля из `!profile`: вид и раскладка как в старом fox-sphere. Роли, цвет ника и титул считаются
+// так же, как в чате (app/utils/chat), поэтому флаги ролей здесь те же, что в `ChatMessagePayload`.
+// `xp`, `startXp` и `maxXp` накопительные (формула shared/xp.ts): полоса идёт от порога прошлого уровня
+// до порога текущего. Ачивки — shared/achievements.ts: `badges` — самые редкие (не больше PROFILE_BADGE_SLOTS),
+// `earned` — сколько всего получено.
 export type ProfileBadgePayload = {
   category: string;
   level: number;
@@ -126,11 +129,29 @@ export type ProfileBadgePayload = {
 export type ProfileShowPayload = {
   userId: string;
   username: string;
+  displayName: string;
+  // Цвет ника в чате Twitch
+  color: string;
   lvl: number;
   xp: number;
-  xpToNext: number;
+  startXp: number;
+  maxXp: number;
   coins: number;
-  rank: number;
+  // Активный герой и его уровень: null, если зрителю герой не определён
+  heroId: string | null;
+  heroLevel: number | null;
+  // Лучший стрик просмотров; null, если ни одной награды за стрик ещё не было
+  bestStreak: number | null;
+  goldenBeers: number;
+  isBroadcaster: boolean;
+  isMod: boolean;
+  isFounder: boolean;
+  isSubscriber: boolean;
+  // Бейдж VIP в Twitch и VIP из базы (!addvip, лотерея); `isLuckyVip` — именно из лотереи
+  isVip: boolean;
+  isPermanentVip: boolean;
+  isLuckyVip: boolean;
+  isFollower: boolean;
   badges: ProfileBadgePayload[];
   earned: number;
 };
@@ -508,11 +529,26 @@ export const isProfileShowPayload = (value: unknown): value is ProfileShowPayloa
   isRecord(value) &&
   isNonEmptyString(value.userId) &&
   isNonEmptyString(value.username) &&
+  isNonEmptyString(value.displayName) &&
+  isNonEmptyString(value.color) &&
   isInt(value.lvl, 1) &&
   isInt(value.xp, 0) &&
-  isInt(value.xpToNext, 1) &&
+  isInt(value.startXp, 0) &&
+  isInt(value.maxXp, 1) &&
+  value.maxXp > value.startXp &&
   isInt(value.coins, 0) &&
-  isInt(value.rank, 1) &&
+  (value.heroId === null || isNonEmptyString(value.heroId)) &&
+  (value.heroLevel === null || isInt(value.heroLevel, 1, 1000)) &&
+  (value.bestStreak === null || isInt(value.bestStreak, 0)) &&
+  isInt(value.goldenBeers, 0) &&
+  typeof value.isBroadcaster === 'boolean' &&
+  typeof value.isMod === 'boolean' &&
+  typeof value.isFounder === 'boolean' &&
+  typeof value.isSubscriber === 'boolean' &&
+  typeof value.isVip === 'boolean' &&
+  typeof value.isPermanentVip === 'boolean' &&
+  typeof value.isLuckyVip === 'boolean' &&
+  typeof value.isFollower === 'boolean' &&
   isInt(value.earned, 0) &&
   Array.isArray(value.badges) &&
   value.badges.length <= 8 &&

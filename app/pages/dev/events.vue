@@ -42,7 +42,9 @@ import {
 } from '#shared/roulette';
 import { DEFAULT_HERO_ID, HEROES } from '#shared/heroes';
 import { TIMER_COLORS, type TimerColor } from '#shared/events';
-import { buildStreamState, getStreamLevel } from '#shared/xp';
+import { buildStreamState, getLevelRange, getStreamLevel } from '#shared/xp';
+import type { ProfileShowPayload } from '#shared/events';
+import { PROFILE_SAMPLE, PROFILE_SPARSE } from '~/utils/profileSample';
 import { segmentView } from '~/utils/roulette/rarity';
 
 const { $socket } = useNuxtApp();
@@ -60,6 +62,7 @@ const previews = [
   { label: 'Рулетка', paths: ['/overlay/roulette'] },
   { label: 'Лотерея', paths: ['/overlay/lottery'] },
   { label: 'Герои', paths: ['/overlay/heroes'] },
+  { label: 'Профиль', paths: ['/overlay/profile'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
@@ -80,6 +83,7 @@ const tabs = [
   { id: 'fishing', label: 'Рыбалка' },
   { id: 'pivo', label: 'Пиво' },
   { id: 'vip', label: 'VIP' },
+  { id: 'profile', label: 'Профиль' },
   { id: 'lottery', label: 'Лотерея' },
   { id: 'music', label: 'Музыка' },
 ] as const;
@@ -106,6 +110,7 @@ onMounted(() => {
 type DevEvent =
   | 'dev:chat-message'
   | 'dev:hero-changed'
+  | 'dev:profile'
   | 'dev:stream-state'
   | 'dev:xp-boost'
   | 'dev:timer'
@@ -571,6 +576,89 @@ const vipAdd = () => {
 };
 const vipRemove = () => botSay(vipTexts.value.removed(vipModerator.value, vipTarget.value));
 
+// --- Профиль ---------------------------------------------------------------------------
+// !profile: карточка на оверлее на 9 секунд (в чат ничего не пишет). Ник, цвет, герой и роли — из полей ниже;
+// титул и цвета карточки считаются как в чате. Ждёт, пока на сцене рулетка или лотерея. База не меняется.
+const profileLvl = ref(14);
+const profileXpPercent = ref(60);
+const profileHeroId = ref<string>(DEFAULT_HERO_ID);
+const profileNoHero = ref(false);
+const profileHeroLevel = ref(7);
+const profileCoins = ref(4180);
+const profileRoles = reactive({
+  isBroadcaster: false,
+  isMod: false,
+  isFounder: false,
+  isSubscriber: true,
+  isVip: false,
+  isPermanentVip: false,
+  isLuckyVip: false,
+  isFollower: true,
+});
+const profileRoleLabels: Record<keyof typeof profileRoles, string> = {
+  isBroadcaster: 'стример',
+  isMod: 'модератор',
+  isFounder: 'founder',
+  isSubscriber: 'саб',
+  isVip: 'VIP (бейдж Twitch)',
+  isPermanentVip: 'VIP из базы',
+  isLuckyVip: 'lucky VIP (лотерея)',
+  isFollower: 'фолловер',
+};
+
+const profileFromForm = (): ProfileShowPayload => {
+  const { startXp, maxXp } = getLevelRange(profileLvl.value);
+  return {
+    ...PROFILE_SAMPLE,
+    userId: `dev-${username.value.toLowerCase()}`,
+    username: username.value.toLowerCase(),
+    displayName: username.value,
+    color: chatColor.value,
+    lvl: profileLvl.value,
+    startXp,
+    maxXp,
+    xp: Math.round(startXp + ((maxXp - startXp) * profileXpPercent.value) / 100),
+    coins: profileCoins.value,
+    heroId: profileNoHero.value ? null : profileHeroId.value,
+    heroLevel: profileNoHero.value ? null : profileHeroLevel.value,
+    ...profileRoles,
+  };
+};
+const profileShow = (payload: ProfileShowPayload = profileFromForm()) => send('dev:profile', payload);
+// По карточке на каждую роль подряд: проверка цвета и титула. Очередь бота держит до 10 карточек
+const PROFILE_ROLE_SAMPLES: [string, number, Partial<typeof profileRoles>][] = [
+  ['Streamer', 100, { isBroadcaster: true }],
+  ['ModMike', 45, { isMod: true }],
+  ['VipVera', 33, { isVip: true }],
+  ['PermVipPit', 28, { isPermanentVip: true }],
+  ['SubSam', 22, { isSubscriber: true }],
+  ['FollowFin', 8, { isFollower: true }],
+  ['Viewer', 2, {}],
+];
+const profileRolesBurst = () => {
+  const none = { isBroadcaster: false, isMod: false, isFounder: false, isSubscriber: false, isVip: false, isPermanentVip: false, isLuckyVip: false, isFollower: false };
+  PROFILE_ROLE_SAMPLES.forEach(([name, lvl, flags], index) => {
+    const { startXp, maxXp } = getLevelRange(lvl);
+    setTimeout(
+      () =>
+        profileShow({
+          ...PROFILE_SAMPLE,
+          ...none,
+          ...flags,
+          userId: `dev-${name.toLowerCase()}`,
+          username: name.toLowerCase(),
+          displayName: name,
+          lvl,
+          startXp,
+          maxXp,
+          xp: Math.round(startXp + (maxXp - startXp) * 0.4),
+          heroId: HEROES[index % HEROES.length]!.id,
+        }),
+      index * 150,
+    );
+  });
+};
+
 // --- Лотерея ---------------------------------------------------------------------------
 // !ticket, !tickets, !runlottery: сцена розыгрыша — в «Лотерее» и «Сцене», билет — алертом в «Алертах», фразы
 // бота — в «Чате». Сцена всегда идёт 15 секунд, сколько бы ни было участников: кнопки ниже гонят
@@ -946,6 +1034,51 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         </div>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="goldenBeer()">Только алерт, без фразы</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="pivoRoll">Бросок по шансам</button>
+      </section>
+
+      <section v-show="tab === 'profile'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">
+          Карточка по <code>!profile</code>: откройте превью «Профиль» или «Сцена». Ник и цвет — из полей «Ник» и
+          «Цвет» во вкладке «Чат».
+          <NuxtLink class="underline" to="/dev/achievements">Все значки ачивок</NuxtLink>
+        </p>
+        <div class="flex gap-x-3">
+          <label class="flex min-w-0 flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Уровень
+            <input v-model.number="profileLvl" type="number" min="1" class="w-full min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex min-w-0 flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            XP на уровне, %
+            <input v-model.number="profileXpPercent" type="number" min="0" max="100" class="w-full min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex min-w-0 flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Монеты
+            <input v-model.number="profileCoins" type="number" min="0" class="w-full min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+        </div>
+        <div class="flex items-end gap-x-3">
+          <label class="flex min-w-0 flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Герой
+            <select v-model="profileHeroId" :disabled="profileNoHero" class="w-full min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+              <option v-for="hero in HEROES" :key="hero.id" :value="hero.id">{{ hero.name }}</option>
+            </select>
+          </label>
+          <label class="flex w-28 shrink-0 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Ур. героя
+            <input v-model.number="profileHeroLevel" type="number" min="1" max="50" :disabled="profileNoHero" class="w-full min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex items-center gap-x-1.5 pb-2 text-sm"><input v-model="profileNoHero" type="checkbox" /> без героя</label>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+          <label v-for="(label, key) in profileRoleLabels" :key="key" class="flex items-center gap-x-1.5 text-sm">
+            <input v-model="profileRoles[key]" type="checkbox" />
+            {{ label }}
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="profileShow()">Показать карточку</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SAMPLE)">Пример: полная карточка</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SPARSE)">Пример: новичок без героя</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileRolesBurst">По карточке от каждой роли</button>
       </section>
 
       <section v-show="tab === 'vip'" class="flex flex-col gap-y-3">

@@ -3,10 +3,13 @@
 // по тиру ранга (utils/chat/ranks.ts); голое, без рамки.
 import { getRankConfigByLevel, MAX_ICON_TIER, RANK_RINGS } from '~/utils/chat/ranks';
 
-const props = withDefaults(defineProps<{ level: number; size?: number }>(), { size: 64 });
+const props = withDefaults(defineProps<{ level: number; size?: number; isBroadcaster?: boolean }>(), {
+  size: 64,
+  isBroadcaster: false,
+});
 
 const ring = computed(
-  () => RANK_RINGS[Math.min(getRankConfigByLevel(props.level).tier, MAX_ICON_TIER)],
+  () => RANK_RINGS[Math.min(getRankConfigByLevel(props.level, props.isBroadcaster).tier, MAX_ICON_TIER)],
 );
 
 const ringStyle = computed(() => ({ width: `${props.size}px`, height: `${props.size}px` }));

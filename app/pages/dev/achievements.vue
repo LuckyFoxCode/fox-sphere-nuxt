@@ -4,6 +4,7 @@
 import { ACHIEVEMENT_CATEGORIES } from '#shared/achievements';
 import type { ProfileShowPayload } from '#shared/events';
 import { achievementRarityLabel } from '~/utils/achievements';
+import { PROFILE_SAMPLE, PROFILE_SPARSE } from '~/utils/profileSample';
 
 useHead({ title: 'Ачивки: превью' });
 
@@ -15,23 +16,8 @@ onBeforeUnmount(() => $socket.disconnect());
 const RARITIES = [1, 2, 3, 4, 5];
 const iconCategories = ACHIEVEMENT_CATEGORIES.filter((category) => !category.art);
 
-const sample: ProfileShowPayload = {
-  userId: '1',
-  username: 'LuckyFoxCode',
-  lvl: 14,
-  xp: 620,
-  xpToNext: 900,
-  coins: 4180,
-  rank: 3,
-  earned: 17,
-  badges: [
-    { category: 'jackpot', level: 2, rarity: 2, value: 2 },
-    { category: 'prize1000', level: 3, rarity: 3, value: 5 },
-    { category: 'golden-beer', level: 5, rarity: 5, value: 13 },
-    { category: 'watch-streak', level: 9, rarity: 4, value: 60 },
-  ],
-};
-const sparse: ProfileShowPayload = { ...sample, username: 'NewViewer', earned: 1, badges: [sample.badges[0]!] };
+const sample = PROFILE_SAMPLE;
+const sparse = PROFILE_SPARSE;
 
 const send = (payload: ProfileShowPayload) => {
   $socket.emit('dev:profile', payload, (result) => {

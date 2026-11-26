@@ -105,7 +105,28 @@
     animation: flip 260ms ease-in-out;
   }
 
+  /* Карточка профиля выезжает справа, 0.4 с (DESIGN.md 2.4) */
+  .profile-slide-enter-active,
+  .profile-slide-leave-active {
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .profile-slide-enter-from,
+  .profile-slide-leave-to {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .profile-slide-enter-active,
+    .profile-slide-leave-active {
+      transition: opacity 1ms;
+    }
+    .profile-slide-enter-from,
+    .profile-slide-leave-to {
+      transform: none;
+    }
     .sticker-slap-enter-active,
     .sticker-slap-leave-active {
       transition: opacity 1ms;

@@ -4,6 +4,8 @@ import type { ChatRoles } from '../viewers';
 export type CommandContext = {
   viewer: Viewer; // свежая строка из БД на момент сообщения
   displayName: string;
+  // Цвет ника в чате (Twitch), для карточки профиля
+  color: string;
   // Роли из бейджей этого сообщения (права команд проверяются по ним, а не по базе)
   roles: ChatRoles;
   args: string[];

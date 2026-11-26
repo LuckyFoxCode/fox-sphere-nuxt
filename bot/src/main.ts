@@ -260,6 +260,7 @@ if (!config.enabled) {
       const isCommand = await registry.dispatch(text, (args) => ({
         viewer,
         displayName: info.displayName,
+        color: info.color || '#9146FF',
         roles,
         args,
         reply,
