@@ -5,6 +5,7 @@ type NameMessage = (name: string) => string;
 type CoinsMessage = (name: string, coins: number) => string;
 // Столько вариантов у «сорвалась» и у улова монет, во всех языках поровну
 type Three<T> = [T, T, T];
+type Five<T> = [T, T, T, T, T];
 
 export type ProfileStats = {
   lvl: number;
@@ -24,6 +25,11 @@ export type FishMessages = {
   xp: (name: string, xp: number) => string;
   // Сундук не платит игроку: текст не должен читаться как личная выплата
   bank: (name: string, coins: number) => string;
+};
+
+export type PivoMessages = {
+  regular: Five<NameMessage>;
+  golden: NameMessage;
 };
 
 // Надписи алерта «сундук» на оверлее; ник на нём печатается отдельной строкой
@@ -52,5 +58,6 @@ export type BotMessages = {
   profile: (name: string, stats: ProfileStats) => string;
   spin: SpinMessages;
   fish: FishMessages;
+  pivo: PivoMessages;
   chestAlert: ChestAlertMessages;
 };

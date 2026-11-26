@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import type {
   FishingChestPayload,
   FollowPayload,
+  GoldenBeerPayload,
   RaidPayload,
   RewardRedeemPayload,
   SubPayload,
@@ -66,6 +67,7 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onRewardRedeem = (payload: RewardRedeemPayload) => push(rewardAlert(payload));
   const onSub = (payload: SubPayload) => push(subAlert(payload));
   const onFishingChest = (payload: FishingChestPayload) => push(chestAlert(payload));
+  const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
 
-  return { current, onFollow, onRaid, onRewardRedeem, onSub, onFishingChest };
+  return { current, onFollow, onRaid, onRewardRedeem, onSub, onFishingChest, onGoldenBeer };
 });

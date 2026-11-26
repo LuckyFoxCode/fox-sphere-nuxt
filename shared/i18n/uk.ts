@@ -42,6 +42,16 @@ export const uk: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — клює! Улов: +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — клює! На гачку скриня: ${coinsText(coins)} — у джекпот`,
   },
+  pivo: {
+    regular: [
+      (name) => `🍺 @${name} відкриває холодненьке. Будьмо!`,
+      (name) => `🍻 @${name} піднімає тост за Sphere! 🦊`,
+      (name) => `🧊 Частую я, @${name}! Чат, дякуйте!`,
+      (name) => `🍺 @${name} пригощає весь чат. Салют!`,
+      (name) => `⚡ З'явилося дике пиво! @${name} підібрав його. Це супер ефективно!`,
+    ],
+    golden: (name) => `👑✨ ЗОЛОТЕ ПИВО! @${name} знаходить легендарний напій! 🍺`,
+  },
   chestAlert: {
     label: 'скриня зі скарбом',
     toBank: (coins) => `+${coinsText(coins)} у банк`,

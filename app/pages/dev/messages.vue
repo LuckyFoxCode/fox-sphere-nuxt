@@ -57,6 +57,17 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
+    title: 'Пиво',
+    rows: [
+      ['Обычное 1', (t) => t.pivo.regular[0](NAME)],
+      ['Обычное 2', (t) => t.pivo.regular[1](NAME)],
+      ['Обычное 3', (t) => t.pivo.regular[2](NAME)],
+      ['Обычное 4', (t) => t.pivo.regular[3](NAME)],
+      ['Обычное 5', (t) => t.pivo.regular[4](NAME)],
+      ['Золотое', (t) => t.pivo.golden(NAME)],
+    ],
+  },
+  {
     title: 'Алерт сундука на оверлее',
     rows: [
       ['Лента', (t) => t.chestAlert.label],

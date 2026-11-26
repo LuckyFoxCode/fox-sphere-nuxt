@@ -37,6 +37,16 @@ export const en: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — a bite! Caught +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — a bite! Pulled out a chest: ${coins} coins went to the jackpot`,
   },
+  pivo: {
+    regular: [
+      (name) => `🍺 @${name} cracks open a cold one. Cheers!`,
+      (name) => `🍻 @${name} raises a toast to the Sphere! 🦊`,
+      (name) => `🧊 Drinks on @${name}! Chat, say thanks!`,
+      (name) => `🍺 @${name} shares a round with the whole chat. Salud!`,
+      (name) => `⚡ A wild beer appears! @${name} picked it up. It's super effective!`,
+    ],
+    golden: (name) => `👑✨ GOLDEN BEER! @${name} found the legendary brew! 🍺`,
+  },
   chestAlert: {
     label: 'treasure chest',
     toBank: (coins) => `+${coins} coins to the bank`,

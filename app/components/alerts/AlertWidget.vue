@@ -11,8 +11,8 @@ import type { AlertKind } from '~/utils/alerts';
 // Громкость из старого fox-sphere; точнее настраивается в микшере OBS
 const VOLUME = 0.5;
 
-// У сундука своя наклейка (ChestAlert), значок нужен только общей
-const ICONS: Record<Exclude<AlertKind, 'chest'>, Component> = {
+// У сундука своя наклейка (ChestAlert), у пива вместо значка арт ступени
+const ICONS: Record<Exclude<AlertKind, 'chest' | 'beer'>, Component> = {
   follow: IconPaw,
   raid: IconLightning,
   reward: IconGift,
@@ -49,7 +49,9 @@ watch(
       v-else-if="alerts.current"
       :key="alerts.current.id"
       :paper="alerts.current.paper"
-      :icon="ICONS[alerts.current.kind]"
+      :icon="alerts.current.kind === 'beer' ? undefined : ICONS[alerts.current.kind]"
+      :media="alerts.current.media"
+      :tag="alerts.current.tag"
       :label="alerts.current.label"
       :title="alerts.current.title"
       :detail="alerts.current.detail"

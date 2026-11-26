@@ -4,15 +4,18 @@
 import type {
   FishingChestPayload,
   FollowPayload,
+  GoldenBeerPayload,
   RaidPayload,
   RewardRedeemPayload,
   SubPayload,
   SubTier,
 } from '#shared/events';
 import { MESSAGES } from '#shared/i18n';
+import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
-// chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest';
+// chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
+// beer — золотое пиво: на пластине не значок, а арт ступени
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer';
 
 export interface AlertView {
   kind: AlertKind;
@@ -24,6 +27,10 @@ export interface AlertView {
   /** Крупное число в плитке справа: месяцы подписки, число подарков */
   stat?: { value: string; unit: string };
   chips?: string[];
+  /** Арт достижения вместо значка: занимает пластину целиком */
+  media?: { src: string; alt: string };
+  /** Овсяный чип в углу — флаг, не факт (например, «new tier») */
+  tag?: string;
   /** Адрес звука из public/; null — алерт без звука */
   sound: string | null;
   /** Задержка звука от появления наклейки */
@@ -36,6 +43,8 @@ const ALERT_DURATION_MS = 5000;
 const CHEST_ALERT_DURATION_MS = 5500;
 // Пик звука приходится на открытие крышки (около 0,9 с)
 const CHEST_SOUND_DELAY_MS = 300;
+// Золотое пиво висит дольше: на пластине арт ступени, его надо успеть рассмотреть (как в старом проекте)
+const BEER_ALERT_DURATION_MS = 7000;
 
 export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   follow: '/assets/sound/follow.mp3',
@@ -47,6 +56,8 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   // Взят из имеющихся (в старом проекте это звук watch streak, он ещё не перенесён).
   // jackpot.mp3 и одинаковый с ним add-vip.mp3 не берём: сундук не должен звучать как джекпот.
   chest: '/assets/sound/streak.mp3',
+  // В старом проекте золотое пиво шло без звука
+  beer: null,
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -96,6 +107,22 @@ export const chestAlert = ({ username, coinAmount, lang }: FishingChestPayload):
     sound: ALERT_SOUNDS.chest,
     soundDelayMs: CHEST_SOUND_DELAY_MS,
     durationMs: CHEST_ALERT_DURATION_MS,
+  };
+};
+
+export const goldenBeerAlert = ({ username, goldenBeers, tier, isNewTier }: GoldenBeerPayload): AlertView => {
+  const tierLabel = goldenBeerTierLabel(tier);
+  return {
+    kind: 'beer',
+    paper: 'bg-paper-amber',
+    label: 'golden beer',
+    title: username,
+    detail: `${tierLabel} brew`,
+    stat: { value: `x${goldenBeers}`, unit: plural(goldenBeers, 'beer') },
+    media: { src: goldenBeerArtPath(tier), alt: `Golden beer achievement: ${tierLabel} tier` },
+    tag: isNewTier ? 'new tier' : undefined,
+    sound: ALERT_SOUNDS.beer,
+    durationMs: BEER_ALERT_DURATION_MS,
   };
 };
 

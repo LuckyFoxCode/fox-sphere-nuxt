@@ -1,5 +1,8 @@
 import { LANGS, type Lang } from './i18n';
+import { PIVO_TIER_THRESHOLDS } from './pivo';
 import type { RoulettePrizeType } from './roulette';
+
+const PIVO_TIER_COUNT = PIVO_TIER_THRESHOLDS.length;
 
 // Контракты событий Socket.io: один файл для бота (сервер) и Nuxt (клиент).
 // Сервер живёт в bot/ (bot/src/socket.ts), оверлей подключается к нему как клиент.
@@ -84,6 +87,17 @@ export type FishingChestPayload = {
   lang: Lang;
 };
 
+// Золотое пиво из `!pivo` (5%). Поля те же, что у `twitch:golden-beer` в старом fox-sphere, без
+// `displayName`: ник один, как у остальных алертов. `goldenBeers` — счётчик за всё время,
+// `tier` — ступень 1..5 по нему (shared/pivo.ts), `isNewTier` — этим пивом ступень выросла.
+export type GoldenBeerPayload = {
+  userId: string;
+  username: string;
+  goldenBeers: number;
+  tier: number;
+  isNewTier: boolean;
+};
+
 // Рулетка. Поля те же, что у `roulette:spin-result` в старом fox-sphere. Приходит в момент старта
 // ленты; через ROULETTE_SPIN_ANIMATION_MS лента встаёт на этом призе. `coinAmount` у джекпота — весь
 // забранный банк, `jackpotTotalAfter` — банк после спина.
@@ -131,6 +145,7 @@ export type ServerToClientEvents = {
   'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
   'twitch:sub': (payload: SubPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
+  'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -158,6 +173,7 @@ export type ClientToServerEvents = {
   'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
   'dev:sub': (payload: unknown, ack?: DevAck) => void;
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
+  'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -253,6 +269,14 @@ export const isFishingChestPayload = (value: unknown): value is FishingChestPayl
   isNonEmptyString(value.username) &&
   isInt(value.coinAmount, 1) &&
   KNOWN_LANGS.includes(value.lang);
+
+export const isGoldenBeerPayload = (value: unknown): value is GoldenBeerPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.goldenBeers, 1) &&
+  isInt(value.tier, 1, PIVO_TIER_COUNT) &&
+  typeof value.isNewTier === 'boolean';
 
 const PRIZE_TYPES: readonly unknown[] = ['empty', 'coins', 'xp', 'jackpot'];
 

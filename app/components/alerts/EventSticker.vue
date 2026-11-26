@@ -6,7 +6,12 @@ import type { Component } from 'vue';
 
 const props = defineProps<{
   paper: string;
-  icon: Component;
+  /** Значок на пластине; не нужен, когда её занял арт */
+  icon?: Component;
+  /** Арт достижения: занимает пластину целиком, как марка на паспарту */
+  media?: { src: string; alt: string };
+  /** Овсяный чип в углу: флаг («new tier»), а не факт */
+  tag?: string;
   label: string;
   title: string;
   detail?: string;
@@ -29,14 +34,26 @@ const ariaLabel = computed(() =>
 
 <template>
   <StickerFrame role="status" :aria-label="ariaLabel" class="w-105 gap-x-3 py-2.5 pr-3 pl-2.5">
-    <div class="flex size-12 shrink-0 items-center justify-center rounded-xl text-sticker-body" :class="paper">
-      <component :is="icon" aria-hidden="true" class="size-8" />
+    <div
+      class="flex shrink-0 items-center justify-center overflow-hidden rounded-xl text-sticker-body"
+      :class="[paper, media ? 'size-28 p-1' : 'size-12']"
+    >
+      <img v-if="media" :src="media.src" :alt="media.alt" class="size-full object-contain" />
+      <component :is="icon" v-else-if="icon" aria-hidden="true" class="size-8" />
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <span class="text-[10px] leading-none font-bold tracking-[0.17em] text-sticker-muted uppercase">
-        {{ label }}
-      </span>
+      <div class="flex items-start justify-between gap-x-2">
+        <span class="text-[10px] leading-none font-bold tracking-[0.17em] text-sticker-muted uppercase">
+          {{ label }}
+        </span>
+        <span
+          v-if="tag"
+          class="-mt-0.5 shrink-0 rounded-md bg-sticker-edge px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-[0.12em] text-sticker-body uppercase"
+        >
+          {{ tag }}
+        </span>
+      </div>
       <span class="mt-1.5 truncate text-xl leading-tight font-bold">{{ title }}</span>
       <span v-if="detail" class="mt-1 truncate text-sm leading-tight font-medium text-sticker-muted">
         {{ detail }}

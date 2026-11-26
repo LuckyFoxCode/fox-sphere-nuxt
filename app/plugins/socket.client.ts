@@ -39,6 +39,7 @@ export default defineNuxtPlugin(() => {
   socket.on('twitch:reward-redeem', alerts.onRewardRedeem);
   socket.on('twitch:sub', alerts.onSub);
   socket.on('fishing:chest', alerts.onFishingChest);
+  socket.on('twitch:golden-beer', alerts.onGoldenBeer);
 
   return { provide: { socket } };
 });

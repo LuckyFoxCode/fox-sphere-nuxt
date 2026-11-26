@@ -20,6 +20,14 @@ import {
 } from '#shared/fishing';
 import { BOT_LANG, LANGS, MESSAGES, type Lang } from '#shared/i18n';
 import {
+  PIVO_MESSAGE_VARIANTS,
+  PIVO_OUTCOME_WEIGHTS,
+  PIVO_TIER_THRESHOLDS,
+  getGoldenBeerTier,
+  goldenBeerTierLabel,
+  pickPivoOutcome,
+} from '#shared/pivo';
+import {
   JACKPOT_SEED,
   JACKPOT_SHARE,
   ROULETTE_PRIZES,
@@ -58,6 +66,7 @@ type DevEvent =
   | 'dev:reward-redeem'
   | 'dev:sub'
   | 'dev:fishing-chest'
+  | 'dev:golden-beer'
   | 'dev:music'
   | 'dev:roulette-spin'
   | 'dev:jackpot';
@@ -292,6 +301,7 @@ const allAlerts = () => {
   resub();
   giftSubs(username.value);
   chest();
+  goldenBeer();
 };
 
 // --- Рулетка и банк --------------------------------------------------------------------
@@ -409,6 +419,38 @@ const fish = (id: FishCatchId, name = username.value) => {
 };
 
 const fishRandom = () => fish(pickCatch((max) => Math.floor(Math.random() * max)));
+
+// --- Пиво ------------------------------------------------------------------------------
+// Своего оверлея у !pivo нет: фраза видна в чате, золото — алертом (amber, арт ступени, 7 с).
+// База не меняется: счётчик золотого пива берётся из поля ниже, а не из базы.
+const pivoLang = ref<Lang>(BOT_LANG);
+const pivoTexts = computed(() => MESSAGES[pivoLang.value].pivo);
+const pivoCount = ref<number>(PIVO_TIER_THRESHOLDS[0]);
+const pivoGoldenChance = (PIVO_OUTCOME_WEIGHTS.golden / (PIVO_OUTCOME_WEIGHTS.regular + PIVO_OUTCOME_WEIGHTS.golden)) * 100;
+
+// Показ золотого пива: алерт с теми же полями, что шлёт бот. Ступень и «new tier» считаются
+// по счётчику так же, как в боте (shared/pivo.ts)
+const goldenBeer = (name = username.value, count = pivoCount.value) => {
+  const tier = getGoldenBeerTier(count);
+  send('dev:golden-beer', {
+    userId: `dev-${name.toLowerCase()}`,
+    username: name,
+    goldenBeers: count,
+    tier,
+    isNewTier: tier > getGoldenBeerTier(count - 1),
+  });
+};
+
+const pivoRegular = (name = username.value, variant = Math.floor(Math.random() * PIVO_MESSAGE_VARIANTS)) =>
+  botSay(pivoTexts.value.regular[variant]!(name));
+
+const pivoGolden = (name = username.value, count = pivoCount.value) => {
+  botSay(pivoTexts.value.golden(name));
+  goldenBeer(name, count);
+};
+
+const pivoRoll = () =>
+  pickPivoOutcome((max) => Math.floor(Math.random() * max)) === 'golden' ? pivoGolden() : pivoRegular();
 
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
@@ -606,6 +648,41 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.cooldown(username, 42))">Повтор во время кулдауна</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(fishTexts.already(username))">«Ты уже рыбачишь»</button>
         <p class="text-sm text-sticker-muted">{{ status }}</p>
+
+        <h2 class="mt-4 text-lg font-bold">Пиво</h2>
+        <p class="text-sm text-sticker-muted">
+          Ник берётся из поля «Ник». Шанс золота {{ pivoGoldenChance }}%, кулдаун 60 с. Фраза — в «Чате», золотое
+          пиво — в «Алертах» (7 с, без звука). База не меняется.
+          <NuxtLink class="underline" to="/dev/messages">Все фразы на трёх языках</NuxtLink>
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Язык ответов
+          <select v-model="pivoLang" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="lang in LANGS" :key="lang" :value="lang">{{ lang }}</option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Сколько золотого пива у зрителя
+          <input v-model.number="pivoCount" type="number" min="1" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          <span class="normal-case tracking-normal">
+            Ступень {{ getGoldenBeerTier(pivoCount) }} ({{ goldenBeerTierLabel(getGoldenBeerTier(pivoCount)) }}), пороги:
+            {{ PIVO_TIER_THRESHOLDS.join(', ') }}
+          </span>
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="pivoRegular()">Обычное пиво</button>
+        <button class="rounded-lg bg-[#ffd066] px-3 py-2 font-bold text-sticker-body" @click="pivoGolden()">Золотое пиво (по счётчику)</button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="(threshold, index) in PIVO_TIER_THRESHOLDS"
+            :key="threshold"
+            class="rounded-lg bg-sticker-track px-3 py-2 font-bold"
+            @click="pivoGolden(username, threshold)"
+          >
+            Ступень {{ index + 1 }} (x{{ threshold }})
+          </button>
+        </div>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="goldenBeer()">Только алерт, без фразы</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="pivoRoll">Бросок по шансам</button>
       </section>
 
       <section class="flex w-80 flex-col gap-y-3">

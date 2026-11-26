@@ -2,6 +2,7 @@ import { getLevelRange } from '../../../shared/xp';
 import { prisma } from '../db';
 import { messages } from '../language';
 import { registerFishCommand } from './fish';
+import { registerPivoCommand } from './pivo';
 import { CommandRegistry } from './registry';
 import { registerSpinCommands, type SpinDeps } from './spin';
 import { createTextCommands } from './text';
@@ -11,6 +12,7 @@ export const createRegistry = (deps: SpinDeps) => {
 
   registerSpinCommands(registry, deps);
   registerFishCommand(registry, deps);
+  registerPivoCommand(registry);
 
   registry.register({
     name: 'coins',
