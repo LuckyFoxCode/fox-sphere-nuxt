@@ -75,8 +75,6 @@ export type LotteryMessages = {
   // Анонс в начале розыгрыша и в конце: уходят анонсами Twitch
   start: string;
   final: string;
-  newWinner: (place: number, name: string, left: number) => string;
-  repeatedWinner: (place: number, name: string, left: number) => string;
   vipFailed: NameMessage;
   postponed: string;
   noTicketsYet: string;
