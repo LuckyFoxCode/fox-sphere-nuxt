@@ -1,6 +1,6 @@
 import type { ApiClient } from '@twurple/api';
 import { EventSubWsListener } from '@twurple/eventsub-ws';
-import type { FollowPayload, RaidPayload, RewardRedeemPayload, SubPayload } from '../../shared/events';
+import type { BitsPayload, FollowPayload, RaidPayload, RewardRedeemPayload, SubPayload } from '../../shared/events';
 
 // Чуть больше паузы между попытками внутри ensureBroadcaster (60 с)
 const TOKEN_RETRY_MS = 65_000;
@@ -17,6 +17,7 @@ type EventSubOptions = {
   onRaid: Handler<RaidPayload>;
   onRewardRedeem: Handler<RewardRedeemPayload>;
   onSub: Handler<SubPayload>;
+  onBits: Handler<BitsPayload>;
 };
 
 // События канала по EventSub WebSocket: фолловы, входящие рейды, награды за баллы и подписки.
@@ -60,6 +61,14 @@ export const startEventSub = (options: EventSubOptions) => {
         username: event.userDisplayName,
         rewardTitle: event.rewardTitle,
         redemptionId: event.id,
+      });
+    });
+
+    // Bits: нужен bits:read (он уже в правах стримера)
+    ws.onChannelCheer(streamerId, (event) => {
+      run('bits', options.onBits, {
+        username: event.isAnonymous ? null : event.userDisplayName,
+        bits: event.bits,
       });
     });
 

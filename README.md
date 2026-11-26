@@ -88,6 +88,7 @@ SQLite открывается из двух процессов (Nuxt и бот),
 | `twitch:raid` | канал рейдят | `raiderId, raiderName, viewers` |
 | `twitch:reward-redeem` | активирована награда за баллы | `userId, username, rewardTitle, redemptionId` |
 | `twitch:sub` | подписка, resub или подарок | `kind, username, tier` + `userId`, `months` или `amount` |
+| `twitch:bits` | cheer (Bits) | `username` (`null` — анонимно), `bits` |
 | `roulette:spin-result` | началось вращение рулетки | `userId, username, prizeType, coinAmount, xpAmount, jackpotWon, jackpotTotalAfter` |
 | `stream:jackpot-updated` | лента остановилась или банк пополнен (сундук рыбалки) | `jackpotTotal` |
 | `fishing:chest` | на рыбалке пойман сундук | `userId, username, coinAmount, lang` |
@@ -163,6 +164,7 @@ XP и уровень зрителя бот хранит в базе; о ново
 - **Ачивки:** считаются из существующих данных (отдельной таблицы нет), лучшие попадают на карточку профиля.
 - **Роли:** `!addvip` / `!removevip` и `!addfounder` / `!removefounder` (стример и модератор, кулдаун 10 с). Founder даёт бонус XP за сообщения и плашку в чате; Twitch API для него нет, поэтому статус хранится только в базе.
 - **Награды за баллы:** на любую награду бот отвечает в чат (только prod), а на оверлее идёт алерт.
+- **Bits:** алерт «bits cheered» с ником и числом битсов (анонимно показывается как Anonymous), звук `bits.mp3`. Нужно право `bits:read`, оно уже в правах стримера; если Bits пришли раньше этого обновления, оповещения о них не было.
 - **Звуки алертов:** лежат в `public/assets/sound/`, адреса в `ALERT_SOUNDS` (`app/utils/alerts.ts`). Звук подписки `sub.mp3` сделан синтезом и свободен от лицензий.
 - **Перенос данных:** `pnpm db:sync-old` забирает свежие данные из Postgres старого fox-sphere в `data/prod.db`. Без `--apply` это пробный прогон, с `--apply` запись (перед ней делается копия базы). Нужен `OLD_SSH_HOST` в `.env.production`, инструкция `docs/MIGRATION.md`.
 

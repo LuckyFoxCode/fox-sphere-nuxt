@@ -6,6 +6,7 @@ import type {
   GoldenBeerPayload,
   LotteryTicketPayload,
   RaidPayload,
+  BitsPayload,
   RewardRedeemPayload,
   SubPayload,
 } from '#shared/events';
@@ -83,6 +84,7 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onRaid = (payload: RaidPayload) => push(raidAlert(payload));
   const onRewardRedeem = (payload: RewardRedeemPayload) => push(rewardAlert(payload));
   const onSub = (payload: SubPayload) => push(subAlert(payload));
+  const onBits = (payload: BitsPayload) => push(bitsAlert(payload));
   const onFishingChest = (payload: FishingChestPayload) => push(chestAlert(payload));
   const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
 
@@ -95,6 +97,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     onRaid,
     onRewardRedeem,
     onSub,
+    onBits,
     onFishingChest,
     onGoldenBeer,
     onAddVip,

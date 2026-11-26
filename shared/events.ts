@@ -87,6 +87,9 @@ export type SubPayload =
   | { kind: 'resub'; userId: string; username: string; tier: SubTier; months: number }
   | { kind: 'gift'; username: string | null; tier: SubTier; amount: number };
 
+// Bits (cheer): `bits` — сколько отправлено, `username: null` — анонимно. Текст сообщения в алерт не идёт.
+export type BitsPayload = { username: string | null; bits: number };
+
 // Сундук из рыбалки: `coinAmount` монет ушли в банк рулетки, сам банк приходит отдельно
 // (`stream:jackpot-updated`). `lang` — язык бота, на нём подписи алерта.
 export type FishingChestPayload = {
@@ -261,6 +264,7 @@ export type ServerToClientEvents = {
   'twitch:raid': (payload: RaidPayload) => void;
   'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
   'twitch:sub': (payload: SubPayload) => void;
+  'twitch:bits': (payload: BitsPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
@@ -303,6 +307,7 @@ export type ClientToServerEvents = {
   'dev:raid': (payload: unknown, ack?: DevAck) => void;
   'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
   'dev:sub': (payload: unknown, ack?: DevAck) => void;
+  'dev:bits': (payload: unknown, ack?: DevAck) => void;
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
@@ -411,6 +416,9 @@ export const isRewardRedeemPayload = (value: unknown): value is RewardRedeemPayl
   isNonEmptyString(value.username) &&
   isNonEmptyString(value.rewardTitle) &&
   isNonEmptyString(value.redemptionId);
+
+export const isBitsPayload = (value: unknown): value is BitsPayload =>
+  isRecord(value) && (value.username === null || isNonEmptyString(value.username)) && isInt(value.bits, 1);
 
 const SUB_TIERS: readonly unknown[] = ['1000', '2000', '3000'];
 

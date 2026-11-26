@@ -330,6 +330,10 @@ if (!config.enabled) {
       await chat.say(channel, text);
       await showBotMessage(text);
     },
+    onBits: (cheer) => {
+      console.log(`[bits] ${cheer.username ?? 'аноним'}: ${cheer.bits}`);
+      emitEvent('twitch:bits', cheer);
+    },
     onSub: (sub) => {
       console.log(`[sub] ${sub.kind}: ${sub.username ?? 'аноним'}`);
       emitEvent('twitch:sub', sub);

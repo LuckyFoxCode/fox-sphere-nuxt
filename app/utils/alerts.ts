@@ -3,6 +3,7 @@
 // подписок и алерта сундука там не было.
 import type {
   AddVipPayload,
+  BitsPayload,
   FishingChestPayload,
   FollowPayload,
   GoldenBeerPayload,
@@ -17,7 +18,7 @@ import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
 // chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
 // beer — золотое пиво: на пластине не значок, а арт ступени
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket';
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket' | 'bits';
 
 export interface AlertView {
   kind: AlertKind;
@@ -64,6 +65,8 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   vip: '/assets/sound/add-vip.mp3',
   // Звук билета из старого проекта
   ticket: '/assets/sound/ticket.mp3',
+  // В старом проекте Bits не было: bits.mp3 синтезирован (короткий «звяк монеты»)
+  bits: '/assets/sound/bits.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -157,6 +160,17 @@ export const lotteryTicketAlert = ({ username, lang }: LotteryTicketPayload): Al
     durationMs: ALERT_DURATION_MS,
   };
 };
+
+// Bits: синяя бумага, число битсов справа. Тексты английские, как у follow и raid
+export const bitsAlert = ({ username, bits }: BitsPayload): AlertView => ({
+  kind: 'bits',
+  paper: 'bg-paper-blue',
+  label: 'bits cheered',
+  title: username ?? 'Anonymous',
+  stat: { value: String(bits), unit: plural(bits, 'bit') },
+  sound: ALERT_SOUNDS.bits,
+  durationMs: ALERT_DURATION_MS,
+});
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {

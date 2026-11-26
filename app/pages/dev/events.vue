@@ -118,6 +118,7 @@ type DevEvent =
   | 'dev:raid'
   | 'dev:reward-redeem'
   | 'dev:sub'
+  | 'dev:bits'
   | 'dev:fishing-chest'
   | 'dev:golden-beer'
   | 'dev:add-vip'
@@ -349,6 +350,7 @@ const rewardTitle = ref('Check My Stats');
 const subTier = ref<SubTier>('1000');
 const subMonths = ref(6);
 const giftAmount = ref(5);
+const bitsAmount = ref(100);
 
 const alertUser = () => ({ userId: `dev-${username.value.toLowerCase()}`, username: username.value });
 
@@ -368,6 +370,7 @@ const reward = () =>
 const sendSub = (payload: SubPayload) => send('dev:sub', payload);
 const subNew = () => sendSub({ kind: 'new', ...alertUser(), tier: subTier.value });
 const resub = () => sendSub({ kind: 'resub', ...alertUser(), tier: subTier.value, months: subMonths.value });
+const sendBits = (name: string | null) => send('dev:bits', { username: name, bits: bitsAmount.value });
 const giftSubs = (gifter: string | null) =>
   sendSub({ kind: 'gift', username: gifter, tier: subTier.value, amount: giftAmount.value });
 
@@ -405,6 +408,7 @@ const allAlerts = () => {
   subNew();
   resub();
   giftSubs(username.value);
+  sendBits(username.value);
   chest();
   goldenBeer();
   vipUnlocked();
@@ -943,6 +947,13 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="resub">Продление (resub)</button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="giftSubs(username)">Подарок подписок</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="giftSubs(null)">Анонимный подарок</button>
+
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Bits
+          <input v-model.number="bitsAmount" type="number" min="1" class="w-full rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendBits(username)">Bits</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendBits(null)">Анонимные Bits</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="allAlerts">Все подряд (очередь)</button>
       </section>
 
