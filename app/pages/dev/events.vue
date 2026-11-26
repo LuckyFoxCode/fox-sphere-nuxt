@@ -35,9 +35,10 @@ const stream = useStreamStore();
 const bank = useBankStore();
 const roulette = useRouletteStore();
 
-// Что показывать в превью справа: слои снизу вверх. «Сцена» — все оверлеи друг на друге, как в OBS
+// Что показывать в превью справа: слои снизу вверх. «Сцена» — все оверлеи друг на друге, как в OBS,
+// но одной страницей: каждая страница в dev держит долгое соединение, а у Chrome лимит 6 на адрес
 const previews = [
-  { label: 'Сцена', paths: ['/overlay/chat', '/overlay/stream', '/overlay/music', '/overlay/roulette', '/overlay/alerts'] },
+  { label: 'Сцена', paths: ['/overlay/scene'] },
   { label: 'Шапка', paths: ['/overlay/stream'] },
   { label: 'Рулетка', paths: ['/overlay/roulette'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
