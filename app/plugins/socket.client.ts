@@ -40,6 +40,7 @@ export default defineNuxtPlugin(() => {
   socket.on('connect', () => music.sync(socket));
   socket.on('music:now-playing', music.onUpdate);
   socket.on('roulette:spin-result', useRouletteStore().onSpin);
+  socket.on('profile:show', useProfileStore().onShow);
   const lottery = useLotteryStore();
   socket.on('lottery:draw', lottery.onDraw);
   socket.on('lottery:participants', lottery.onParticipants);
