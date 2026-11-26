@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { messages } from '../language';
 import { registerXpBoostCommand } from './boost';
 import { registerFishCommand } from './fish';
+import { registerLotteryCommands, type LotteryDeps } from './lottery';
 import { registerPivoCommand } from './pivo';
 import { registerVipCommands, type VipDeps } from './vip';
 import { CommandRegistry } from './registry';
@@ -10,13 +11,14 @@ import { registerSpinCommands, type SpinDeps } from './spin';
 import { registerTimerCommands } from './timer';
 import { createTextCommands } from './text';
 
-export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'>) => {
+export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & Omit<LotteryDeps, 'prefix'>) => {
   const registry = new CommandRegistry(deps.prefix);
 
   registerSpinCommands(registry, deps);
   registerFishCommand(registry, deps);
   registerPivoCommand(registry);
   registerVipCommands(registry, deps);
+  registerLotteryCommands(registry, deps);
   registerXpBoostCommand(registry, deps.prefix);
   registerTimerCommands(registry, deps.prefix);
 

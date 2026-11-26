@@ -7,6 +7,7 @@ import IconGift from '~/components/icons/IconGift.vue';
 import IconLightning from '~/components/icons/IconLightning.vue';
 import IconPaw from '~/components/icons/IconPaw.vue';
 import IconStar from '~/components/icons/IconStar.vue';
+import IconTicket from '~/components/icons/IconTicket.vue';
 import type { AlertKind } from '~/utils/alerts';
 
 // Громкость из старого fox-sphere; точнее настраивается в микшере OBS
@@ -19,6 +20,7 @@ const ICONS: Record<Exclude<AlertKind, 'chest' | 'beer'>, Component> = {
   reward: IconGift,
   sub: IconStar,
   vip: IconCrown,
+  ticket: IconTicket,
 };
 
 const alerts = useAlertsStore();

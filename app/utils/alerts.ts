@@ -6,6 +6,7 @@ import type {
   FishingChestPayload,
   FollowPayload,
   GoldenBeerPayload,
+  LotteryTicketPayload,
   RaidPayload,
   RewardRedeemPayload,
   SubPayload,
@@ -16,7 +17,7 @@ import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
 // chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
 // beer — золотое пиво: на пластине не значок, а арт ступени
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip';
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket';
 
 export interface AlertView {
   kind: AlertKind;
@@ -61,6 +62,8 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   beer: null,
   // Тот же файл, что в старом проекте у add-vip
   vip: '/assets/sound/add-vip.mp3',
+  // Звук билета из старого проекта
+  ticket: '/assets/sound/ticket.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -139,6 +142,21 @@ export const addVipAlert = ({ username }: AddVipPayload): AlertView => ({
   sound: ALERT_SOUNDS.vip,
   durationMs: ALERT_DURATION_MS,
 });
+
+// Билет лотереи: «earned a Lottery Ticket» из старого проекта. Бумага cyan: у лотереи своего цвета нет,
+// а mint — главный акцент сцены розыгрыша
+export const lotteryTicketAlert = ({ username, lang }: LotteryTicketPayload): AlertView => {
+  const texts = MESSAGES[lang].lotteryScene;
+  return {
+    kind: 'ticket',
+    paper: 'bg-paper-cyan',
+    label: texts.ticketLabel,
+    title: username,
+    detail: texts.ticketDetail,
+    sound: ALERT_SOUNDS.ticket,
+    durationMs: ALERT_DURATION_MS,
+  };
+};
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {

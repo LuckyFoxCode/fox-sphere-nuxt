@@ -66,6 +66,42 @@ export type ChestAlertMessages = {
   toBank: (coins: number) => string;
 };
 
+// Лотерея VIP: чат (`!ticket`, `!tickets`, `!runlottery`) и надписи сцены на оверлее
+export type LotteryMessages = {
+  ticketEarned: NameMessage;
+  ticketHave: NameMessage;
+  ticketProgress: (name: string, xp: number, threshold: number) => string;
+  alreadyRunning: NameMessage;
+  // Анонс в начале розыгрыша и в конце: уходят анонсами Twitch
+  start: string;
+  final: string;
+  newWinner: (place: number, name: string, left: number) => string;
+  repeatedWinner: (place: number, name: string, left: number) => string;
+  vipFailed: NameMessage;
+  postponed: string;
+  noTicketsYet: string;
+  totalTickets: (count: number) => string;
+  ticketList: (names: string, count: number, threshold: number) => string;
+};
+
+// Надписи сцены лотереи и алерта билета на оверлее; ники печатаются как есть
+export type LotterySceneMessages = {
+  label: string;
+  title: string;
+  intro: string;
+  drawing: string;
+  finale: string;
+  entries: string;
+  newVip: string;
+  extended: string;
+  until: string;
+  listLabel: string;
+  listTitle: (count: number) => string;
+  more: (count: number) => string;
+  ticketLabel: string;
+  ticketDetail: string;
+};
+
 export type SpinMessages = {
   cooldown: (name: string, secondsLeft: number, prefix: string) => string;
   notEnough: (name: string, price: number, have: number) => string;
@@ -93,4 +129,6 @@ export type BotMessages = {
   xpBoost: XpBoostMessages;
   timer: TimerMessages;
   chestAlert: ChestAlertMessages;
+  lottery: LotteryMessages;
+  lotteryScene: LotterySceneMessages;
 };

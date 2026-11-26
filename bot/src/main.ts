@@ -5,10 +5,12 @@ import { createBadgeResolver } from './badges';
 import { getJackpot } from './bank';
 import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
+import { playLotteryScene, playParticipants } from './commands/lottery';
 import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
-import { messages } from './language';
+import { language, messages } from './language';
+import { awardLotteryXp } from './lottery';
 import { getNowPlaying, startMusicReader } from './music';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
@@ -17,6 +19,7 @@ import { addStreamXp, getStreamState } from './stream';
 import { getActiveTimer } from './streamTimer';
 import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
 import type { ChatMessagePayload } from '../../shared/events';
+import type { Viewer } from '../../generated/prisma/client';
 import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 
 // Одна очередь вращений на настоящие спины и эмулятор
@@ -35,6 +38,9 @@ await startSocketServer({
       async () => emitEvent('stream:jackpot-updated', { jackpotTotal: result.jackpotTotalAfter }),
     ).catch((error: unknown) => console.error('[spin] эмуляция вращения не удалась:', error));
   },
+  // Эмулятор лотереи: сцена и список встают в ту же очередь, что и рулетка; база и Twitch не трогаются
+  playDevLottery: playLotteryScene,
+  playDevParticipants: playParticipants,
 });
 
 // Виджет «сейчас играет» не зависит от Twitch: читатель работает и при BOT_ENABLED=false
@@ -177,12 +183,34 @@ if (!config.enabled) {
     streamerId: config.streamerId,
     ensureBroadcaster,
     announce: announcer.announce,
+    twitchVip: config.lotteryTwitchVip,
+    say: async (text) => {
+      console.log(`[bot] в чат: ${text}`);
+      await chat.say(channel, text);
+      await showBotMessage(text);
+    },
     awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
       const award = await awardBonusXp(viewer.id, xp);
       const stream = await tryAddStreamXp(xp);
       return () => showXpAward(displayName, award, reply, stream);
     },
   });
+
+  // +1 недельный XP за сообщение; на сотом выдаётся билет. Сбой здесь не должен съесть обычный XP
+  const countLotteryTicket = async (displayName: string, userId: string, viewer: Viewer) => {
+    try {
+      if ((await awardLotteryXp(viewer)) !== 'ticket') return;
+      console.log(`[lottery] ${displayName} получает билет`);
+      emitEvent('lottery:ticket', { userId, username: displayName, lang: language() });
+      // Как в старом боте: в dev только оверлей, в чат пишет боевой бот
+      if (!config.isProduction) return;
+      const text = messages().lottery.ticketEarned(displayName);
+      await chat.say(channel, text);
+      await showBotMessage(text);
+    } catch (error) {
+      console.error(`[lottery] недельный XP для ${displayName} не начислен:`, error);
+    }
+  };
 
   chat.onMessage(async (_channel, _user, text, msg) => {
     const info = msg.userInfo;
@@ -231,6 +259,9 @@ if (!config.enabled) {
 
       // msg.channelId — id канала из самого сообщения: стример отсеется и без TWITCH_USER_ID
       if (info.userId === msg.channelId || noXpIds.has(info.userId)) return;
+
+      // Недельный XP лотереи считается отдельно от обычного: свой кулдаун, без ролей и буста
+      await countLotteryTicket(info.displayName, info.userId, viewer);
 
       const result = await awardMessageXp(viewer, roles);
       if (result.status === 'cooldown') {

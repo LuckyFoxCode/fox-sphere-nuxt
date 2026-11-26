@@ -1,4 +1,5 @@
 import { LANGS, type Lang } from './i18n';
+import { LOTTERY_CONFIG, LOTTERY_ENTRIES_MAX } from './lottery';
 import { PIVO_TIER_THRESHOLDS } from './pivo';
 import type { RoulettePrizeType } from './roulette';
 
@@ -105,6 +106,38 @@ export type GoldenBeerPayload = {
   isNewTier: boolean;
 };
 
+// Лотерея VIP (shared/lottery.ts). `lang` — язык бота, на нём подписи на оверлее (как у сундука).
+// `lottery:draw` приходит в момент старта сцены: дальше всё идёт по таймингам из shared/lottery.ts.
+// `entries` — выборка имён участников для ленты (не больше LOTTERY_ENTRIES_MAX), `total` — сколько их
+// на самом деле. `winners` — по местам, 1..5; `returning` — у зрителя был VIP с прошлой недели (продлевается).
+export type LotteryWinnerPayload = {
+  userId: string;
+  username: string;
+  returning: boolean;
+};
+
+export type LotteryDrawPayload = {
+  id: string;
+  total: number;
+  entries: string[];
+  winners: LotteryWinnerPayload[];
+  lang: Lang;
+};
+
+// Список держателей билетов по `!tickets` (от 10): `names` — первые из них, `total` — все
+export type LotteryParticipantsPayload = {
+  total: number;
+  names: string[];
+  lang: Lang;
+};
+
+// Зритель набрал недельный XP и получил билет
+export type LotteryTicketPayload = {
+  userId: string;
+  username: string;
+  lang: Lang;
+};
+
 // Рулетка. Поля те же, что у `roulette:spin-result` в старом fox-sphere. Приходит в момент старта
 // ленты; через ROULETTE_SPIN_ANIMATION_MS лента встаёт на этом призе. `coinAmount` у джекпота — весь
 // забранный банк, `jackpotTotalAfter` — банк после спина.
@@ -163,6 +196,9 @@ export type MusicNowPlayingPayload = {
 
 // Сервер → оверлей
 export type ServerToClientEvents = {
+  'lottery:draw': (payload: LotteryDrawPayload) => void;
+  'lottery:participants': (payload: LotteryParticipantsPayload) => void;
+  'lottery:ticket': (payload: LotteryTicketPayload) => void;
   'music:now-playing': (payload: MusicNowPlayingPayload | null) => void;
   'roulette:spin-result': (payload: RouletteSpinResultPayload) => void;
   'stream:jackpot-updated': (payload: JackpotPayload) => void;
@@ -196,6 +232,9 @@ export type ClientToServerEvents = {
   'twitch:get-timer': (ack: (state: TimerPayload | null) => void) => void;
   'music:get-current': (ack: (state: MusicNowPlayingPayload | null) => void) => void;
   'dev:music': (payload: unknown, ack?: DevAck) => void;
+  'dev:lottery-draw': (payload: unknown, ack?: DevAck) => void;
+  'dev:lottery-participants': (payload: unknown, ack?: DevAck) => void;
+  'dev:lottery-ticket': (payload: unknown, ack?: DevAck) => void;
   'dev:roulette-spin': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot': (payload: unknown, ack?: DevAck) => void;
   'dev:jackpot-reset': (ack?: DevAck) => void;
@@ -338,6 +377,40 @@ export const isGoldenBeerPayload = (value: unknown): value is GoldenBeerPayload 
   isInt(value.goldenBeers, 1) &&
   isInt(value.tier, 1, PIVO_TIER_COUNT) &&
   typeof value.isNewTier === 'boolean';
+
+const isLotteryWinner = (value: unknown): value is LotteryWinnerPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  typeof value.returning === 'boolean';
+
+const isNameList = (value: unknown, max: number): value is string[] =>
+  Array.isArray(value) && value.length <= max && value.every(isNonEmptyString);
+
+export const isLotteryDrawPayload = (value: unknown): value is LotteryDrawPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.id) &&
+  KNOWN_LANGS.includes(value.lang) &&
+  isInt(value.total, 1) &&
+  isNameList(value.entries, LOTTERY_ENTRIES_MAX) &&
+  Array.isArray(value.winners) &&
+  value.winners.length >= 1 &&
+  value.winners.length <= LOTTERY_CONFIG.WINNERS_COUNT &&
+  value.winners.length <= value.total &&
+  value.winners.every(isLotteryWinner);
+
+export const isLotteryParticipantsPayload = (value: unknown): value is LotteryParticipantsPayload =>
+  isRecord(value) &&
+  KNOWN_LANGS.includes(value.lang) &&
+  isInt(value.total, 1) &&
+  isNameList(value.names, LOTTERY_ENTRIES_MAX) &&
+  value.names.length <= value.total;
+
+export const isLotteryTicketPayload = (value: unknown): value is LotteryTicketPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  KNOWN_LANGS.includes(value.lang);
 
 const PRIZE_TYPES: readonly unknown[] = ['empty', 'coins', 'xp', 'jackpot'];
 

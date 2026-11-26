@@ -19,6 +19,11 @@ export const config = {
   // Значение берётся из COMMAND_PREFIX; если не задано, по умолчанию безопасный "!t",
   // и только NODE_ENV=production даёт "!".
   prefix: process.env.COMMAND_PREFIX || (process.env.NODE_ENV === 'production' ? '!' : '!t'),
+  // Лотерея: менять ли VIP на самом Twitch. По умолчанию только в prod: dev-база — копия боевой, и
+  // розыгрыш в ней иначе снимал бы и выдавал настоящие VIP зрителям канала. Включить в dev: true
+  lotteryTwitchVip: process.env.LOTTERY_TWITCH_VIP
+    ? process.env.LOTTERY_TWITCH_VIP === 'true'
+    : process.env.NODE_ENV === 'production',
   // Nuxt крутится на порту из OVERLAY_URL, там же живёт /auth/twitch/login
   loginUrl: `${process.env.OVERLAY_URL || 'http://localhost:3001'}/auth/twitch/login`,
 };

@@ -7,6 +7,9 @@ import {
   isFollowPayload,
   isGoldenBeerPayload,
   isJackpotPayload,
+  isLotteryDrawPayload,
+  isLotteryParticipantsPayload,
+  isLotteryTicketPayload,
   isMusicPayloadOrNull,
   isRaidPayload,
   isRewardRedeemPayload,
@@ -19,6 +22,8 @@ import {
   type ClientToServerEvents,
   type DevAck,
   type JackpotPayload,
+  type LotteryDrawPayload,
+  type LotteryParticipantsPayload,
   type MusicNowPlayingPayload,
   type RouletteSpinResultPayload,
   type ServerToClientEvents,
@@ -79,6 +84,8 @@ type SocketSources = {
   getTimer: () => Promise<TimerPayload | null>;
   getMusic: () => MusicNowPlayingPayload | null;
   playDevSpin: (result: RouletteSpinResultPayload) => void;
+  playDevLottery: (payload: LotteryDrawPayload) => void;
+  playDevParticipants: (payload: LotteryParticipantsPayload) => void;
 };
 let sources: SocketSources;
 
@@ -188,6 +195,14 @@ io.on('connection', (socket) => {
     emitEvent('music:now-playing', payload);
     ack?.({ ok: true });
   });
+
+  // Лотерея: сцена и список встают в очередь сцены бота (после рулетки), билет идёт алертом сразу
+  socket.on('dev:lottery-draw', relayDev(isLotteryDrawPayload, (payload) => sources.playDevLottery(payload)));
+  socket.on(
+    'dev:lottery-participants',
+    relayDev(isLotteryParticipantsPayload, (payload) => sources.playDevParticipants(payload)),
+  );
+  socket.on('dev:lottery-ticket', relayDev(isLotteryTicketPayload, (payload) => emitEvent('lottery:ticket', payload)));
 
   // Рулетка и банк
   socket.on('stream:get-jackpot', async (ack) => {

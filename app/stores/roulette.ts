@@ -32,6 +32,9 @@ export const useRouletteStore = defineStore('roulette', () => {
   const run = async () => {
     busy.value = true;
     for (let next = queue.shift(); next; next = queue.shift()) {
+      // Лотерея на экране занимает центр: бот ставит их в одну очередь, это страховка
+      const lottery = useLotteryStore();
+      while (lottery.busy) await after(120);
       current.value = { ...next, id: ++seq };
       phase.value = 'spinning';
       await after(ROULETTE_SPIN_ANIMATION_MS);

@@ -61,7 +61,6 @@ export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<
     where: { id: viewer.id },
     data: {
       xp: { increment: xp },
-      xpThisWeek: { increment: xp },
       lastXpAt: new Date(now),
     },
   });
@@ -81,6 +80,9 @@ const applyLevel = async (viewer: Viewer): Promise<{ lvl: number; leveledUp: boo
   });
   return { lvl, leveledUp: count > 0 };
 };
+
+// Недельный XP лотереи считается отдельно (bot/src/lottery.ts, `awardLotteryXp`): 1 за сообщение раз
+// в 5 с, без ролей и буста. Здесь его нет, иначе буст ×2 и роли ускоряли бы билеты.
 
 // XP не за сообщение (приз рулетки): без надбавок за роли, кулдауна и XP недели, как в старом боте
 export const awardBonusXp = async (

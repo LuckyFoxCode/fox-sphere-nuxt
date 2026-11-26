@@ -40,6 +40,9 @@ export default defineNuxtPlugin(() => {
   socket.on('connect', () => music.sync(socket));
   socket.on('music:now-playing', music.onUpdate);
   socket.on('roulette:spin-result', useRouletteStore().onSpin);
+  const lottery = useLotteryStore();
+  socket.on('lottery:draw', lottery.onDraw);
+  socket.on('lottery:participants', lottery.onParticipants);
   const alerts = useAlertsStore();
   socket.on('twitch:follow', alerts.onFollow);
   socket.on('twitch:raid', alerts.onRaid);
@@ -48,6 +51,7 @@ export default defineNuxtPlugin(() => {
   socket.on('fishing:chest', alerts.onFishingChest);
   socket.on('twitch:golden-beer', alerts.onGoldenBeer);
   socket.on('twitch:add-vip', alerts.onAddVip);
+  socket.on('lottery:ticket', alerts.onLotteryTicket);
 
   return { provide: { socket } };
 });

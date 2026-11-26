@@ -4,7 +4,16 @@ import { ru } from './ru';
 import type { BotMessages } from './types';
 import { uk } from './uk';
 
-export type { BotMessages, ChestAlertMessages, FishMessages, PivoMessages, ProfileStats, VipMessages } from './types';
+export type {
+  BotMessages,
+  ChestAlertMessages,
+  FishMessages,
+  LotteryMessages,
+  LotterySceneMessages,
+  PivoMessages,
+  ProfileStats,
+  VipMessages,
+} from './types';
 
 // Порядок — по важности: en основной, uk второй, ru дополнительный
 export const LANGS = ['en', 'uk', 'ru'] as const;

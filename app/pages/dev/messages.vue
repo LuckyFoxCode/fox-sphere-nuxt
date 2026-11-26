@@ -101,6 +101,35 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
+    title: 'Лотерея VIP (!ticket, !tickets, !runlottery)',
+    rows: [
+      ['Билет получен', (t) => t.lottery.ticketEarned(NAME)],
+      ['!ticket: прогресс', (t) => t.lottery.ticketProgress(NAME, 37, 100)],
+      ['!ticket: билет уже есть', (t) => t.lottery.ticketHave(NAME)],
+      ['!tickets: билетов нет', (t) => t.lottery.noTicketsYet],
+      ['!tickets: от 10 билетов', (t) => t.lottery.totalTickets(42)],
+      ['!tickets: список до 10', (t) => t.lottery.ticketList('🔹 1. @Fox, 🔹 2. @Lynx', 2, 100)],
+      ['Розыгрыш уже идёт', (t) => t.lottery.alreadyRunning(NAME)],
+      ['Старт розыгрыша (анонс)', (t) => t.lottery.start],
+      ['Новый победитель', (t) => t.lottery.newWinner(1, NAME, 4)],
+      ['Продление VIP', (t) => t.lottery.repeatedWinner(2, NAME, 3)],
+      ['Twitch не выдал VIP', (t) => t.lottery.vipFailed(NAME)],
+      ['Финал (анонс)', (t) => t.lottery.final],
+      ['Нет билетов: розыгрыш отложен', (t) => t.lottery.postponed],
+      ['Нет прав', (t) => t.denied(NAME)],
+    ],
+  },
+  {
+    title: 'Лотерея на оверлее',
+    rows: [
+      ['Подпись и заголовок', (t) => `${t.lotteryScene.label} / ${t.lotteryScene.title}`],
+      ['Фазы', (t) => `${t.lotteryScene.intro} → ${t.lotteryScene.drawing} → ${t.lotteryScene.finale}`],
+      ['Участники, чипы, финал', (t) => `${t.lotteryScene.entries} · ${t.lotteryScene.newVip} · ${t.lotteryScene.extended} · ${t.lotteryScene.until}`],
+      ['Список билетов', (t) => `${t.lotteryScene.listLabel} · ${t.lotteryScene.listTitle(42)} · ${t.lotteryScene.more(180)}`],
+      ['Алерт билета', (t) => `${t.lotteryScene.ticketLabel} · ${t.lotteryScene.ticketDetail}`],
+    ],
+  },
+  {
     title: 'Алерт сундука на оверлее',
     rows: [
       ['Лента', (t) => t.chestAlert.label],

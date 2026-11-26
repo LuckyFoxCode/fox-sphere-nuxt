@@ -4,6 +4,7 @@ import type {
   FishingChestPayload,
   FollowPayload,
   GoldenBeerPayload,
+  LotteryTicketPayload,
   RaidPayload,
   RewardRedeemPayload,
   SubPayload,
@@ -22,6 +23,8 @@ const ROULETTE_QUIET_MS = 600;
 
 // Очередь алертов: показывается один, следующий ждёт, пока он уйдёт. Сундук не выходит поверх
 // рулетки: пока на сцене вращение или джекпот, он ждёт, а остальные алерты проходят вперёд.
+// Лотерея (розыгрыш или список билетов) занимает центр экрана: пока она ждёт очереди и идёт, не
+// выходит ни один алерт, а уже показанный доигрывает.
 export const useAlertsStore = defineStore('alerts', () => {
   const current = ref<QueuedAlert | null>(null);
 
@@ -31,7 +34,8 @@ export const useAlertsStore = defineStore('alerts', () => {
   let seq = 0;
 
   const roulette = useRouletteStore();
-  const isHeld = (alert: AlertView) => alert.kind === 'chest' && roulette.busy;
+  const lottery = useLotteryStore();
+  const isHeld = (alert: AlertView) => lottery.claimed || (alert.kind === 'chest' && roulette.busy);
 
   const showNext = () => {
     const index = queue.findIndex((alert) => !isHeld(alert));
@@ -63,6 +67,18 @@ export const useAlertsStore = defineStore('alerts', () => {
     },
   );
 
+  watch(
+    () => lottery.claimed,
+    (claimed) => {
+      clearTimeout(quietTimer);
+      if (claimed) return;
+      // Алерты, накопленные за лотерею, выходят следом, а не все сразу
+      quietTimer = setTimeout(() => {
+        if (!busy) showNext();
+      }, ROULETTE_QUIET_MS);
+    },
+  );
+
   const onFollow = (payload: FollowPayload) => push(followAlert(payload));
   const onRaid = (payload: RaidPayload) => push(raidAlert(payload));
   const onRewardRedeem = (payload: RewardRedeemPayload) => push(rewardAlert(payload));
@@ -71,6 +87,17 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
 
   const onAddVip = (payload: AddVipPayload) => push(addVipAlert(payload));
+  const onLotteryTicket = (payload: LotteryTicketPayload) => push(lotteryTicketAlert(payload));
 
-  return { current, onFollow, onRaid, onRewardRedeem, onSub, onFishingChest, onGoldenBeer, onAddVip };
+  return {
+    current,
+    onFollow,
+    onRaid,
+    onRewardRedeem,
+    onSub,
+    onFishingChest,
+    onGoldenBeer,
+    onAddVip,
+    onLotteryTicket,
+  };
 });

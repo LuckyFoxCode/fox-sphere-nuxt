@@ -20,6 +20,13 @@ import {
 } from '#shared/fishing';
 import { BOT_LANG, LANGS, MESSAGES, type Lang } from '#shared/i18n';
 import {
+  LOTTERY_CONFIG,
+  LOTTERY_ENTRIES_MAX,
+  LOTTERY_LIST_MIN,
+  LOTTERY_REVEAL_AT_MS,
+  LOTTERY_SCENE_MS,
+} from '#shared/lottery';
+import {
   PIVO_MESSAGE_VARIANTS,
   PIVO_OUTCOME_WEIGHTS,
   PIVO_TIER_THRESHOLDS,
@@ -43,6 +50,7 @@ const app = useAppStore();
 const stream = useStreamStore();
 const bank = useBankStore();
 const roulette = useRouletteStore();
+const lottery = useLotteryStore();
 
 // Что показывать в превью справа: слои снизу вверх. «Сцена» — все оверлеи друг на друге, как в OBS,
 // но одной страницей: каждая страница в dev держит долгое соединение, а у Chrome лимит 6 на адрес
@@ -50,6 +58,7 @@ const previews = [
   { label: 'Сцена', paths: ['/overlay/scene'] },
   { label: 'Шапка', paths: ['/overlay/stream'] },
   { label: 'Рулетка', paths: ['/overlay/roulette'] },
+  { label: 'Лотерея', paths: ['/overlay/lottery'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
@@ -70,6 +79,7 @@ const tabs = [
   { id: 'fishing', label: 'Рыбалка' },
   { id: 'pivo', label: 'Пиво' },
   { id: 'vip', label: 'VIP' },
+  { id: 'lottery', label: 'Лотерея' },
   { id: 'music', label: 'Музыка' },
 ] as const;
 type TabId = (typeof tabs)[number]['id'];
@@ -104,6 +114,9 @@ type DevEvent =
   | 'dev:fishing-chest'
   | 'dev:golden-beer'
   | 'dev:add-vip'
+  | 'dev:lottery-draw'
+  | 'dev:lottery-participants'
+  | 'dev:lottery-ticket'
   | 'dev:music'
   | 'dev:roulette-spin'
   | 'dev:jackpot';
@@ -549,6 +562,97 @@ const vipAdd = () => {
 };
 const vipRemove = () => botSay(vipTexts.value.removed(vipModerator.value, vipTarget.value));
 
+// --- Лотерея ---------------------------------------------------------------------------
+// !ticket, !tickets, !runlottery: сцена розыгрыша — в «Лотерее» и «Сцене», билет — алертом в «Алертах», фразы
+// бота — в «Чате». Сцена всегда идёт 15 секунд, сколько бы ни было участников: кнопки ниже гонят
+// разные числа, а справа от них виден замер. База и Twitch не меняются, сцена встаёт в очередь бота
+// после рулетки, как настоящая.
+const lotteryLang = ref<Lang>(BOT_LANG);
+const lotteryTexts = computed(() => MESSAGES[lotteryLang.value].lottery);
+const lotteryReturning = ref(1);
+const lotteryChat = ref(true);
+const LOTTERY_SIZES = [1, 3, 5, 8, 25, LOTTERY_ENTRIES_MAX, 600] as const;
+
+const LOTTERY_NAME_A = ['Fox', 'Lynx', 'Wolf', 'Bear', 'Owl', 'Hawk', 'Otter', 'Raven', 'Panda', 'Tiger', 'Moose', 'Koala'];
+const LOTTERY_NAME_B = ['Pixel', 'Storm', 'Byte', 'Cloud', 'Rune', 'Ember', 'Frost', 'Nova', 'Echo', 'Blaze', 'Dash', 'Mint'];
+// Ники Twitch до 25 символов: длинные проверяют обрезку в барабане и в списке
+const LOTTERY_LONG_NAMES = ['The_Longest_Twitch_Name_1', 'xX_ShadowFoxSlayer_Xx', 'ВеликийЛисЗаПроектом'];
+
+const lotteryName = (index: number) =>
+  index < LOTTERY_LONG_NAMES.length
+    ? LOTTERY_LONG_NAMES[index]!
+    : `${LOTTERY_NAME_A[index % 12]}${LOTTERY_NAME_B[Math.floor(index / 12) % 12]}${index >= 144 ? index : ''}`;
+
+const lotteryShuffle = <T,>(items: readonly T[]): T[] => {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j]!, result[i]!];
+  }
+  return result;
+};
+
+// Фразы бота для сцены, которые идут в момент её показа: старт — сразу, места — когда встал последний барабан
+const lotteryChatPlans = new Map<string, { winners: { username: string; returning: boolean }[]; lang: Lang }>();
+
+const lotteryDraw = (total: number, name = username.value) => {
+  const names = Array.from({ length: total }, (_, index) => lotteryName(index));
+  // Ник из поля — всегда среди участников и первый на победу, чтобы его легко найти на сцене
+  if (name && !names.includes(name)) names[names.length - 1] = name;
+  const count = Math.min(LOTTERY_CONFIG.WINNERS_COUNT, total);
+  const picked = lotteryShuffle(names).slice(0, count);
+  const winners = picked.map((winner, index) => ({
+    userId: `dev-${winner.toLowerCase()}`,
+    username: winner,
+    returning: index < lotteryReturning.value,
+  }));
+  const id = `dev-lottery-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  if (lotteryChat.value) lotteryChatPlans.set(id, { winners, lang: lotteryLang.value });
+  send('dev:lottery-draw', {
+    id,
+    total,
+    entries: total <= LOTTERY_ENTRIES_MAX ? names : lotteryShuffle(names).slice(0, LOTTERY_ENTRIES_MAX),
+    winners,
+    lang: lotteryLang.value,
+  });
+};
+
+// Оверлей показывает сцену в свою очередь, а фразы бота идут по её началу, а не по нажатию кнопки
+watch(
+  () => lottery.current,
+  (shown) => {
+    if (shown?.kind !== 'draw') return;
+    const plan = lotteryChatPlans.get(shown.payload.id);
+    if (!plan) return;
+    lotteryChatPlans.delete(shown.payload.id);
+    const t = MESSAGES[plan.lang].lottery;
+    botSay(t.start);
+    plan.winners.forEach((winner, index) => {
+      const place = index + 1;
+      const left = plan.winners.length - place;
+      setTimeout(
+        () => botSay(winner.returning ? t.repeatedWinner(place, winner.username, left) : t.newWinner(place, winner.username, left)),
+        LOTTERY_REVEAL_AT_MS + index * 800,
+      );
+    });
+    setTimeout(() => botSay(t.final), LOTTERY_REVEAL_AT_MS + plan.winners.length * 800);
+  },
+);
+
+const lotteryAll = () => LOTTERY_SIZES.forEach((total) => lotteryDraw(total));
+
+const lotteryList = (total: number) =>
+  send('dev:lottery-participants', {
+    total,
+    names: Array.from({ length: Math.min(total, LOTTERY_ENTRIES_MAX) }, (_, index) => lotteryName(index)),
+    lang: lotteryLang.value,
+  });
+
+const lotteryTicket = () =>
+  send('dev:lottery-ticket', { ...alertUser(), lang: lotteryLang.value });
+
+const lotteryDuration = (ms: number) => `${(ms / 1000).toFixed(2)} с`;
+
 onMounted(() => $socket.connect());
 onBeforeUnmount(() => $socket.disconnect());
 
@@ -867,6 +971,80 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.notFound(vipTarget))">Ник не найден</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.denied(username))">Нет прав</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(vipTexts.failed(username))">Twitch не принял</button>
+      </section>
+
+      <section v-show="tab === 'lottery'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">
+          Команды: <code>{{ vipPrefix }}ticket</code> (алиас <code>{{ vipPrefix }}билет</code>) — сколько XP до билета,
+          <code>{{ vipPrefix }}tickets</code> (<code>{{ vipPrefix }}розыгрыш</code>) — держатели билетов (от
+          {{ LOTTERY_LIST_MIN }} — списком на оверлее), <code>{{ vipPrefix }}runlottery</code> (<code>{{ vipPrefix }}lottery</code>,
+          <code>{{ vipPrefix }}лотерея</code>) — розыгрыш {{ LOTTERY_CONFIG.WINNERS_COUNT }} VIP, только стример. Билет
+          даёт {{ LOTTERY_CONFIG.TICKET_XP_THRESHOLD }} недельного XP. Сцена всегда идёт
+          {{ lotteryDuration(LOTTERY_SCENE_MS) }}. Превью «Лотерея» или «Сцена». База и Twitch не меняются.
+          <NuxtLink class="underline" to="/dev/messages">Все фразы на трёх языках</NuxtLink>
+        </p>
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Язык сцены и фраз бота
+          <select v-model="lotteryLang" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+            <option v-for="lang in LANGS" :key="lang" :value="lang">{{ lang }}</option>
+          </select>
+        </label>
+        <div class="flex gap-x-3">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Победителей с VIP с прошлой недели
+            <input v-model.number="lotteryReturning" type="number" min="0" max="5" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+        </div>
+        <label class="flex items-center gap-x-1.5 text-sm">
+          <input v-model="lotteryChat" type="checkbox" /> писать фразы бота в чат (старт, места, финал)
+        </label>
+
+        <h3 class="mt-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">Розыгрыш: сколько участников</h3>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="total in LOTTERY_SIZES"
+            :key="total"
+            class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body"
+            @click="lotteryDraw(total)"
+          >
+            {{ total }}
+          </button>
+        </div>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="lotteryAll">
+          Все семь подряд (очередь, около {{ Math.ceil((LOTTERY_SCENE_MS * LOTTERY_SIZES.length) / 60000) }} минут)
+        </button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="spin('coins500'); lotteryDraw(8)">
+          Спин рулетки, сразу за ним розыгрыш (ждёт рулетку)
+        </button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="lotteryDraw(8); follow()">
+          Розыгрыш и follow (алерт ждёт розыгрыш)
+        </button>
+
+        <h3 class="mt-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">Замер: сколько шла сцена</h3>
+        <p v-if="!lottery.log.length" class="text-sm text-sticker-muted">Пока не было розыгрышей на этой странице.</p>
+        <ul v-else class="flex flex-col gap-y-1 text-sm tabular-nums">
+          <li v-for="item in lottery.log" :key="item.id" class="flex justify-between rounded-lg bg-sticker-track px-3 py-1.5">
+            <span>{{ item.total }} участн., {{ item.winners }} побед.</span>
+            <span class="font-bold">{{ lotteryDuration(item.ms) }}</span>
+          </li>
+        </ul>
+
+        <h3 class="mt-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">Список билетов и билет</h3>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="lotteryList(LOTTERY_LIST_MIN + 2)">Список: {{ LOTTERY_LIST_MIN + 2 }} билетов</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="lotteryList(240)">Список: 240 билетов (с «ещё»)</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="lotteryTicket">Алерт «lottery ticket»</button>
+
+        <h3 class="mt-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">Фразы бота в чат</h3>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.ticketEarned(username))">Билет получен</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.ticketProgress(username, 37, LOTTERY_CONFIG.TICKET_XP_THRESHOLD))">!ticket: прогресс</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.ticketHave(username))">!ticket: билет уже есть</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.noTicketsYet)">!tickets: билетов нет</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.totalTickets(42))">!tickets: 42 билета</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.ticketList('🔹 1. @Fox, 🔹 2. @Lynx, 🔹 3. @Wolf', 3, LOTTERY_CONFIG.TICKET_XP_THRESHOLD))">!tickets: список до 10</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.postponed)">Розыгрыш без билетов</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.alreadyRunning(username))">Розыгрыш уже идёт</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(lotteryTexts.vipFailed(username))">Twitch не выдал VIP</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="botSay(MESSAGES[lotteryLang].denied(username))">Нет прав (не стример)</button>
       </section>
 
       <section v-show="tab === 'music'" class="flex flex-col gap-y-3">

@@ -10,7 +10,14 @@ import {
 import { holdBankDisplay } from './bank';
 import { emitEvent } from './socket';
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+// Сцена на экране одна: вращения рулетки и лотерея идут через одну очередь, и ничто не показывается
+// поверх другого. Задача очереди сама ловит свои ошибки: упавшая не должна останавливать остальные.
+let tail: Promise<void> = Promise.resolve();
+export const onStage = (job: () => Promise<void>): void => {
+  tail = tail.then(job).catch((error: unknown) => console.error('[stage] задача сцены упала:', error));
+};
+
+export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export type PlaySpin = (
   // Определяет исход (настоящий спин пишет в базу, эмулятор отдаёт готовый)
@@ -20,11 +27,9 @@ export type PlaySpin = (
 ) => Promise<void>;
 
 export const createSpinStage = (): PlaySpin => {
-  let tail: Promise<void> = Promise.resolve();
-
   return (spin, onStop) =>
     new Promise<void>((resolve, reject) => {
-      tail = tail.then(async () => {
+      onStage(async () => {
         try {
           // С этого момента и до остановки ленты банк в шапке не меняется
           holdBankDisplay(true);
