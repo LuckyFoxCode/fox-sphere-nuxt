@@ -1,6 +1,7 @@
 {
   "name": "fox-sphere-nuxt",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "scripts": {
@@ -14,6 +15,8 @@
     "prisma:generate": "prisma generate",
     "db:push:dev": "dotenv -e .env.development -- prisma db push",
     "db:push:prod": "dotenv -e .env.production -- prisma db push",
+    "db:seed:dev": "dotenv -e .env.development -- pnpm --filter bot exec tsx ../scripts/seed-commands.ts",
+    "db:seed:prod": "dotenv -e .env.production -- pnpm --filter bot exec tsx ../scripts/seed-commands.ts",
     "db:copy-prod-to-dev": "node scripts/copy-prod-db.mjs",
     "db:import": "dotenv -e .env.development -- pnpm --filter bot exec tsx ../scripts/import-from-postgres.ts",
     "typecheck": "nuxt typecheck",

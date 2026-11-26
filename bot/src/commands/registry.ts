@@ -5,7 +5,14 @@ export class CommandRegistry {
   private byName = new Map<string, Command>();
   private cooldowns = new Map<string, { since: number; notified: boolean }>();
 
+  // Команды не из кода (текстовые из БД): код всегда главнее, поэтому ищем их только после byName
+  private fallback?: (name: string) => Promise<Command | undefined>;
+
   constructor(private prefix: string) {}
+
+  setFallback(lookup: (name: string) => Promise<Command | undefined>) {
+    this.fallback = lookup;
+  }
 
   register(command: Command) {
     for (const name of [command.name, ...(command.aliases ?? [])]) {
@@ -20,11 +27,12 @@ export class CommandRegistry {
   ): Promise<boolean> {
     if (!text.startsWith(this.prefix)) return false;
     const [rawName, ...args] = text.slice(this.prefix.length).trim().split(/\s+/);
-    const command = this.byName.get((rawName ?? '').toLowerCase());
+    const name = (rawName ?? '').toLowerCase();
+    const command = this.byName.get(name) ?? (await this.fallback?.(name));
     if (!command) return false;
 
     const base = build(args);
-    const key = `${command.name}:${base.viewer.twitchId}`;
+    const key = command.cooldownScope === 'global' ? command.name : `${command.name}:${base.viewer.twitchId}`;
     const now = Date.now();
     const active = this.cooldowns.get(key);
     if (active && now - active.since < command.cooldownMs) {

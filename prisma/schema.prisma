@@ -109,3 +109,20 @@ model TwitchToken {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
+
+// Простые текстовые команды чата (!help, !lurk, !gh ...). Логику (спин, рыбалка) не хранят:
+// она остаётся в коде. Править можно прямо в базе (Prisma Studio), бот перечитывает таблицу ~30 с.
+model TextCommand {
+  id         Int      @id @default(autoincrement())
+  name       String // без префикса: "lurk"
+  lang       String   @default("en") // en | uk | ru; бот берёт язык BOT_LANG, иначе en
+  aliases    Json     @default("[]") // ["лурк"]
+  responses  Json // ["текст 1", "текст 2"]; при нескольких выбирается случайный
+  enabled    Boolean  @default(true)
+  cooldownMs Int      @default(10000)
+  scope      String   @default("global") // global — общий кулдаун, user — на зрителя
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([name, lang])
+}

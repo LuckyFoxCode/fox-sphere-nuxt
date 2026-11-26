@@ -4,6 +4,7 @@ import { messages } from '../language';
 import { registerFishCommand } from './fish';
 import { CommandRegistry } from './registry';
 import { registerSpinCommands, type SpinDeps } from './spin';
+import { createTextCommands } from './text';
 
 export const createRegistry = (deps: SpinDeps) => {
   const registry = new CommandRegistry(deps.prefix);
@@ -39,6 +40,9 @@ export const createRegistry = (deps: SpinDeps) => {
       );
     },
   });
+
+  // Текстовые команды из БД — после кодовых: имя из кода не перекрывается
+  registry.setFallback(createTextCommands(deps.prefix));
 
   return registry;
 };

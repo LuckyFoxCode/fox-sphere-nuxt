@@ -1,0 +1,135 @@
+[
+  {
+    "name": "help",
+    "lang": "en",
+    "aliases": [
+      "commands",
+      "bot",
+      "info",
+      "помощь",
+      "команды",
+      "хелп"
+    ],
+    "responses": [
+      "🔮 Commands: {prefix}coins • {prefix}profile • {prefix}spin • {prefix}fish | Fun: {prefix}lurk | Info: {prefix}gh • {prefix}tg • {prefix}stack • {prefix}project • {prefix}version ➔ Type any command for details! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "lurk",
+    "lang": "en",
+    "aliases": [
+      "лурк"
+    ],
+    "responses": [
+      "🦊 @{user} slips into the den to lurk. Enjoy the vibes!",
+      "🌙 @{user} curls up on the couch. We'll keep a seat warm!",
+      "👀 @{user} watches from the shadows... we see you! 💚",
+      "☕ Lights off, snacks ready — @{user} went full lurk mode! 🚀",
+      "🛋️ Welcome to lurk life, @{user}! Hydrate and enjoy 💧"
+    ],
+    "enabled": true,
+    "cooldownMs": 300000,
+    "scope": "user"
+  },
+  {
+    "name": "version",
+    "lang": "en",
+    "aliases": [
+      "ver",
+      "версия"
+    ],
+    "responses": [
+      "🦊 The bot is running version {version}! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "user"
+  },
+  {
+    "name": "project",
+    "lang": "en",
+    "aliases": [
+      "task",
+      "current",
+      "проект",
+      "задача"
+    ],
+    "responses": [
+      "🛠️ Current Project • Describe what you are building here."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "stack",
+    "lang": "en",
+    "aliases": [
+      "tech",
+      "technologies",
+      "стек",
+      "инструменты",
+      "tools"
+    ],
+    "responses": [
+      "💻 Tech Stack • List your tools here."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "gh",
+    "lang": "en",
+    "aliases": [
+      "github",
+      "git",
+      "code",
+      "repo",
+      "репозиторий",
+      "код"
+    ],
+    "responses": [
+      "🚀 GitHub • Follow my dev journey and explore the code: https://github.com/YOUR_GITHUB 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "tg",
+    "lang": "en",
+    "aliases": [
+      "telegram",
+      "tgchannel",
+      "телеграм",
+      "телега"
+    ],
+    "responses": [
+      "📢 Telegram • Join for devlogs and announcements: https://t.me/YOUR_CHANNEL 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "points",
+    "lang": "en",
+    "aliases": [
+      "economy",
+      "coinsinfo",
+      "баллы",
+      "поинты",
+      "экономика"
+    ],
+    "responses": [
+      "🪙 Economy • Earn Coins by watching and chatting, and spend them on interactive features! 🔮"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  }
+]

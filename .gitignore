@@ -15,3 +15,6 @@ dist
 data/*
 !data/.gitkeep
 generated
+
+# личные тексты команд (ссылки, имена) — только на своей машине
+prisma/seed/commands.local.json
