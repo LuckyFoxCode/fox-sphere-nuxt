@@ -52,9 +52,9 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   follow: '/assets/sound/follow.mp3',
   raid: '/assets/sound/raid.mp3',
   reward: '/assets/sound/knock.wav',
-  // Заглушка: в старом проекте звука подписки не было. Положите файл в public/assets/sound/
-  // и впишите его адрес сюда.
-  sub: null,
+  // В старом проекте звука подписки не было: sub.mp3 синтезирован с нуля (мягкий колокольчик, E5-G5-B5-E6),
+  // чужих файлов и лицензий нет. Заменить на свой можно, подменив файл или адрес здесь.
+  sub: '/assets/sound/sub.mp3',
   // Взят из имеющихся (в старом проекте это звук watch streak, он ещё не перенесён).
   // jackpot.mp3 и одинаковый с ним add-vip.mp3 не берём: сундук не должен звучать как джекпот.
   chest: '/assets/sound/streak.mp3',

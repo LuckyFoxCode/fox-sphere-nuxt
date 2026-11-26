@@ -72,6 +72,15 @@ export const en: BotMessages = {
     denied: (name) => `@${name}, you don't have permission to use this command!`,
     failed: (name) => `⚠️ @${name}, Twitch didn't accept the change. Try again later.`,
   },
+  founder: {
+    added: (mod, name) => `🏅 @${mod} has made @${name} a founder! The message XP bonus is on. 🎉`,
+    removed: (mod, name) => `✨ Founder status removed: @${mod} has updated @${name}'s permissions.`,
+    usage: (name, prefix, command) => `@${name}, please specify a username: ${prefix}${command} <username>`,
+    notFound: (name) => `User @${name} not found on Twitch.`,
+    denied: (name) => `@${name}, you don't have permission to use this command!`,
+    failed: (name) => `⚠️ @${name}, couldn't change the status. Try again later.`,
+  },
+  reward: (name, title) => `🎁 @${name} redeems "${title}"! Thanks for spending your points! 💜`,
   denied: (name) => `@${name}, you don't have permission to use this command!`,
   xpBoost: {
     started: (name, minutes, multiplier) => `⚡ @${name} activated an XP ×${multiplier} boost for ${minutes} minutes! 🚀`,

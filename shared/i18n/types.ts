@@ -59,6 +59,9 @@ export type VipMessages = {
   failed: (name: string) => string;
 };
 
+// Команды !addfounder и !removefounder: те же поля, что у VIP; `mod` — кто выдал, `name` — кому
+export type FounderMessages = VipMessages;
+
 // Буст XP (!xpboost). `minutes` — на сколько включён, `multiplier` — во сколько раз больше XP
 export type XpBoostMessages = {
   started: (name: string, minutes: number, multiplier: number) => string;
@@ -138,6 +141,9 @@ export type BotMessages = {
   hero: HeroMessages;
   pivo: PivoMessages;
   vip: VipMessages;
+  founder: FounderMessages;
+  // Ответ в чат на награду за баллы: `name` — кто активировал, `title` — название награды
+  reward: (name: string, title: string) => string;
   // Отказ командам для стримера и модераторов (!xpboost, !timer, !stoptimer)
   denied: NameMessage;
   xpBoost: XpBoostMessages;

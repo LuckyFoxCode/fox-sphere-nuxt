@@ -318,9 +318,17 @@ if (!config.enabled) {
       await announcer.announce(messages().raid(raid.raiderName, raid.viewers), 'purple');
       await announcer.shoutout(raid.raiderId);
     },
-    onRewardRedeem: (reward) => {
+    onRewardRedeem: async (reward) => {
       console.log(`[reward] ${reward.username}: ${reward.rewardTitle}`);
       emitEvent('twitch:reward-redeem', reward);
+      // В dev только лог: на ту же награду уже отвечает боевой бот
+      if (!config.isProduction) {
+        console.log('[reward] dev: ответ в чат не отправляется');
+        return;
+      }
+      const text = messages().reward(reward.username, reward.rewardTitle);
+      await chat.say(channel, text);
+      await showBotMessage(text);
     },
     onSub: (sub) => {
       console.log(`[sub] ${sub.kind}: ${sub.username ?? 'аноним'}`);

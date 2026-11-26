@@ -77,6 +77,15 @@ export const uk: BotMessages = {
     denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
     failed: (name) => `⚠️ @${name}, Twitch не прийняв зміну. Спробуй пізніше.`,
   },
+  founder: {
+    added: (mod, name) => `🏅 @${mod} робить @${name} засновником (founder)! Бонус XP за повідомлення увімкнено. 🎉`,
+    removed: (mod, name) => `✨ Статус засновника знято: @${mod} змінив(ла) права @${name}.`,
+    usage: (name, prefix, command) => `@${name}, вкажи нік: ${prefix}${command} <нік>`,
+    notFound: (name) => `Користувача @${name} не знайдено в Twitch.`,
+    denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
+    failed: (name) => `⚠️ @${name}, не вдалося змінити статус. Спробуй пізніше.`,
+  },
+  reward: (name, title) => `🎁 @${name} активує нагороду «${title}»! Дякую, що витрачаєш бали! 💜`,
   denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
   xpBoost: {
     started: (name, minutes, multiplier) => `⚡ @${name} вмикає буст XP ×${multiplier} на ${count(minutes, 'хвилину', 'хвилини', 'хвилин')}! 🚀`,
