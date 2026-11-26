@@ -416,12 +416,25 @@ onBeforeUnmount(() => $socket.disconnect());
 const box = ref<HTMLElement>();
 const scale = ref(0.4);
 onMounted(() => {
+  // Высота превью задана через aspect-ratio, а не через scale: иначе ширина → scale → высота →
+  // полоса прокрутки → ширина замыкались в петлю (ResizeObserver loop), когда превью падает на
+  // отдельную строку. Само изменение scale откладывается на кадр по той же причине.
+  let frame = 0;
   const observer = new ResizeObserver(([entry]) => {
-    if (entry) scale.value = entry.contentRect.width / 1920;
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      if (entry) scale.value = entry.contentRect.width / 1920;
+    });
   });
   if (box.value) observer.observe(box.value);
-  onBeforeUnmount(() => observer.disconnect());
+  onBeforeUnmount(() => {
+    cancelAnimationFrame(frame);
+    observer.disconnect();
+  });
 });
+
+// Место под полосу прокрутки занято всегда: она не появляется и не исчезает, не сдвигая превью
+useHead({ htmlAttrs: { style: 'scrollbar-gutter: stable' } });
 
 const connectionLabel = { connecting: 'подключаюсь…', connected: 'подключён', disconnected: 'нет связи' };
 </script>
@@ -617,7 +630,7 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
             {{ item.label }}
           </button>
         </div>
-        <div ref="box" class="relative w-full overflow-hidden rounded-xl border-2 border-sticker-edge checker" :style="{ height: `${1080 * scale}px` }">
+        <div ref="box" class="relative w-full overflow-hidden rounded-xl border-2 border-sticker-edge checker" :style="{ aspectRatio: '16 / 9' }">
           <iframe
             v-for="path in preview.paths"
             :key="path"
