@@ -106,6 +106,27 @@ export type GoldenBeerPayload = {
   isNewTier: boolean;
 };
 
+// Карточка профиля из `!profile`: уровень, XP до следующего, монеты, место и самые редкие ачивки
+// (shared/achievements.ts, не больше PROFILE_BADGE_SLOTS). `earned` — сколько ачивок всего получено.
+export type ProfileBadgePayload = {
+  category: string;
+  level: number;
+  rarity: number;
+  value: number;
+};
+
+export type ProfileShowPayload = {
+  userId: string;
+  username: string;
+  lvl: number;
+  xp: number;
+  xpToNext: number;
+  coins: number;
+  rank: number;
+  badges: ProfileBadgePayload[];
+  earned: number;
+};
+
 // Лотерея VIP (shared/lottery.ts). `lang` — язык бота, на нём подписи на оверлее (как у сундука).
 // `lottery:draw` приходит в момент старта сцены: дальше всё идёт по таймингам из shared/lottery.ts.
 // `entries` — выборка имён участников для ленты (не больше LOTTERY_ENTRIES_MAX), `total` — сколько их
@@ -214,6 +235,7 @@ export type ServerToClientEvents = {
   'fishing:chest': (payload: FishingChestPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
+  'profile:show': (payload: ProfileShowPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;
@@ -253,6 +275,7 @@ export type ClientToServerEvents = {
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
+  'dev:profile': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -459,3 +482,24 @@ export const resolveSocketPort = (raw: string | undefined): number => {
   const port = Number(raw);
   return Number.isInteger(port) && port > 0 && port < 65536 ? port : DEFAULT_SOCKET_PORT;
 };
+
+export const isProfileShowPayload = (value: unknown): value is ProfileShowPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.lvl, 1) &&
+  isInt(value.xp, 0) &&
+  isInt(value.xpToNext, 1) &&
+  isInt(value.coins, 0) &&
+  isInt(value.rank, 1) &&
+  isInt(value.earned, 0) &&
+  Array.isArray(value.badges) &&
+  value.badges.length <= 8 &&
+  value.badges.every(
+    (badge) =>
+      isRecord(badge) &&
+      isNonEmptyString(badge.category) &&
+      isInt(badge.level, 1) &&
+      isInt(badge.rarity, 1, 5) &&
+      isInt(badge.value, 0),
+  );

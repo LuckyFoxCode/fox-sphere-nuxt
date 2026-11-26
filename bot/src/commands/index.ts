@@ -1,6 +1,9 @@
+import { pickProfileBadges, resolveAchievements } from '../../../shared/achievements';
 import { getLevelRange } from '../../../shared/xp';
+import { loadAchievementCounters } from '../achievements';
 import { prisma } from '../db';
 import { messages } from '../language';
+import { emitEvent } from '../socket';
 import { registerXpBoostCommand } from './boost';
 import { registerFishCommand } from './fish';
 import { registerLotteryCommands, type LotteryDeps } from './lottery';
@@ -31,23 +34,29 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & Omit<L
     },
   });
 
+  // Карточка на оверлее: уровень, место и самые редкие ачивки. В чат ничего не пишем: смотреть её на стриме
   registry.register({
     name: 'profile',
     aliases: ['профиль'],
     cooldownMs: 10_000,
-    run: async ({ viewer, displayName, reply }) => {
+    run: async ({ viewer, displayName }) => {
       const { startXp, maxXp } = getLevelRange(viewer.lvl);
-      const rank =
-        (await prisma.viewer.count({ where: { xp: { gt: viewer.xp } } })) + 1;
-      await reply(
-        messages().profile(displayName, {
-          lvl: viewer.lvl,
-          xp: viewer.xp - startXp,
-          xpToNext: maxXp - startXp,
-          coins: viewer.coins,
-          rank,
-        }),
-      );
+      const [rank, counters] = await Promise.all([
+        prisma.viewer.count({ where: { xp: { gt: viewer.xp } } }),
+        loadAchievementCounters(viewer),
+      ]);
+      const earned = resolveAchievements(counters);
+      emitEvent('profile:show', {
+        userId: viewer.twitchId,
+        username: displayName,
+        lvl: viewer.lvl,
+        xp: viewer.xp - startXp,
+        xpToNext: maxXp - startXp,
+        coins: viewer.coins,
+        rank: rank + 1,
+        badges: pickProfileBadges(earned),
+        earned: earned.length,
+      });
     },
   });
 
