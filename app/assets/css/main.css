@@ -118,6 +118,16 @@
     transform: translateX(120%);
   }
 
+  /* Смена страницы витрины магазина: только прозрачность, окно целиком не прыгает */
+  .shop-page-enter-active,
+  .shop-page-leave-active {
+    transition: opacity 0.25s ease;
+  }
+  .shop-page-enter-from,
+  .shop-page-leave-to {
+    opacity: 0;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .profile-slide-enter-active,
     .profile-slide-leave-active {

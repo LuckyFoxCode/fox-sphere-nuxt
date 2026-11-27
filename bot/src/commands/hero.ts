@@ -1,8 +1,8 @@
 // !buy hero <имя> (алиас !купить), !use hero <имя> (алиасы !надеть, !активировать) и !shop (!магазин,
-// !витрина). Каталог, цены и разбор аргументов — из старого fox-sphere. Отличия: витрина идёт текстом
-// в чат (окна магазина на оверлее пока нет), а смену героя оверлей узнаёт из `hero:changed`.
+// !витрина). Каталог, цены и разбор аргументов — из старого fox-sphere. Отличия: витрина — окно на оверлее
+// (`shop:show`, в чат ничего не пишем), а смену героя оверлей узнаёт из `hero:changed`.
 import { findHeroByTerm, HEROES } from '../../../shared/heroes';
-import { buyHero, equipHero } from '../heroes';
+import { buyHero, equipHero, getActiveHeroId, listOwnedHeroIds } from '../heroes';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
 import type { CommandRegistry } from './registry';
@@ -99,16 +99,18 @@ export const registerHeroCommands = (registry: CommandRegistry, prefix: string):
     name: 'shop',
     aliases: ['магазин', 'витрина'],
     cooldownMs: SHOP_COOLDOWN_MS,
-    // Витрина одна на всех: повтор в течение 30 секунд молча пропускается
-    cooldownScope: 'global',
-    run: async ({ displayName, reply }) => {
-      await reply(
-        messages().hero.shop(
-          displayName,
-          HEROES.map(({ name, price }) => ({ name, price })),
-          prefix,
-        ),
-      );
+    // Кулдаун на зрителя: окно личное (баланс и коллекция), а очередь на оверлее не даст им наложиться
+    run: async ({ viewer, displayName }) => {
+      // Окно на оверлее вместо текста в чат: цены берёт сам оверлей из каталога, от зрителя нужны баланс и коллекция
+      const [ownedHeroIds, activeHeroId] = await Promise.all([listOwnedHeroIds(viewer.id), getActiveHeroId(viewer.id)]);
+      emitEvent('shop:show', {
+        userId: viewer.twitchId,
+        displayName,
+        coins: viewer.coins,
+        ownedHeroIds,
+        activeHeroId,
+        prefix,
+      });
     },
   });
 };

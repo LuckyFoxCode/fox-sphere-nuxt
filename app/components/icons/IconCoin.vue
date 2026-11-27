@@ -1,0 +1,31 @@
+<template>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="10.5"
+      fill="currentColor"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="7.4"
+      fill="none"
+      stroke="#2b2630"
+      stroke-opacity="0.55"
+      stroke-width="1.6"
+    />
+    <path
+      d="M12 7.4v9.2M9.4 10.4h4.1a1.5 1.5 0 0 1 0 3H10.5a1.5 1.5 0 0 0 0 3h4.1"
+      fill="none"
+      stroke="#2b2630"
+      stroke-opacity="0.75"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.6"
+    />
+  </svg>
+</template>

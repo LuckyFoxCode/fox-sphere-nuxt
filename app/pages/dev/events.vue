@@ -43,7 +43,7 @@ import {
 import { DEFAULT_HERO_ID, HEROES } from '#shared/heroes';
 import { TIMER_COLORS, type TimerColor } from '#shared/events';
 import { buildStreamState, getLevelRange, getStreamLevel } from '#shared/xp';
-import type { ProfileShowPayload } from '#shared/events';
+import type { ProfileShowPayload, ShopShowPayload } from '#shared/events';
 import { PROFILE_SAMPLE, PROFILE_SPARSE } from '~/utils/profileSample';
 import { segmentView } from '~/utils/roulette/rarity';
 
@@ -63,6 +63,7 @@ const previews = [
   { label: 'Лотерея', paths: ['/overlay/lottery'] },
   { label: 'Герои', paths: ['/overlay/heroes'] },
   { label: 'Профиль', paths: ['/overlay/profile'] },
+  { label: 'Магазин', paths: ['/overlay/shop'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
   { label: 'Алерты', paths: ['/overlay/alerts'] },
@@ -84,6 +85,7 @@ const tabs = [
   { id: 'pivo', label: 'Пиво' },
   { id: 'vip', label: 'VIP' },
   { id: 'profile', label: 'Профиль' },
+  { id: 'shop', label: 'Магазин' },
   { id: 'lottery', label: 'Лотерея' },
   { id: 'music', label: 'Музыка' },
 ] as const;
@@ -111,6 +113,7 @@ type DevEvent =
   | 'dev:chat-message'
   | 'dev:hero-changed'
   | 'dev:profile'
+  | 'dev:shop'
   | 'dev:stream-state'
   | 'dev:xp-boost'
   | 'dev:timer'
@@ -579,6 +582,26 @@ const vipAdd = () => {
   vipUnlocked();
 };
 const vipRemove = () => botSay(vipTexts.value.removed(vipModerator.value, vipTarget.value));
+
+// --- Магазин ---------------------------------------------------------------------------
+// !shop: окно героев на оверлее на 12 секунд (в чат ничего не пишет). Баланс, купленные и надетый герой — из полей.
+// Ждёт, пока на сцене рулетка или лотерея. База не меняется.
+const shopCoins = ref(500);
+const shopOwned = reactive<Record<string, boolean>>(Object.fromEntries(HEROES.map((hero) => [hero.id, hero.price === 0])));
+const shopActiveId = ref<string>(DEFAULT_HERO_ID);
+
+const shopFromForm = (): ShopShowPayload => {
+  const ownedHeroIds = HEROES.filter((hero) => shopOwned[hero.id]).map((hero) => hero.id);
+  return {
+    userId: `dev-${username.value.toLowerCase()}`,
+    displayName: username.value,
+    coins: shopCoins.value,
+    ownedHeroIds,
+    activeHeroId: ownedHeroIds.includes(shopActiveId.value) ? shopActiveId.value : (ownedHeroIds[0] ?? null),
+    prefix: vipPrefix,
+  };
+};
+const shopShow = (patch: Partial<ShopShowPayload> = {}) => send('dev:shop', { ...shopFromForm(), ...patch });
 
 // --- Профиль ---------------------------------------------------------------------------
 // !profile: карточка на оверлее на 9 секунд (в чат ничего не пишет). Ник, цвет, герой и роли — из полей ниже;
@@ -1090,6 +1113,35 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SAMPLE)">Пример: полная карточка</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SPARSE)">Пример: новичок без героя</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileRolesBurst">По карточке от каждой роли</button>
+      </section>
+
+      <section v-show="tab === 'shop'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">
+          Окно по <code>{{ vipPrefix }}shop</code>: откройте превью «Магазин» или «Сцена». Ник — из поля «Ник». Окно
+          показывает баланс, у каждого героя — статы, цену и состояние: куплен, надет, не хватает монет. База не меняется.
+        </p>
+        <div class="flex flex-wrap items-end gap-x-3 gap-y-2">
+          <label class="flex flex-col gap-y-1 text-sm">
+            Монеты
+            <input v-model.number="shopCoins" type="number" min="0" class="w-32 min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex flex-col gap-y-1 text-sm">
+            Надет
+            <select v-model="shopActiveId" class="min-w-0 rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink">
+              <option v-for="hero in HEROES" :key="hero.id" :value="hero.id">{{ hero.name }}</option>
+            </select>
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
+          <label v-for="hero in HEROES" :key="hero.id" class="flex items-center gap-x-1.5 text-sm">
+            <input v-model="shopOwned[hero.id]" type="checkbox" />
+            куплен: {{ hero.name }}
+          </label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="shopShow()">Показать магазин</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="shopShow({ coins: 0, ownedHeroIds: [DEFAULT_HERO_ID], activeHeroId: DEFAULT_HERO_ID })">Пример: новичок без монет</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="shopShow({ coins: 500, ownedHeroIds: [DEFAULT_HERO_ID], activeHeroId: DEFAULT_HERO_ID })">Пример: хватает на Robber</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="shopShow({ coins: 12_450, ownedHeroIds: HEROES.map((hero) => hero.id), activeHeroId: HEROES[HEROES.length - 1]?.id ?? null })">Пример: всё куплено</button>
       </section>
 
       <section v-show="tab === 'vip'" class="flex flex-col gap-y-3">

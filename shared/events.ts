@@ -129,6 +129,18 @@ export type ProfileBadgePayload = {
   value: number;
 };
 
+// Окно магазина героев из `!shop`: каталог и цены оверлей берёт из shared/heroes.ts, а здесь только то, что
+// зависит от зрителя, - сколько у него монет, кого он уже купил и кто надет. `prefix` - префикс команд бота
+// (в dev `!t`), чтобы подсказка «как купить» на экране была рабочей.
+export type ShopShowPayload = {
+  userId: string;
+  displayName: string;
+  coins: number;
+  ownedHeroIds: string[];
+  activeHeroId: string | null;
+  prefix: string;
+};
+
 export type ProfileShowPayload = {
   userId: string;
   username: string;
@@ -269,6 +281,7 @@ export type ServerToClientEvents = {
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
   'profile:show': (payload: ProfileShowPayload) => void;
+  'shop:show': (payload: ShopShowPayload) => void;
   'hero:changed': (payload: HeroChangedPayload) => void;
 };
 
@@ -312,6 +325,7 @@ export type ClientToServerEvents = {
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
   'dev:profile': (payload: unknown, ack?: DevAck) => void;
+  'dev:shop': (payload: unknown, ack?: DevAck) => void;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -568,3 +582,14 @@ export const isProfileShowPayload = (value: unknown): value is ProfileShowPayloa
       isInt(badge.rarity, 1, 5) &&
       isInt(badge.value, 0),
   );
+
+export const isShopShowPayload = (value: unknown): value is ShopShowPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.displayName) &&
+  isInt(value.coins, 0) &&
+  Array.isArray(value.ownedHeroIds) &&
+  value.ownedHeroIds.length <= 64 &&
+  value.ownedHeroIds.every((id) => typeof id === 'string' && isKnownHeroId(id)) &&
+  (value.activeHeroId === null || (typeof value.activeHeroId === 'string' && isKnownHeroId(value.activeHeroId))) &&
+  isNonEmptyString(value.prefix);

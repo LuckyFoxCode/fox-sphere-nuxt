@@ -82,3 +82,9 @@ export const equipHero = async (viewerId: number, heroId: string): Promise<Equip
   if (result === 'equipped') activeCache.set(viewerId, heroId);
   return result;
 };
+
+// Купленные герои зрителя для окна магазина (бесплатный выдаётся при первом сообщении)
+export const listOwnedHeroIds = async (viewerId: number): Promise<string[]> => {
+  const rows = await prisma.viewerHero.findMany({ where: { viewerId }, select: { heroId: true } });
+  return rows.map((row) => row.heroId);
+};
