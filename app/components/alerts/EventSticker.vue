@@ -8,6 +8,8 @@ const props = defineProps<{
   paper: string;
   /** Значок на пластине; не нужен, когда её занял арт */
   icon?: Component;
+  /** Вид алерта: от него зависит анимация значка при входе */
+  motion?: string;
   /** Арт достижения: занимает пластину целиком, как марка на паспарту */
   media?: { src: string; alt: string };
   /** Овсяный чип в углу: флаг («new tier»), а не факт */
@@ -35,11 +37,11 @@ const ariaLabel = computed(() =>
 <template>
   <StickerFrame role="status" :aria-label="ariaLabel" class="w-105 gap-x-3 py-2.5 pr-3 pl-2.5">
     <div
-      class="flex shrink-0 items-center justify-center overflow-hidden rounded-xl text-sticker-body"
-      :class="[paper, media ? 'size-28 p-1' : 'size-12']"
+      class="plate relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl text-sticker-body"
+      :class="[paper, media ? 'size-28 p-1' : 'size-12', icon && motion ? `plate-${motion}` : '']"
     >
       <img v-if="media" :src="media.src" :alt="media.alt" class="size-full object-contain" />
-      <component :is="icon" v-else-if="icon" aria-hidden="true" class="size-8" />
+      <component :is="icon" v-else-if="icon" aria-hidden="true" class="plate-icon size-8" />
     </div>
 
     <div class="flex min-w-0 flex-1 flex-col">
