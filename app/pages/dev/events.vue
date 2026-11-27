@@ -42,7 +42,7 @@ import {
 } from '#shared/roulette';
 import { DEFAULT_HERO_ID, HEROES } from '#shared/heroes';
 import { TIMER_COLORS, type TimerColor } from '#shared/events';
-import { watchStreakReward } from '#shared/economy';
+import { COIN_EXCHANGE_PACKAGES, watchStreakReward } from '#shared/economy';
 import { buildStreamState, getLevelRange, getStreamLevel } from '#shared/xp';
 import type { ProfileShowPayload, ShopShowPayload } from '#shared/events';
 import { PROFILE_SAMPLE, PROFILE_SPARSE } from '~/utils/profileSample';
@@ -992,6 +992,16 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
           Название награды
           <input v-model="rewardTitle" maxlength="45" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink normal-case" />
         </label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="pkg in COIN_EXCHANGE_PACKAGES"
+            :key="pkg.title"
+            class="rounded-lg bg-sticker-track px-2 py-1 text-xs font-bold text-sticker-ink"
+            @click="rewardTitle = pkg.title"
+          >
+            {{ pkg.title }}
+          </button>
+        </div>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="reward">Награда за баллы</button>
 
         <div class="flex gap-x-3">

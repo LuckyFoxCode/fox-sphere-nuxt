@@ -85,6 +85,7 @@ export const ru: BotMessages = {
     failed: (name) => `⚠️ @${name}, не удалось изменить статус. Попробуй позже.`,
   },
   reward: (name, title) => `🎁 @${name} активирует награду «${title}»! Спасибо, что тратишь баллы! 💜`,
+  exchange: (name, title, coins) => `💰 @${name} обменял(а) баллы: «${title}» → +${coins} монет!`,
   leaderboard: (name, top, yourRank) => `🏆 @${name} хвастается лидербордом! Топ-5 по XP: ${top}${yourRank ? ` Ты на ${yourRank} месте.` : ''}`,
   denied: (name) => `@${name}, у тебя нет прав на эту команду!`,
   xpBoost: {

@@ -16,14 +16,15 @@ import { awardLotteryXp } from './lottery';
 import { awardWatchStreak } from './watchStreak';
 import { getNowPlaying, startMusicReader } from './music';
 import { prisma } from './db';
-import { specialRewardOf } from './rewards';
+import { coinExchangeOf, specialRewardOf } from './rewards';
+import { exchangePointsForCoins } from './exchange';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { createSpinStage } from './spinStage';
 import { addStreamXp, getStreamState } from './stream';
 import { getActiveTimer } from './streamTimer';
 import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
 import type { ChatMessagePayload, RewardRedeemPayload } from '../../shared/events';
-import type { SpecialReward } from '../../shared/economy';
+import { COIN_EXCHANGE_PACKAGES, type SpecialReward } from '../../shared/economy';
 import type { Viewer } from '../../generated/prisma/client';
 import { DEFAULT_HERO_ID } from '../../shared/heroes';
 import { getActiveHeroId } from './heroes';
@@ -451,6 +452,33 @@ if (!config.enabled) {
       const special = specialRewardOf(reward);
       if (special) {
         await showSpecialReward(special, reward);
+        return;
+      }
+      // Обмен баллов на монеты: общий алерт остаётся, а ответ в чат свой (с суммой)
+      const exchange = coinExchangeOf(reward);
+      if (exchange) {
+        // Баллы уже списаны Twitch, поэтому зрителя без записи создаём, а не пропускаем
+        const viewer = await ensureViewer(reward.userId, reward.username, {
+          isMod: false,
+          isSubscriber: false,
+          isBroadcaster: false,
+          isVip: false,
+          isFollower: false,
+        });
+        const result = await exchangePointsForCoins(viewer, exchange, reward.redemptionId);
+        if (result.status === 'duplicate') {
+          console.log(`[reward] повтор активации ${reward.redemptionId}, монеты не начислены`);
+          return;
+        }
+        emitEvent('twitch:reward-redeem', reward);
+        console.log(`[reward] обмен: +${result.coins} монет для ${reward.username}`);
+        if (!config.isProduction) {
+          console.log('[reward] dev: ответ в чат не отправляется');
+          return;
+        }
+        const text = messages().exchange(reward.username, COIN_EXCHANGE_PACKAGES[exchange].title, result.coins);
+        await chat.say(channel, text);
+        await showBotMessage(text);
         return;
       }
       emitEvent('twitch:reward-redeem', reward);

@@ -74,3 +74,28 @@ export const matchSpecialReward = (
   }
   return null;
 };
+
+// Обмен баллов канала на монеты: три награды из старого бота, чем дороже пакет, тем выгоднее курс.
+// Опознаются по id награды (REWARD_COIN_POUCH_ID и т. д. в .env бота) или, если id не задан, по названию без учёта регистра.
+export const COIN_EXCHANGE_PACKAGES = {
+  pouch: { title: 'Coin Pouch', points: 1000, coins: 1000 },
+  chest: { title: 'Coin Chest', points: 3000, coins: 3900 },
+  hoard: { title: "Poke Master's Hoard", points: 5000, coins: 7500 },
+} as const;
+export type CoinExchangeKind = keyof typeof COIN_EXCHANGE_PACKAGES;
+
+export const matchCoinExchange = (
+  reward: { id?: string; title: string },
+  ids: Partial<Record<CoinExchangeKind, string>> = {},
+): CoinExchangeKind | null => {
+  const title = reward.title.trim().toLowerCase();
+  for (const kind of Object.keys(COIN_EXCHANGE_PACKAGES) as CoinExchangeKind[]) {
+    const id = ids[kind];
+    if (id) {
+      if (reward.id === id) return kind;
+      continue;
+    }
+    if (COIN_EXCHANGE_PACKAGES[kind].title.toLowerCase() === title) return kind;
+  }
+  return null;
+};
