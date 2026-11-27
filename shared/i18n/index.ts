@@ -19,7 +19,12 @@ export type {
 export const LANGS = ['en', 'uk', 'ru'] as const;
 export type Lang = (typeof LANGS)[number];
 
-// Язык бота. Пока константа; переключатель появится вместе с админкой
+// Язык бота по умолчанию. Выбранный в админке («Настройки») лежит в SystemState.botLang
 export const BOT_LANG: Lang = 'en';
+
+export const isLang = (value: unknown): value is Lang => (LANGS as readonly unknown[]).includes(value);
+
+// Значение из базы: пустое или незнакомое — язык по умолчанию
+export const toLang = (value: unknown): Lang => (isLang(value) ? value : BOT_LANG);
 
 export const MESSAGES: Record<Lang, BotMessages> = { en, uk, ru };

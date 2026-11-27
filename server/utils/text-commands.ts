@@ -1,7 +1,7 @@
 // Текстовые команды для админки: строки TextCommand (по одной на язык) складываются в одну команду.
 import type { TextCommand } from '../../generated/prisma/client';
 import { type AdminTextCommand, resolveCommandPrefix } from '../../shared/commands';
-import { BOT_LANG, LANGS, type Lang } from '../../shared/i18n';
+import { LANGS, type Lang } from '../../shared/i18n';
 
 export const commandPrefix = (): string => resolveCommandPrefix(process.env.COMMAND_PREFIX, process.env.NODE_ENV);
 
@@ -10,9 +10,9 @@ export const stringList = (value: unknown): string[] =>
 
 // Все строки одной команды. Алиасы, кулдаун и состояние берутся так же, как их берёт бот:
 // строка на языке бота, без неё английская (bot/src/commands/text.ts)
-export const toAdminCommand = (rows: TextCommand[]): AdminTextCommand => {
+export const toAdminCommand = (rows: TextCommand[], botLang: Lang): AdminTextCommand => {
   const byLang = new Map(rows.map((row) => [row.lang, row]));
-  const active = [byLang.get(BOT_LANG), byLang.get('en')].filter((row) => row !== undefined);
+  const active = [byLang.get(botLang), byLang.get('en')].filter((row) => row !== undefined);
   const main = active.find((row) => row.enabled) ?? active[0] ?? rows[0]!;
   const responses = {} as Record<Lang, string[]>;
   for (const lang of LANGS) responses[lang] = stringList(byLang.get(lang)?.responses);

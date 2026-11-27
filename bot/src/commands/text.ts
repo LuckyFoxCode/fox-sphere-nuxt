@@ -32,11 +32,13 @@ export const renderText = (
 export const createTextCommands = (prefix: string) => {
   const version = readVersion();
   let loadedAt = 0;
+  let loadedLang = language();
   let byName = new Map<string, Command>();
 
   const refresh = async () => {
-    if (Date.now() - loadedAt < TTL_MS) return;
     const lang = language();
+    // Смена языка в админке перечитывает таблицу сразу, не дожидаясь TTL
+    if (lang === loadedLang && Date.now() - loadedAt < TTL_MS) return;
     const rows = await prisma.textCommand.findMany({
       where: { enabled: true, lang: { in: [lang, FALLBACK_LANG] } },
     });
@@ -64,6 +66,7 @@ export const createTextCommands = (prefix: string) => {
     }
     byName = next;
     loadedAt = Date.now();
+    loadedLang = lang;
   };
 
   // Ошибка базы не должна ронять обработку сообщения: просто нет текстовых команд

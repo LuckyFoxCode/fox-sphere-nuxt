@@ -97,6 +97,7 @@ model SystemState {
   timerTitle        String?
   timerColor        String?
   timerEndsAt       DateTime?
+  botLang           String? // en | uk | ru, выбирается в админке; null — BOT_LANG из shared/i18n
   updatedAt         DateTime  @updatedAt
 }
 

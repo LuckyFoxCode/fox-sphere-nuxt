@@ -20,6 +20,8 @@ const sections = [
 // Обычные переходы с перезагрузкой: стили админки не должны ехать на другие страницы
 const links = [{ label: 'Оверлеи', icon: 'i-lucide-layers', to: '/', external: true }];
 
+useAdminPalette().apply();
+
 const login = useAdminLogin();
 const { act } = useAdminApi();
 const logout = async () => {

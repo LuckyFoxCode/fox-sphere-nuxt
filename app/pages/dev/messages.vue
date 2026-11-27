@@ -37,7 +37,7 @@ const SECTIONS: PhraseSection[] = [
   <main class="min-h-screen bg-sticker-well p-6 font-quicksand text-sticker-ink">
     <h1 class="text-2xl font-bold">Фразы бота</h1>
     <p class="mt-1 text-sm text-sticker-muted">
-      Сейчас бот отвечает на <code>{{ BOT_LANG }}</code> (<code>BOT_LANG</code> в <code>shared/i18n/index.ts</code>).
+      Язык ответов выбирается в админке, раздел «Настройки»; по умолчанию <code>{{ BOT_LANG }}</code>.
       Тексты — в файлах <code>shared/i18n/</code>, текстовые команды — в базе (внизу страницы).
       <NuxtLink class="underline" to="/dev/events">Эмулятор событий</NuxtLink>
     </p>

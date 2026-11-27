@@ -12,7 +12,7 @@ import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker, createFollowerList } from './followers';
 import { buildLeaderboard, rankOf } from './leaderboard';
-import { language, messages } from './language';
+import { language, messages, startLanguageSync } from './language';
 import { awardLotteryXp } from './lottery';
 import { awardWatchStreak } from './watchStreak';
 import { getNowPlaying, startMusicReader } from './music';
@@ -36,6 +36,8 @@ const playSpin = createSpinStage();
 
 // Заполняется ниже, когда бот включён: пульту админки для розыгрыша и фраз в чат нужен Twitch
 let liveBot: LiveBot | null = null;
+
+await startLanguageSync();
 
 await startSocketServer({
   getStreamState,

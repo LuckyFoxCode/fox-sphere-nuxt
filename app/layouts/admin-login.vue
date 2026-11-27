@@ -3,6 +3,7 @@ import { ru } from '@nuxt/ui/locale';
 import '~/assets/css/admin.css';
 
 useHead({ htmlAttrs: { class: 'dark', lang: 'ru' }, title: 'Вход · fox-sphere' });
+useAdminPalette().apply();
 </script>
 
 <template>
