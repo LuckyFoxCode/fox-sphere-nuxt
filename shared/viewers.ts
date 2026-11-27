@@ -10,6 +10,9 @@ export type AdminViewer = {
   createdAt: string;
   // Когда сообщение в чате в последний раз дало XP; null — ни разу
   lastXpAt: string | null;
+  // Из Twitch через бота; null — узнать не удалось
+  isFollower: boolean | null;
+  followedAt: string | null;
   isStreamer: boolean;
   isBot: boolean;
   // Модератор и саб — по бейджам последнего сообщения
@@ -24,8 +27,12 @@ export type AdminViewer = {
 
 export type AdminCoinRecord = { id: number; amount: number; reason: string; createdAt: string };
 
+// followersProblem — почему статус фолловера неизвестен; пусто — всё хорошо
+export type AdminViewers = { viewers: AdminViewer[]; followersProblem: string };
+
 export type AdminViewerDetails = {
   viewer: AdminViewer;
+  followersProblem: string;
   spinsCount: number;
   totalWin: number;
   totalLoss: number;

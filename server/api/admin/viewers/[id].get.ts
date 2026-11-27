@@ -27,8 +27,10 @@ export default defineAdminHandler(async (event): Promise<AdminViewerDetails> => 
     ).length;
   };
 
+  const followers = await loadFollowers();
   return {
-    viewer: toAdminViewer(viewer),
+    viewer: toAdminViewer(viewer, followers),
+    followersProblem: followers.problem,
     spinsCount: viewer.spinsCount,
     totalWin: viewer.totalWin,
     totalLoss: viewer.totalLoss,

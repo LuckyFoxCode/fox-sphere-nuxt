@@ -28,7 +28,10 @@ export type AdminStreamState = {
   };
 };
 
-export type BoostRequest = { action: 'start'; minutes: number } | { action: 'stop' };
+// Фолловеры канала из Twitch: для раздела «Зрители»
+export type BotFollowers = { followers: { userId: string; followedAt: string }[] };
+
+export type BoostRequest ={ action: 'start'; minutes: number } | { action: 'stop' };
 
 export const parseBoostRequest = (value: unknown): BoostRequest | null => {
   if (typeof value !== 'object' || value === null) return null;

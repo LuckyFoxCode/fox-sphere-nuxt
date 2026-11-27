@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Зрители и балансы: поиск по нику и сортировка; ник открывает страницу зрителя. Ничего не меняет.
-import type { AdminViewer } from '#shared/viewers';
+import type { AdminViewer, AdminViewers } from '#shared/viewers';
 import { getRankConfigByLevel } from '~/utils/chat/ranks';
 
 definePageMeta({ layout: 'admin', middleware: 'admin' });
@@ -9,14 +9,15 @@ const PAGE_SIZE = 25;
 
 const { leaveIfSignedOut } = useAdminApi();
 // Список, поиск, сортировка и страница таблицы переживают переход к зрителю и возврат
-const viewers = useState<AdminViewer[] | null>('admin-viewers', () => null);
+const data = useState<AdminViewers | null>('admin-viewers', () => null);
+const viewers = computed(() => data.value?.viewers ?? null);
 const problem = ref('');
 const loading = ref(false);
 
 const load = async () => {
   loading.value = true;
   try {
-    viewers.value = await $fetch<AdminViewer[]>('/api/admin/viewers');
+    data.value = await $fetch<AdminViewers>('/api/admin/viewers');
     problem.value = '';
   } catch (error) {
     if (!(await leaveIfSignedOut(error))) problem.value = adminErrorText(error);
@@ -82,6 +83,15 @@ const columns = [
     />
 
     <template v-if="viewers">
+      <UAlert
+        v-if="data?.followersProblem"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-heart-off"
+        title="Кто фолловит, сейчас неизвестно"
+        :description="data.followersProblem"
+      />
+
       <dl class="grid gap-3 sm:grid-cols-3">
         <UCard v-for="[label, value] in totals" :key="label">
           <dt class="text-sm text-muted">{{ label }}</dt>
@@ -155,7 +165,10 @@ const columns = [
           :items-per-page="PAGE_SIZE"
         />
       </div>
-      <p class="text-xs text-dimmed">Метки «mod» и «sub» берутся из последнего сообщения зрителя.</p>
+      <p class="text-xs text-dimmed">
+        Метки «mod» и «sub» берутся из последнего сообщения зрителя. «follower» и «viewer» бот спрашивает у Twitch не
+        чаще раза в 5 минут.
+      </p>
     </template>
   </AdminPage>
 </template>

@@ -6,7 +6,9 @@ import { resolveSocketPort } from '../../shared/events';
 const botError = (statusCode: number, error: string) =>
   createError({ statusCode, statusMessage: 'Bot request failed', data: { error } });
 
-export const callBot = async <T>(path: '/state' | '/boost' | '/lottery' | '/test', body?: object): Promise<T> => {
+type BotPath = '/state' | '/followers' | '/boost' | '/lottery' | '/test';
+
+export const callBot = async <T>(path: BotPath, body?: object): Promise<T> => {
   const secret = process.env.INTERNAL_SECRET;
   if (!isUsableSecret(secret)) throw botError(503, 'Не задан INTERNAL_SECRET в .env (см. .env.example)');
 

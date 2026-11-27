@@ -96,6 +96,15 @@ const columns = [
     <p v-else-if="!details" class="text-muted">Загрузка…</p>
 
     <template v-if="details && level">
+      <UAlert
+        v-if="details.followersProblem"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-heart-off"
+        title="Фолловит ли зритель, сейчас неизвестно"
+        :description="details.followersProblem"
+      />
+
       <UCard>
         <div class="flex flex-col gap-3">
           <div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -110,6 +119,7 @@ const columns = [
           <p class="text-sm text-muted">
             Первый раз в базе: {{ formatDate(details.viewer.createdAt) }}. Последний XP за чат:
             {{ formatDate(details.viewer.lastXpAt) }}.
+            <template v-if="details.viewer.followedAt"> Фолловит с {{ formatDate(details.viewer.followedAt) }}.</template>
           </p>
         </div>
       </UCard>

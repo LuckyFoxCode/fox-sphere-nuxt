@@ -10,7 +10,7 @@ import { buildProfilePayload } from './commands/profile';
 import { createLotteryRunner, playLotteryScene, playParticipants } from './commands/lottery';
 import { config } from './config';
 import { startEventSub } from './eventsub';
-import { createFollowerChecker } from './followers';
+import { createFollowerChecker, createFollowerList } from './followers';
 import { buildLeaderboard, rankOf } from './leaderboard';
 import { language, messages } from './language';
 import { awardLotteryXp } from './lottery';
@@ -234,7 +234,12 @@ if (!config.enabled) {
     say,
     twitchVip: config.lotteryTwitchVip,
   });
-  liveBot = { isChatConnected: () => chat.isConnected, say, lottery };
+  liveBot = {
+    isChatConnected: () => chat.isConnected,
+    say,
+    lottery,
+    followers: createFollowerList(api, ensureBroadcaster),
+  };
 
   const registry = createRegistry({
     prefix: config.prefix,

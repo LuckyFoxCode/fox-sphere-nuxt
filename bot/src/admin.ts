@@ -1,6 +1,6 @@
 // Действия пульта эфира: те же функции, что у команд чата (!xpboost, !runlottery), плюс тестовые алерты.
 // Проверку сессии стримера делает Nuxt, проверку секрета и формы запроса — internal.ts.
-import type { AdminStreamState } from '../../shared/admin';
+import type { AdminStreamState, BotFollowers } from '../../shared/admin';
 import { BOOST_CONFIG } from '../../shared/economy';
 import { emitTestEvent } from '../../shared/testEvents';
 import type { LotteryRunner } from './commands/lottery';
@@ -12,11 +12,13 @@ import { getLotteryWinners, getTicketHolders } from './lottery';
 import { emitEvent } from './socket';
 import { activateXpBoost, cancelXpBoost, getActiveXpBoost } from './xpBoost';
 
-// То, что есть только у включённого бота (BOT_ENABLED=true): чат Twitch и розыгрыш
+// То, что есть только у включённого бота (BOT_ENABLED=true): чат Twitch, розыгрыш и API Twitch
 export type LiveBot = {
   isChatConnected: () => boolean;
   say: (text: string) => Promise<void>;
   lottery: LotteryRunner;
+  // null — нет токена стримера
+  followers: () => Promise<BotFollowers['followers'] | null>;
 };
 
 export const createAdminActions = (live: () => LiveBot | null): AdminActions => {
@@ -63,6 +65,17 @@ export const createAdminActions = (live: () => LiveBot | null): AdminActions => 
           winners: running ? null : winners.map((person) => person.username),
         },
       };
+    },
+
+    getFollowers: async (): Promise<BotFollowers> => {
+      const bot = live();
+      if (!bot) throw new AdminError(409, 'бот выключен (BOT_ENABLED)');
+      const followers = await bot.followers().catch((error: unknown) => {
+        console.error('[admin] не удалось получить фолловеров:', error);
+        throw new AdminError(502, 'Twitch не отдал список фолловеров, подробности в логе бота');
+      });
+      if (!followers) throw new AdminError(409, 'нет входа стримера: откройте /auth/twitch/broadcaster/login');
+      return { followers };
     },
 
     setBoost: async (request) => {

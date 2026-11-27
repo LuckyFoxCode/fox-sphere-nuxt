@@ -1,6 +1,7 @@
 // Внутренний HTTP API админки на том же порту, что Socket.io. Вызывает его только сервер Nuxt, уже
 // проверив сессию стримера; браузер сюда не ходит. Каждый запрос — с `Authorization: Bearer INTERNAL_SECRET`.
 //   GET  /internal/state    состояние пульта
+//   GET  /internal/followers  фолловеры канала для раздела «Зрители»
 //   POST /internal/boost    включить или выключить буст XP
 //   POST /internal/lottery  запустить розыгрыш
 //   POST /internal/test     тестовый алерт или карточка на оверлей
@@ -13,6 +14,7 @@ import {
   parseBoostRequest,
   type AdminStreamState,
   type BoostRequest,
+  type BotFollowers,
 } from '../../shared/admin';
 import { isTestEventKind, parseTestName, type TestEventKind } from '../../shared/testEvents';
 
@@ -28,6 +30,7 @@ export class AdminError extends Error {
 
 export type AdminActions = {
   getState: () => Promise<AdminStreamState>;
+  getFollowers: () => Promise<BotFollowers>;
   setBoost: (request: BoostRequest) => Promise<void>;
   runLottery: () => void;
   sendTest: (kind: TestEventKind, username: string) => void;
@@ -57,6 +60,7 @@ export const createInternalHandler = (secret: string | undefined, actions: () =>
     const path = (req.url ?? '').split('?')[0]!.slice(INTERNAL_PREFIX.length);
 
     if (req.method === 'GET' && path === '/state') return actions().getState();
+    if (req.method === 'GET' && path === '/followers') return actions().getFollowers();
     if (req.method !== 'POST') throw new AdminError(404, 'нет такого адреса');
 
     if (path === '/boost') {
