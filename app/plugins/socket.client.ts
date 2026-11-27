@@ -44,6 +44,7 @@ export default defineNuxtPlugin(() => {
   socket.on('music:now-playing', music.onUpdate);
   socket.on('roulette:spin-result', useRouletteStore().onSpin);
   socket.on('profile:show', useProfileStore().onShow);
+  socket.on('leaderboard:show', useLeaderboardStore().onShow);
   socket.on('shop:show', useShopStore().onShow);
   const lottery = useLotteryStore();
   socket.on('lottery:draw', lottery.onDraw);

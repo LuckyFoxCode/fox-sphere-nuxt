@@ -65,7 +65,7 @@ const watchStreakSummary = computed(() => {
           </span>
           <span
             v-if="message.isHighlight"
-            class="rounded-full border-2 border-rose-500 bg-rose-900 px-1.5 py-0.5 text-xs font-bold tracking-wide text-rose-300 uppercase"
+            class="rounded-full border-2 border-sticker-edge bg-sticker-edge px-1.5 py-0.5 text-xs font-bold tracking-wide text-sticker-body uppercase"
           >
             Highlight
           </span>
@@ -84,7 +84,12 @@ const watchStreakSummary = computed(() => {
       </div>
       <div
         class="font-quicksand flex flex-col gap-y-1 rounded-lg bg-linear-to-r px-3 py-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.7)]"
-        :class="roleStyle.body"
+        :class="[
+          roleStyle.body,
+          // Highlight: жёлтый «маркер» внутри тела: рамка 3px и мягкая внутренняя тень. Цвет не зависит
+          // от роли, читается на всех семи; без свечения и анимации (DESIGN.md: matte)
+          message.isHighlight && 'shadow-[inset_0_0_0_3px_#facc15,inset_0_0_22px_4px_rgba(250,204,21,0.6)]',
+        ]"
       >
         <div class="flex items-center gap-1 font-semibold">
           <div

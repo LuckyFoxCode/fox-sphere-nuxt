@@ -64,6 +64,7 @@ const previews = [
   { label: 'Лотерея', paths: ['/overlay/lottery'] },
   { label: 'Герои', paths: ['/overlay/heroes'] },
   { label: 'Профиль', paths: ['/overlay/profile'] },
+  { label: 'Лидерборд', paths: ['/overlay/leaderboard'] },
   { label: 'Магазин', paths: ['/overlay/shop'] },
   { label: 'Чат', paths: ['/overlay/chat'] },
   { label: 'Музыка', paths: ['/overlay/music'] },
@@ -86,6 +87,7 @@ const tabs = [
   { id: 'pivo', label: 'Пиво' },
   { id: 'vip', label: 'VIP' },
   { id: 'profile', label: 'Профиль' },
+  { id: 'leaderboard', label: 'Лидерборд' },
   { id: 'shop', label: 'Магазин' },
   { id: 'lottery', label: 'Лотерея' },
   { id: 'music', label: 'Музыка' },
@@ -115,6 +117,7 @@ type DevEvent =
   | 'dev:hero-changed'
   | 'dev:profile'
   | 'dev:shop'
+  | 'dev:leaderboard'
   | 'dev:stream-state'
   | 'dev:xp-boost'
   | 'dev:timer'
@@ -307,7 +310,7 @@ const ROLE_SAMPLES: [string, number, Partial<ChatMessagePayload>][] = [
   ['FollowFin', 8, { isFollower: true }],
   ['Viewer', 2, {}],
 ];
-const chatRolesBurst = () => {
+const chatRolesBurst = (highlight = false) => {
   ROLE_SAMPLES.forEach(([name, lvl, flags], index) => {
     setTimeout(() => {
       send(
@@ -329,6 +332,7 @@ const chatRolesBurst = () => {
           isFollower: false,
           isBroadcaster: false,
           isBot: false,
+          isHighlight: highlight === true,
           ...flags,
         }),
       );
@@ -609,6 +613,22 @@ const vipAdd = () => {
 const vipRemove = () => botSay(vipTexts.value.removed(vipModerator.value, vipTarget.value));
 
 // --- Магазин ---------------------------------------------------------------------------
+// Награда «Flex Leaderboard»: топ-5 на оверлее на 9 секунд. Данные примера, в базу ничего не пишется.
+const BOARD_TOP = [
+  { rank: 1, userId: 'dev-1', username: 'FoxMaster', lvl: 42, xp: 128_400 },
+  { rank: 2, userId: 'dev-2', username: 'Beerbaron', lvl: 37, xp: 96_150 },
+  { rank: 3, userId: 'dev-3', username: 'night_owl', lvl: 31, xp: 71_020 },
+  { rank: 4, userId: 'dev-4', username: 'Pixelka', lvl: 28, xp: 55_300 },
+  { rank: 5, userId: 'dev-5', username: 'mr_coin', lvl: 25, xp: 43_870 },
+];
+const leaderboardShow = (inTop: boolean) =>
+  send('dev:leaderboard', {
+    requesterId: inTop ? 'dev-3' : 'dev-77',
+    requesterName: inTop ? 'night_owl' : 'LuckyViewer',
+    entries: BOARD_TOP,
+    you: inTop ? null : { rank: 18, userId: 'dev-77', username: 'LuckyViewer', lvl: 9, xp: 2_340 },
+  });
+
 // !shop: окно героев на оверлее на 12 секунд (в чат ничего не пишет). Баланс, купленные и надетый герой — из полей.
 // Ждёт, пока на сцене рулетка или лотерея. База не меняется.
 const shopCoins = ref(500);
@@ -949,7 +969,8 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
           </select>
         </label>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="changeHero">Сменить героя у этого зрителя (как !use)</button>
-        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst">По сообщению от каждой роли</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst()">По сообщению от каждой роли</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatRolesBurst(true)">Highlight от каждой роли</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatSpam">Семь подряд (лимит 5)</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="chatLongLink">Ссылка и длинное слово</button>
       </section>
@@ -1147,6 +1168,14 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SAMPLE)">Пример: полная карточка</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileShow(PROFILE_SPARSE)">Пример: новичок без героя</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="profileRolesBurst">По карточке от каждой роли</button>
+      </section>
+
+      <section v-show="tab === 'leaderboard'" class="flex flex-col gap-y-3">
+        <p class="text-sm text-sticker-muted">
+          Награда «Flex Leaderboard»: откройте превью «Лидерборд» или «Сцена». Карточка висит 9 секунд.
+        </p>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="leaderboardShow(false)">Активировавший вне топа</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="leaderboardShow(true)">Активировавший в топе</button>
       </section>
 
       <section v-show="tab === 'shop'" class="flex flex-col gap-y-3">

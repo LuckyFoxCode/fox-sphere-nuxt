@@ -12,6 +12,7 @@ import {
   isLotteryParticipantsPayload,
   isLotteryTicketPayload,
   isMusicPayloadOrNull,
+  isLeaderboardShowPayload,
   isProfileShowPayload,
   isShopShowPayload,
   isRaidPayload,
@@ -191,6 +192,7 @@ io.on('connection', (socket) => {
   socket.on('dev:fishing-chest', relayDev(isFishingChestPayload, (payload) => emitEvent('fishing:chest', payload)));
   socket.on('dev:add-vip', relayDev(isAddVipPayload, (payload) => emitEvent('twitch:add-vip', payload)));
   socket.on('dev:profile', relayDev(isProfileShowPayload, (payload) => emitEvent('profile:show', payload)));
+  socket.on('dev:leaderboard', relayDev(isLeaderboardShowPayload, (payload) => emitEvent('leaderboard:show', payload)));
   socket.on('dev:shop', relayDev(isShopShowPayload, (payload) => emitEvent('shop:show', payload)));
   socket.on('dev:golden-beer', relayDev(isGoldenBeerPayload, (payload) => emitEvent('twitch:golden-beer', payload)));
 

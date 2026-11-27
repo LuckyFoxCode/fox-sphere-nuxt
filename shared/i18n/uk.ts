@@ -86,6 +86,7 @@ export const uk: BotMessages = {
     failed: (name) => `⚠️ @${name}, не вдалося змінити статус. Спробуй пізніше.`,
   },
   reward: (name, title) => `🎁 @${name} активує нагороду «${title}»! Дякую, що витрачаєш бали! 💜`,
+  leaderboard: (name, top, yourRank) => `🏆 @${name} хизується лідербордом! Топ-5 за XP: ${top}${yourRank ? ` Ти на ${yourRank} місці.` : ''}`,
   denied: (name) => `@${name}, у тебе немає прав на цю команду!`,
   xpBoost: {
     started: (name, minutes, multiplier) => `⚡ @${name} вмикає буст XP ×${multiplier} на ${count(minutes, 'хвилину', 'хвилини', 'хвилин')}! 🚀`,

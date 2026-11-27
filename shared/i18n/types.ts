@@ -144,6 +144,8 @@ export type BotMessages = {
   founder: FounderMessages;
   // Ответ в чат на награду за баллы: `name` — кто активировал, `title` — название награды
   reward: (name: string, title: string) => string;
+  // Награда «Flex Leaderboard»: `top` — готовая строка топ-5, `yourRank` — место активировавшего, если он вне топа
+  leaderboard: (name: string, top: string, yourRank: string | null) => string;
   // Отказ командам для стримера и модераторов (!xpboost, !timer, !stoptimer)
   denied: NameMessage;
   xpBoost: XpBoostMessages;

@@ -48,3 +48,29 @@ export const watchStreakReward = (streak: number, isRepeat: boolean): { xp: numb
     coins: Math.floor((streak * WATCH_STREAK_REWARD.COINS_PER_STREAK) / divisor),
   };
 };
+
+// Особые награды за баллы канала. Опознаются по id награды из Twitch (REWARD_STATS_ID, REWARD_LEADERBOARD_ID
+// в .env бота) или, если id не заданы, по названию без учёта регистра. Остальные награды получают общий ответ.
+export const SPECIAL_REWARD_TITLES = {
+  stats: ['check my stats'],
+  leaderboard: ['flex leaderboard'],
+} as const;
+export type SpecialReward = keyof typeof SPECIAL_REWARD_TITLES;
+
+export const LEADERBOARD_TOP = 5;
+
+export const matchSpecialReward = (
+  reward: { id?: string; title: string },
+  ids: Partial<Record<SpecialReward, string>> = {},
+): SpecialReward | null => {
+  const title = reward.title.trim().toLowerCase();
+  for (const kind of Object.keys(SPECIAL_REWARD_TITLES) as SpecialReward[]) {
+    const id = ids[kind];
+    if (id) {
+      if (reward.id === id) return kind;
+      continue;
+    }
+    if ((SPECIAL_REWARD_TITLES[kind] as readonly string[]).includes(title)) return kind;
+  }
+  return null;
+};

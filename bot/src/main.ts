@@ -5,21 +5,25 @@ import { createBadgeResolver } from './badges';
 import { getJackpot } from './bank';
 import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
+import { buildProfilePayload } from './commands/profile';
 import { playLotteryScene, playParticipants } from './commands/lottery';
 import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
+import { buildLeaderboard, rankOf } from './leaderboard';
 import { language, messages } from './language';
 import { awardLotteryXp } from './lottery';
 import { awardWatchStreak } from './watchStreak';
 import { getNowPlaying, startMusicReader } from './music';
 import { prisma } from './db';
+import { specialRewardOf } from './rewards';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
 import { createSpinStage } from './spinStage';
 import { addStreamXp, getStreamState } from './stream';
 import { getActiveTimer } from './streamTimer';
 import { getActiveXpBoost, startAutoXpBoost } from './xpBoost';
-import type { ChatMessagePayload } from '../../shared/events';
+import type { ChatMessagePayload, RewardRedeemPayload } from '../../shared/events';
+import type { SpecialReward } from '../../shared/economy';
 import type { Viewer } from '../../generated/prisma/client';
 import { DEFAULT_HERO_ID } from '../../shared/heroes';
 import { getActiveHeroId } from './heroes';
@@ -216,8 +220,63 @@ if (!config.enabled) {
     }
   };
 
+  // Цвет ника для карточек по наградам: у события награды его нет, берём из последнего сообщения зрителя.
+  // Один канал: ключ — twitchId, карта живёт в процессе и денег не хранит
+  const lastColor = new Map<string, string>();
+
+  // «Check My Stats» и «Flex Leaderboard»: те же данные, что у !profile, но по награде, а не по команде
+  const showSpecialReward = async (kind: SpecialReward, reward: RewardRedeemPayload) => {
+    const existing = await prisma.viewer.findUnique({ where: { twitchId: reward.userId } });
+    const viewer =
+      existing ??
+      (await ensureViewer(reward.userId, reward.username, {
+        isMod: false,
+        isSubscriber: false,
+        isBroadcaster: false,
+        isVip: false,
+        isFollower: false,
+      }));
+    const isBroadcaster = reward.userId === config.streamerId;
+    const roles = {
+      isBroadcaster,
+      isMod: viewer.isMod,
+      isSubscriber: viewer.isSubscriber,
+      isVip: false,
+      isFollower: isBroadcaster || viewer.isSubscriber ? false : await isFollower(reward.userId),
+    };
+    if (kind === 'stats') {
+      const color = lastColor.get(reward.userId) ?? '#9146FF';
+      const profile = await buildProfilePayload(viewer, { displayName: reward.username, color, roles });
+      emitEvent('profile:show', profile);
+      // В dev только оверлей: в чат пишет боевой бот. Текст нужен тому, кто не успел прочесть карточку
+      if (!config.isProduction) return;
+      const text = messages().profile(reward.username, {
+        lvl: profile.lvl,
+        xp: profile.xp - profile.startXp,
+        xpToNext: profile.maxXp - profile.startXp,
+        coins: profile.coins,
+        rank: await rankOf(viewer),
+      });
+      await chat.say(channel, text);
+      await showBotMessage(text);
+      return;
+    }
+    const board = await buildLeaderboard(viewer, reward.username);
+    emitEvent('leaderboard:show', board);
+    // В dev только оверлей: в чат пишет боевой бот
+    if (!config.isProduction || board.entries.length === 0) return;
+    const text = messages().leaderboard(
+      reward.username,
+      board.entries.map((entry) => `${entry.rank}. ${entry.username} (lvl ${entry.lvl})`).join(' · '),
+      board.you ? `${board.you.rank}` : null,
+    );
+    await chat.say(channel, text);
+    await showBotMessage(text);
+  };
+
   chat.onMessage(async (_channel, _user, text, msg) => {
     const info = msg.userInfo;
+    lastColor.set(info.userId, info.color || '#9146FF');
     console.log(`[chat] ${info.displayName}: ${text}`);
 
     try {
@@ -388,6 +447,12 @@ if (!config.enabled) {
     },
     onRewardRedeem: async (reward) => {
       console.log(`[reward] ${reward.username}: ${reward.rewardTitle}`);
+      // Особая награда заменяет общий алерт и общий ответ своей карточкой на оверлее
+      const special = specialRewardOf(reward);
+      if (special) {
+        await showSpecialReward(special, reward);
+        return;
+      }
       emitEvent('twitch:reward-redeem', reward);
       // В dev только лог: на ту же награду уже отвечает боевой бот
       if (!config.isProduction) {

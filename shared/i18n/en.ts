@@ -81,6 +81,7 @@ export const en: BotMessages = {
     failed: (name) => `⚠️ @${name}, couldn't change the status. Try again later.`,
   },
   reward: (name, title) => `🎁 @${name} redeems "${title}"! Thanks for spending your points! 💜`,
+  leaderboard: (name, top, yourRank) => `🏆 @${name} flexes the leaderboard! Top 5 by XP: ${top}${yourRank ? ` You are #${yourRank}.` : ''}`,
   denied: (name) => `@${name}, you don't have permission to use this command!`,
   xpBoost: {
     started: (name, minutes, multiplier) => `⚡ @${name} activated an XP ×${multiplier} boost for ${minutes} minutes! 🚀`,

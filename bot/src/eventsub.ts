@@ -60,6 +60,7 @@ export const startEventSub = (options: EventSubOptions) => {
         userId: event.userId,
         username: event.userDisplayName,
         rewardTitle: event.rewardTitle,
+        rewardId: event.rewardId,
         redemptionId: event.id,
       });
     });

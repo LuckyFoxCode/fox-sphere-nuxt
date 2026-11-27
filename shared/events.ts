@@ -74,6 +74,8 @@ export type RewardRedeemPayload = {
   username: string;
   rewardTitle: string;
   redemptionId: string;
+  // id награды в Twitch: по нему опознаются особые награды (shared/economy.ts); в эмуляторе может не быть
+  rewardId?: string;
 };
 
 // Уровень подписки в обозначениях Twitch: 1000 — первый, 2000 — второй, 3000 — третий
@@ -151,6 +153,23 @@ export type ShopShowPayload = {
   ownedHeroIds: string[];
   activeHeroId: string | null;
   prefix: string;
+};
+
+// Карточка лидерборда за награду «Flex Leaderboard»: топ по XP и строка активировавшего, если он вне топа.
+// `you` — null, когда зритель уже в `entries` (его строка там подсвечивается по `userId`) или не ранжируется.
+export type LeaderboardEntryPayload = {
+  rank: number;
+  userId: string;
+  username: string;
+  lvl: number;
+  xp: number;
+};
+
+export type LeaderboardShowPayload = {
+  requesterId: string;
+  requesterName: string;
+  entries: LeaderboardEntryPayload[];
+  you: LeaderboardEntryPayload | null;
 };
 
 export type ProfileShowPayload = {
@@ -294,6 +313,7 @@ export type ServerToClientEvents = {
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
   'profile:show': (payload: ProfileShowPayload) => void;
+  'leaderboard:show': (payload: LeaderboardShowPayload) => void;
   'shop:show': (payload: ShopShowPayload) => void;
   'hero:changed': (payload: HeroChangedPayload) => void;
 };
@@ -339,6 +359,7 @@ export type ClientToServerEvents = {
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
   'dev:profile': (payload: unknown, ack?: DevAck) => void;
+  'dev:leaderboard': (payload: unknown, ack?: DevAck) => void;
   'dev:shop': (payload: unknown, ack?: DevAck) => void;
 };
 
@@ -443,7 +464,8 @@ export const isRewardRedeemPayload = (value: unknown): value is RewardRedeemPayl
   isNonEmptyString(value.userId) &&
   isNonEmptyString(value.username) &&
   isNonEmptyString(value.rewardTitle) &&
-  isNonEmptyString(value.redemptionId);
+  isNonEmptyString(value.redemptionId) &&
+  (value.rewardId === undefined || isNonEmptyString(value.rewardId));
 
 export const isBitsPayload = (value: unknown): value is BitsPayload =>
   isRecord(value) && (value.username === null || isNonEmptyString(value.username)) && isInt(value.bits, 1);
@@ -605,6 +627,23 @@ export const isProfileShowPayload = (value: unknown): value is ProfileShowPayloa
       isInt(badge.rarity, 1, 5) &&
       isInt(badge.value, 0),
   );
+
+const isLeaderboardEntry = (value: unknown): value is LeaderboardEntryPayload =>
+  isRecord(value) &&
+  isInt(value.rank, 1) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.lvl, 1) &&
+  isInt(value.xp, 0);
+
+export const isLeaderboardShowPayload = (value: unknown): value is LeaderboardShowPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.requesterId) &&
+  isNonEmptyString(value.requesterName) &&
+  Array.isArray(value.entries) &&
+  value.entries.length <= 10 &&
+  value.entries.every(isLeaderboardEntry) &&
+  (value.you === null || isLeaderboardEntry(value.you));
 
 export const isShopShowPayload = (value: unknown): value is ShopShowPayload =>
   isRecord(value) &&
