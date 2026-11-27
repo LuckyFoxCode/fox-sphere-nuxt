@@ -24,6 +24,7 @@ import {
   isSubPayload,
   isBitsPayload,
   isWatchStreakPayload,
+  isUserLevelUpPayload,
   resolveSocketPort,
   type ClientToServerEvents,
   type DevAck,
@@ -190,6 +191,7 @@ io.on('connection', (socket) => {
   socket.on('dev:bits', relayDev(isBitsPayload, (payload) => emitEvent('twitch:bits', payload)));
   socket.on('dev:watch-streak', relayDev(isWatchStreakPayload, (payload) => emitEvent('twitch:watch-streak', payload)));
   socket.on('dev:fishing-chest', relayDev(isFishingChestPayload, (payload) => emitEvent('fishing:chest', payload)));
+  socket.on('dev:user-level-up', relayDev(isUserLevelUpPayload, (payload) => emitEvent('user:level-up', payload)));
   socket.on('dev:add-vip', relayDev(isAddVipPayload, (payload) => emitEvent('twitch:add-vip', payload)));
   socket.on('dev:profile', relayDev(isProfileShowPayload, (payload) => emitEvent('profile:show', payload)));
   socket.on('dev:leaderboard', relayDev(isLeaderboardShowPayload, (payload) => emitEvent('leaderboard:show', payload)));

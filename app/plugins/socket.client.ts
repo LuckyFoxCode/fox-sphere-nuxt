@@ -58,6 +58,7 @@ export default defineNuxtPlugin(() => {
   socket.on('twitch:watch-streak', alerts.onWatchStreak);
   socket.on('fishing:chest', alerts.onFishingChest);
   socket.on('twitch:golden-beer', alerts.onGoldenBeer);
+  socket.on('user:level-up', alerts.onLevelUp);
   socket.on('twitch:add-vip', alerts.onAddVip);
   socket.on('lottery:ticket', alerts.onLotteryTicket);
 

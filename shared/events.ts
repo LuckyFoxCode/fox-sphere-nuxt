@@ -113,6 +113,20 @@ export type FishingChestPayload = {
   lang: Lang;
 };
 
+// Новый уровень зрителя (любой источник XP: чат, рыбалка, рулетка, награды за стрик). `newLevel` — уже
+// записанный в базу уровень, `fromLevel` — прежний (XP может перескочить несколько уровней), `xp` — весь
+// накопленный XP зрителя (полоса до следующего уровня). `heroId` и `heroLevel` — активный герой и его
+// уровень; без героя карточка рисуется без портрета и статов.
+export type UserLevelUpPayload = {
+  userId: string;
+  username: string;
+  newLevel: number;
+  fromLevel: number;
+  xp: number;
+  heroId?: string;
+  heroLevel?: number;
+};
+
 // VIP, выданный командой `!addvip`. Поля те же, что у `twitch:add-vip` в старом fox-sphere, но
 // `twitchId` назван `userId`, как у остальных алертов. Снятие VIP алерта не даёт.
 export type AddVipPayload = {
@@ -310,6 +324,7 @@ export type ServerToClientEvents = {
   'twitch:bits': (payload: BitsPayload) => void;
   'twitch:watch-streak': (payload: WatchStreakPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
+  'user:level-up': (payload: UserLevelUpPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
   'profile:show': (payload: ProfileShowPayload) => void;
@@ -356,6 +371,7 @@ export type ClientToServerEvents = {
   'dev:bits': (payload: unknown, ack?: DevAck) => void;
   'dev:watch-streak': (payload: unknown, ack?: DevAck) => void;
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
+  'dev:user-level-up': (payload: unknown, ack?: DevAck) => void;
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
   'dev:profile': (payload: unknown, ack?: DevAck) => void;
@@ -491,6 +507,16 @@ export const isSubPayload = (value: unknown): value is SubPayload => {
 };
 
 const KNOWN_LANGS: readonly unknown[] = LANGS;
+
+export const isUserLevelUpPayload = (value: unknown): value is UserLevelUpPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.newLevel, 1, 10_000) &&
+  isInt(value.fromLevel, 1, 10_000) &&
+  isInt(value.xp, 0) &&
+  (value.heroLevel === undefined || isInt(value.heroLevel, 1, 1000)) &&
+  (value.heroId === undefined || (typeof value.heroId === 'string' && isKnownHeroId(value.heroId)));
 
 export const isFishingChestPayload = (value: unknown): value is FishingChestPayload =>
   isRecord(value) &&

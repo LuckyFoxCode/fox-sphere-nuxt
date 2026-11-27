@@ -201,9 +201,10 @@ model TwitchToken {            // без изменений по смыслу
 | `twitch:timer`, `twitch:timer-stop` | таймер |
 | `twitch:watch-streak` | алерт стрика: `{userId, username, streakValue, xpAwarded, coinsAwarded, isRepeat}`; плашка в чате идёт отдельно, полем `watchStreak` в `chat:message` |
 | `fishing:chest` | алерты: сундук из рыбалки (новое, в старом проекте не было) |
+| `user:level-up` | алерт «level up»: `{userId, username, newLevel, fromLevel, xp, heroId?, heroLevel?}`; бот шлёт его при любом новом уровне зрителя, из любого источника XP (чат, рыбалка, приз рулетки, награда за стрик), в dev и в prod |
 | `music:now-playing` (`null` = скрыть) | карточка «играет сейчас», скрывается через 45с тишины, отбрасывает payload старше 45с |
 
-Карточку зрителя и level-up (`user:created`, `user:level-up` в старом проекте) в новый оверлей не переносим.
+Карточку зрителя (`user:created` в старом проекте) в новый оверлей не переносим. Level up зрителя (`user:level-up`) вернулся отдельной карточкой `LevelUpCard` (алерт в общей очереди).
 
 Оверлей → сервер (запрос состояния при подключении): `stream:get-system-state`, `twitch:get-timer`, `music:get-current` (состояние в памяти бота; оверлей отбрасывает старше 45 с).
 

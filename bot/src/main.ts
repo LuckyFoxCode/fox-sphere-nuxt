@@ -159,16 +159,44 @@ if (!config.enabled) {
     await reply(messages().levelUp(username, lvl));
   };
 
+  // Сбой героя или сокета не должен съесть сообщение о level-up в чат
+  const showViewerLevelUp = async (
+    { viewer, username }: { viewer: Viewer; username: string },
+    award: { lvl: number; fromLvl: number; totalXp: number },
+  ) => {
+    try {
+      const heroId = await getActiveHeroId(viewer.id);
+      const hero = await prisma.viewerHero.findUnique({
+        where: { viewerId_heroId: { viewerId: viewer.id, heroId } },
+      });
+      emitEvent('user:level-up', {
+        userId: viewer.twitchId,
+        username,
+        newLevel: award.lvl,
+        fromLevel: award.fromLvl,
+        xp: award.totalXp,
+        heroId,
+        heroLevel: hero?.level ?? 1,
+      });
+    } catch (error) {
+      console.error(`[xp] наклейка level-up для ${username} не показана:`, error);
+    }
+  };
+
   // После начисления XP: шапка стрима и сообщения о новых уровнях в чат
   const showXpAward = async (
-    username: string,
-    award: { lvl: number; leveledUp: boolean },
+    who: { viewer: Viewer; username: string },
+    award: { lvl: number; fromLvl: number; totalXp: number; leveledUp: boolean },
     reply: (text: string) => Promise<void>,
     stream: Awaited<ReturnType<typeof addStreamXp>> | null,
   ) => {
     if (stream) emitEvent('stream:xp-updated', stream.state);
 
-    if (award.leveledUp) await announceViewerLevel(username, award.lvl, reply);
+    if (award.leveledUp) {
+      // Наклейка на оверлее, из любого источника XP и в любом окружении (в dev в чат не пишем, а наклейка нужна)
+      await showViewerLevelUp(who, award);
+      await announceViewerLevel(who.username, award.lvl, reply);
+    }
     if (stream?.leveledUp) {
       // Как в старом боте: новый уровень стрима включает буст на 30 минут, если другого нет
       await startAutoXpBoost().catch((error: unknown) =>
@@ -201,7 +229,7 @@ if (!config.enabled) {
     awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
       const award = await awardBonusXp(viewer.id, xp);
       const stream = await tryAddStreamXp(xp);
-      return () => showXpAward(displayName, award, reply, stream);
+      return () => showXpAward({ viewer, username: displayName }, award, reply, stream);
     },
   });
 
@@ -345,7 +373,7 @@ if (!config.enabled) {
             `(всего XP ${result.totalXp}, уровень ${result.lvl})`,
         );
         // Тот же XP идёт стриму
-        await showXpAward(info.displayName, result, reply, await tryAddStreamXp(result.xp));
+        await showXpAward({ viewer, username: info.displayName }, result, reply, await tryAddStreamXp(result.xp));
       }
     } catch (error) {
       console.error('[bot] ошибка обработки сообщения:', error);
@@ -411,7 +439,7 @@ if (!config.enabled) {
       if (award.xp > 0) {
         const reply = (text: string) => chat.say(channel, text);
         const xpAward = await awardBonusXp(viewer.id, award.xp);
-        await showXpAward(info.displayName, xpAward, reply, await tryAddStreamXp(award.xp));
+        await showXpAward({ viewer, username: info.displayName }, xpAward, reply, await tryAddStreamXp(award.xp));
       }
     } catch (error) {
       console.error(`[streak] рубеж ${streak} для ${info.displayName} не обработан:`, error);

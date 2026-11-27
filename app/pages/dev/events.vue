@@ -128,6 +128,7 @@ type DevEvent =
   | 'dev:bits'
   | 'dev:watch-streak'
   | 'dev:fishing-chest'
+  | 'dev:user-level-up'
   | 'dev:golden-beer'
   | 'dev:add-vip'
   | 'dev:lottery-draw'
@@ -431,6 +432,20 @@ const chest = (name = username.value, lang: Lang = fishLang.value) => {
   send('dev:fishing-chest', { userId: `dev-${name.toLowerCase()}`, username: name, coinAmount: CHEST_COINS, lang });
 };
 
+// --- Level up зрителя ------------------------------------------------------------------
+// Как настоящий: ник, новый уровень и активный герой (тот, что выбран в «Чате»); без героя — значок
+const levelUpValue = ref(12);
+const levelUpNoHero = ref(false);
+const userLevelUp = (level = levelUpValue.value) =>
+  send('dev:user-level-up', {
+    ...alertUser(),
+    newLevel: level,
+    fromLevel: Math.max(1, level - 1),
+    // Середина уровня: накопительный XP между порогами level-1 и level, как у настоящего зрителя
+    xp: Math.round((getLevelRange(level).startXp + getLevelRange(level).maxXp) / 2),
+    ...(levelUpNoHero.value ? {} : { heroId: chatHero.value, heroLevel: Math.max(1, Math.floor(level / 2)) }),
+  });
+
 // Все сразу: на оверлее они должны идти по одному
 const allAlerts = () => {
   follow();
@@ -442,6 +457,7 @@ const allAlerts = () => {
   sendBits(username.value);
   watchStreakAlert();
   chest();
+  userLevelUp();
   goldenBeer();
   vipUnlocked();
 };
@@ -979,6 +995,16 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         <p class="text-sm text-sticker-muted">Ник берётся из поля «Ник». Откройте превью «Алерты» или «Сцена».</p>
         <button class="rounded-lg bg-[#ffd066] px-3 py-2 font-bold text-sticker-body" @click="chest()">
           Сундук из рыбалки (+{{ CHEST_COINS }} в банк)
+        </button>
+        <div class="flex items-end gap-x-2">
+          <label class="flex flex-1 flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+            Новый уровень
+            <input v-model.number="levelUpValue" type="number" min="1" max="999" class="rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+          </label>
+          <label class="flex items-center gap-x-1.5 pb-2 text-sm"><input v-model="levelUpNoHero" type="checkbox" /> без героя</label>
+        </div>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="userLevelUp()">
+          Level up зрителя (герой из «Чата»)
         </button>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="follow">Follow</button>
 

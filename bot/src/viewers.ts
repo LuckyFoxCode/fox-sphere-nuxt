@@ -45,7 +45,7 @@ export const xpForMessage = (viewer: Viewer, roles: ChatRoles): number => {
 
 export type XpResult =
   | { status: 'cooldown'; waitMs: number }
-  | { status: 'awarded'; xp: number; totalXp: number; lvl: number; leveledUp: boolean };
+  | { status: 'awarded'; xp: number; totalXp: number; fromLvl: number; lvl: number; leveledUp: boolean };
 
 // Кулдаун хранится в БД (lastXpAt), поэтому переживает перезапуск бота.
 export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<XpResult> => {
@@ -65,7 +65,7 @@ export const awardMessageXp = async (viewer: Viewer, roles: ChatRoles): Promise<
     },
   });
 
-  return { status: 'awarded', xp, totalXp: updated.xp, ...(await applyLevel(updated)) };
+  return { status: 'awarded', xp, totalXp: updated.xp, fromLvl: updated.lvl, ...(await applyLevel(updated)) };
 };
 
 // Поднимает уровень под накопленный XP; вниз уровень не опускается

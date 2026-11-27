@@ -12,6 +12,7 @@ import type {
   RewardRedeemPayload,
   SubPayload,
   SubTier,
+  UserLevelUpPayload,
   WatchStreakPayload,
 } from '#shared/events';
 import { achievementArtPath, achievementLevel, findCategory } from '#shared/achievements';
@@ -20,7 +21,18 @@ import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
 // chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
 // beer — золотое пиво: на пластине не значок, а арт ступени
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket' | 'bits' | 'streak';
+export type AlertKind =
+  | 'follow'
+  | 'raid'
+  | 'reward'
+  | 'sub'
+  | 'chest'
+  | 'beer'
+  | 'vip'
+  | 'ticket'
+  | 'bits'
+  | 'streak'
+  | 'levelup';
 
 export interface AlertView {
   kind: AlertKind;
@@ -34,6 +46,8 @@ export interface AlertView {
   chips?: string[];
   /** Арт достижения вместо значка: занимает пластину целиком */
   media?: { src: string; alt: string };
+  /** Level up: данные для отдельной карточки (LevelUpCard), как у сундука своя наклейка */
+  levelUp?: UserLevelUpPayload;
   /** Овсяный чип в углу — флаг, не факт (например, «new tier») */
   tag?: string;
   /** Адрес звука из public/; null — алерт без звука */
@@ -44,6 +58,8 @@ export interface AlertView {
 }
 
 const ALERT_DURATION_MS = 5000;
+// Level up: на карточке портрет, ранг, полоса XP и статы героя, их надо успеть прочитать
+const LEVEL_UP_ALERT_DURATION_MS = 6500;
 // Чуть дольше обычного: первую секунду занимает открытие сундука
 const CHEST_ALERT_DURATION_MS = 5500;
 // Пик звука приходится на открытие крышки (около 0,9 с)
@@ -74,6 +90,9 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   // streak.mp3 из старого проекта занят сундуком, поэтому у стрика свой звук: watch-streak.mp3
   // синтезирован (бодрый восходящий аккорд, около 1,3 с), чужих файлов и лицензий нет
   streak: '/assets/sound/watch-streak.mp3',
+  // В старом проекте был level-up.mp3, но он не перенесён: level-up.mp3 синтезирован с нуля (быстрый подъём
+  // G-C-E-G и яркий мажорный аккорд, около 1,5 с), чужих файлов и лицензий нет
+  levelup: '/assets/sound/level-up.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -219,6 +238,18 @@ const streakFlavor = (streak: number): string => {
   if (streak % 5 === 0) return 'a round number';
   return 'streams in a row';
 };
+
+// Новый уровень зрителя: своя карточка в духе мини-профиля (LevelUpCard), не на старом неоне (DESIGN.md, 4.8).
+// Она крупнее обычной наклейки: на 44-пиксельной пластине героя не разглядеть. Висит дольше обычного.
+export const levelUpAlert = (payload: UserLevelUpPayload): AlertView => ({
+  kind: 'levelup',
+  paper: 'bg-paper-cyan',
+  label: 'level up',
+  title: payload.username,
+  levelUp: payload,
+  sound: ALERT_SOUNDS.levelup,
+  durationMs: LEVEL_UP_ALERT_DURATION_MS,
+});
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {

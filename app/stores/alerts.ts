@@ -9,6 +9,7 @@ import type {
   BitsPayload,
   RewardRedeemPayload,
   SubPayload,
+  UserLevelUpPayload,
   WatchStreakPayload,
 } from '#shared/events';
 import type { AlertView } from '~/utils/alerts';
@@ -89,6 +90,7 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onWatchStreak = (payload: WatchStreakPayload) => push(watchStreakAlert(payload));
   const onFishingChest = (payload: FishingChestPayload) => push(chestAlert(payload));
   const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
+  const onLevelUp = (payload: UserLevelUpPayload) => push(levelUpAlert(payload));
 
   const onAddVip = (payload: AddVipPayload) => push(addVipAlert(payload));
   const onLotteryTicket = (payload: LotteryTicketPayload) => push(lotteryTicketAlert(payload));
@@ -103,6 +105,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     onWatchStreak,
     onFishingChest,
     onGoldenBeer,
+    onLevelUp,
     onAddVip,
     onLotteryTicket,
   };

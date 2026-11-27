@@ -160,6 +160,11 @@
     50% { transform: translateY(0) rotate(6deg); }
     70% { transform: translateY(-2px) rotate(-3deg); }
   }
+  /* Level up: значок или портрет героя один раз поднимается на место, без блика и пульса */
+  @keyframes icon-rise {
+    0% { transform: translateY(8px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
   /* Блик: полоса света один раз проходит по пластине слева направо */
   @keyframes plate-shine {
     0% { transform: translateX(-160%) skewX(-20deg); }
@@ -174,6 +179,7 @@
   .plate-bits .plate-icon { animation: icon-coin 900ms ease-in-out 120ms both; }
   .plate-sub .plate-icon,
   .plate-vip .plate-icon { animation: icon-pop 650ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both; }
+  .plate-levelup .plate-icon { animation: icon-rise 420ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both; }
   .plate-reward .plate-icon,
   .plate-ticket .plate-icon { animation: icon-hop 700ms ease-in-out 120ms both; }
   .plate-bits::after,

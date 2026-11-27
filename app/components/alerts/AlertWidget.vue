@@ -15,7 +15,7 @@ import type { AlertKind } from "~/utils/alerts";
 const VOLUME = 0.5;
 
 // У сундука своя наклейка (ChestAlert), у пива и стрика вместо значка арт
-const ICONS: Record<Exclude<AlertKind, "chest" | "beer" | "streak">, Component> = {
+const ICONS: Record<Exclude<AlertKind, "chest" | "beer" | "streak" | "levelup">, Component> = {
   follow: IconPaw,
   raid: IconLightning,
   reward: IconGift,
@@ -56,13 +56,20 @@ watch(
       :username="alerts.current.title"
       :amount="alerts.current.detail ?? ''"
     />
+    <LevelUpCard
+      v-else-if="alerts.current?.kind === 'levelup' && alerts.current.levelUp"
+      :key="`levelup-${alerts.current.id}`"
+      :payload="alerts.current.levelUp"
+    />
     <EventSticker
       v-else-if="alerts.current"
       :key="`sticker-${alerts.current.id}`"
       :paper="alerts.current.paper"
       :motion="alerts.current.kind"
       :icon="
-        alerts.current.kind === 'beer' || alerts.current.kind === 'streak'
+        alerts.current.kind === 'beer' ||
+        alerts.current.kind === 'streak' ||
+        alerts.current.kind === 'levelup'
           ? undefined
           : ICONS[alerts.current.kind]
       "
