@@ -41,6 +41,17 @@ const reload = async (name: string): Promise<boolean> => {
 const filter = ref<CommandRole | 'all'>('all');
 const matches = (role: CommandRole) => filter.value === 'all' || filter.value === role;
 
+const query = ref('');
+const categoryTitle = (id: string) => COMMAND_CATEGORIES.find((category) => category.id === id)?.title ?? '';
+// Поиск по имени и алиасам (с префиксом, с «!» или без), описанию и названию группы
+const found = (name: string, aliases: readonly string[], category: string, description = ''): boolean => {
+  const needle = query.value.trim().toLowerCase();
+  if (!needle) return true;
+  const prefix = data.value?.prefix ?? '!';
+  const names = [name, ...aliases].flatMap((item) => [`!${item}`, `${prefix}${item}`]);
+  return [...names, description, categoryTitle(category)].some((text) => text.toLowerCase().includes(needle));
+};
+
 const codeNames = Object.keys(CODE_COMMANDS) as CodeCommandName[];
 // Порядок текстовых команд — как в каталоге, незнакомые в конце
 const textOrder = Object.keys(TEXT_COMMAND_INFO);
@@ -60,13 +71,31 @@ const groups = computed(() => {
   })).filter((group) => group.text.length || group.code.length);
 });
 
+// Что подходит под поиск, с ролью каждой команды. Текстовые команды доступны всем зрителям
+const searched = computed(() => {
+  const roles = new Map<string, CommandRole>();
+  for (const command of data.value?.text ?? []) {
+    const info = TEXT_COMMAND_INFO[command.name];
+    if (found(command.name, command.aliases, info?.category ?? 'other', info?.description)) {
+      roles.set(command.name, 'viewer');
+    }
+  }
+  for (const name of codeNames) {
+    const { aliases, category, description, role } = CODE_COMMANDS[name];
+    if (found(name, aliases, category, description)) roles.set(name, role);
+  }
+  return roles;
+});
+// Проходит и поиск, и фильтр по ролям
+const visible = (name: string, role: CommandRole) => searched.value.has(name) && matches(role);
+const shownCount = computed(() => [...searched.value.values()].filter(matches).length);
+
 type Group = (typeof groups.value)[number];
-// Текстовые команды доступны всем зрителям
-const hasShown = (group: Group) =>
-  (group.text.length > 0 && matches('viewer')) || group.code.some((name) => matches(CODE_COMMANDS[name].role));
+const hasCode = (group: Group) => group.code.some((name) => visible(name, CODE_COMMANDS[name].role));
+const hasShown = (group: Group) => group.text.some((command) => visible(command.name, 'viewer')) || hasCode(group);
 
 const filters = computed(() => {
-  const roles = [...codeNames.map((name) => CODE_COMMANDS[name].role), ...(data.value?.text ?? []).map(() => 'viewer')];
+  const roles = [...searched.value.values()];
   return [
     { value: 'all' as const, label: 'Все команды', count: roles.length },
     ...(Object.keys(COMMAND_ROLES) as CommandRole[]).map((value) => ({
@@ -100,6 +129,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
     />
 
     <template v-if="data">
+      <UInput
+        v-model="query"
+        type="search"
+        icon="i-lucide-search"
+        size="lg"
+        placeholder="Найти команду: gh, !timer, рулетка"
+        aria-label="Поиск по командам"
+        class="w-full max-w-md"
+      />
+
       <div class="flex flex-wrap gap-2" role="group" aria-label="Кто может вызвать команду">
         <UButton
           v-for="item in filters"
@@ -129,7 +168,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
         description="Заполните их шаблонами: pnpm db:seed:dev (для боевой базы pnpm db:seed:prod)."
       />
 
-      <!-- v-show, а не v-if: фильтр не должен стирать несохранённые правки -->
+      <p v-if="shownCount === 0" class="text-muted">Ничего не нашлось. Измените запрос или фильтр по ролям.</p>
+
+      <!-- v-show, а не v-if: поиск и фильтр не должны стирать несохранённые правки -->
       <section v-for="group in groups" v-show="hasShown(group)" :key="group.id" class="flex flex-col gap-3">
         <div class="mt-4">
           <h2 class="text-lg font-semibold text-highlighted">{{ group.title }}</h2>
@@ -138,7 +179,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
 
         <AdminTextCommandCard
           v-for="command in group.text"
-          v-show="matches('viewer')"
+          v-show="visible(command.name, 'viewer')"
           :key="command.name"
           :command="command"
           :prefix="data.prefix"
@@ -149,11 +190,10 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
           @dirty="setDirty"
         />
 
-        <UCard v-if="group.code.some((name) => matches(CODE_COMMANDS[name].role))">
+        <UCard v-if="hasCode(group)">
           <div class="flex flex-col divide-y divide-default">
             <div
-              v-for="name in group.code"
-              v-show="matches(CODE_COMMANDS[name].role)"
+              v-for="name in group.code.filter((item) => visible(item, CODE_COMMANDS[item].role))"
               :key="name"
               class="flex flex-col gap-2 py-3 first:pt-0 last:pb-0"
             >
@@ -172,7 +212,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnUnload));
 
         <AdminPhrases
           v-if="group.phrases && group.code.length"
-          v-show="group.code.some((name) => matches(CODE_COMMANDS[name].role))"
+          v-show="hasCode(group)"
           :section="group.phrases"
           :prefix="data.prefix"
           :bot-lang="data.botLang"
