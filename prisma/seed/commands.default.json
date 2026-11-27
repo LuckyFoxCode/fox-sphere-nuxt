@@ -11,7 +11,43 @@
       "хелп"
     ],
     "responses": [
-      "🔮 Commands: {prefix}coins • {prefix}profile • {prefix}spin • {prefix}fish | Fun: {prefix}lurk | Info: {prefix}gh • {prefix}tg • {prefix}stack • {prefix}project • {prefix}version ➔ Type any command for details! 🚀"
+      "🔮 Commands: {prefix}coins • {prefix}profile • {prefix}spin • {prefix}fish | Heroes: {prefix}shop • {prefix}buy hero • {prefix}use hero | VIP lottery: {prefix}ticket • {prefix}tickets | Fun: {prefix}lurk • {prefix}pivo | Info: {prefix}gh • {prefix}tg • {prefix}stack • {prefix}project • {prefix}version ➔ Type any command for details! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "help",
+    "lang": "uk",
+    "aliases": [
+      "commands",
+      "bot",
+      "info",
+      "помощь",
+      "команды",
+      "хелп"
+    ],
+    "responses": [
+      "🔮 Команди: {prefix}coins • {prefix}profile • {prefix}spin • {prefix}fish | Герої: {prefix}shop • {prefix}buy hero • {prefix}use hero | VIP-лотерея: {prefix}ticket • {prefix}tickets | Розваги: {prefix}lurk • {prefix}pivo | Інфо:{prefix}gh • {prefix}tg • {prefix}stack • {prefix}project • {prefix}version ➔ Пиши будь-яку команду, щоб дізнатися більше! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "help",
+    "lang": "ru",
+    "aliases": [
+      "commands",
+      "bot",
+      "info",
+      "помощь",
+      "команды",
+      "хелп"
+    ],
+    "responses": [
+      "🔮 Команды: {prefix}coins • {prefix}profile • {prefix}spin • {prefix}fish | Герои: {prefix}shop • {prefix}buy hero • {prefix}use hero | VIP-лотерея: {prefix}ticket • {prefix}tickets | Развлечения: {prefix}lurk • {prefix}pivo | Инфо:{prefix}gh • {prefix}tg • {prefix}stack • {prefix}project • {prefix}version ➔ Напиши любую команду, чтобы узнать больше! 🚀"
     ],
     "enabled": true,
     "cooldownMs": 10000,
@@ -35,6 +71,40 @@
     "scope": "user"
   },
   {
+    "name": "lurk",
+    "lang": "uk",
+    "aliases": [
+      "лурк"
+    ],
+    "responses": [
+      "🦊 @{user} ховається в нірку й переходить у лурк. Насолоджуйся вайбом!",
+      "🌙 @{user} вмощується на дивані. Притримаємо тепле місце!",
+      "👀 @{user} спостерігає з тіні... ми тебе бачимо! 💚",
+      "☕ Світло вимкнено, смаколики готові — @{user} повністю в режимі лурку! 🚀",
+      "🛋️ Ласкаво просимо в лурк, @{user}! Пий водичку й насолоджуйся 💧"
+    ],
+    "enabled": true,
+    "cooldownMs": 300000,
+    "scope": "user"
+  },
+  {
+    "name": "lurk",
+    "lang": "ru",
+    "aliases": [
+      "лурк"
+    ],
+    "responses": [
+      "🦊 @{user} прячется в норку и уходит в лурк. Наслаждайся вайбом!",
+      "🌙 @{user} устраивается на диване. Придержим тёплое местечко!",
+      "👀 @{user} наблюдает из тени... мы тебя видим! 💚",
+      "☕ Свет выключен, вкусняшки готовы — @{user} полностью в режиме лурка! 🚀",
+      "🛋️ Добро пожаловать в лурк, @{user}! Пей водичку и наслаждайся 💧"
+    ],
+    "enabled": true,
+    "cooldownMs": 300000,
+    "scope": "user"
+  },
+  {
     "name": "version",
     "lang": "en",
     "aliases": [
@@ -43,6 +113,34 @@
     ],
     "responses": [
       "🦊 The bot is running version {version}! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "user"
+  },
+  {
+    "name": "version",
+    "lang": "uk",
+    "aliases": [
+      "ver",
+      "версия"
+    ],
+    "responses": [
+      "🦊 Бот працює на версії {version}! 🚀"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "user"
+  },
+  {
+    "name": "version",
+    "lang": "ru",
+    "aliases": [
+      "ver",
+      "версия"
+    ],
+    "responses": [
+      "🦊 Бот работает на версии {version}! 🚀"
     ],
     "enabled": true,
     "cooldownMs": 10000,
@@ -65,6 +163,38 @@
     "scope": "global"
   },
   {
+    "name": "project",
+    "lang": "uk",
+    "aliases": [
+      "task",
+      "current",
+      "проект",
+      "задача"
+    ],
+    "responses": [
+      "🛠️ Поточний проєкт • Опиши тут, над чим працюєш."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "project",
+    "lang": "ru",
+    "aliases": [
+      "task",
+      "current",
+      "проект",
+      "задача"
+    ],
+    "responses": [
+      "🛠️ Текущий проект • Опиши здесь, над чем работаешь."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
     "name": "stack",
     "lang": "en",
     "aliases": [
@@ -76,6 +206,40 @@
     ],
     "responses": [
       "💻 Tech Stack • List your tools here."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "stack",
+    "lang": "uk",
+    "aliases": [
+      "tech",
+      "technologies",
+      "стек",
+      "инструменты",
+      "tools"
+    ],
+    "responses": [
+      "💻 Стек технологій • Перелічи тут свої інструменти."
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "stack",
+    "lang": "ru",
+    "aliases": [
+      "tech",
+      "technologies",
+      "стек",
+      "инструменты",
+      "tools"
+    ],
+    "responses": [
+      "💻 Стек технологий • Перечисли здесь свои инструменты."
     ],
     "enabled": true,
     "cooldownMs": 10000,
@@ -100,6 +264,42 @@
     "scope": "global"
   },
   {
+    "name": "gh",
+    "lang": "uk",
+    "aliases": [
+      "github",
+      "git",
+      "code",
+      "repo",
+      "репозиторий",
+      "код"
+    ],
+    "responses": [
+      "🚀 GitHub • Стеж за моїм шляхом у розробці та заглядай у код: https://github.com/YOUR_GITHUB 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "gh",
+    "lang": "ru",
+    "aliases": [
+      "github",
+      "git",
+      "code",
+      "repo",
+      "репозиторий",
+      "код"
+    ],
+    "responses": [
+      "🚀 GitHub • Следи за моим путём в разработке и заглядывай в код: https://github.com/YOUR_GITHUB 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
     "name": "tg",
     "lang": "en",
     "aliases": [
@@ -110,6 +310,38 @@
     ],
     "responses": [
       "📢 Telegram • Join for devlogs and announcements: https://t.me/YOUR_CHANNEL 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "tg",
+    "lang": "uk",
+    "aliases": [
+      "telegram",
+      "tgchannel",
+      "телеграм",
+      "телега"
+    ],
+    "responses": [
+      "📢 Telegram • Приєднуйся, там девлоги та анонси: https://t.me/YOUR_CHANNEL 🌐"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "tg",
+    "lang": "ru",
+    "aliases": [
+      "telegram",
+      "tgchannel",
+      "телеграм",
+      "телега"
+    ],
+    "responses": [
+      "📢 Telegram • Присоединяйся, там девлоги и анонсы: https://t.me/YOUR_CHANNEL 🌐"
     ],
     "enabled": true,
     "cooldownMs": 10000,
