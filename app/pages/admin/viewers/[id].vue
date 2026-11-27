@@ -47,6 +47,27 @@ const level = computed(() => {
   return { done, size, rank: getRankConfigByLevel(lvl).rankTitle };
 });
 
+// Даты под полоской опыта: каждая своим блоком с иконкой
+const facts = computed(() => {
+  if (!details.value) return [];
+  const { createdAt, lastXpAt, isFollower, followedAt, isStreamer, isBot } = details.value.viewer;
+  const dates = [
+    { icon: 'i-lucide-calendar-plus', color: 'text-primary', label: 'Первый раз в базе', value: formatDate(createdAt) },
+    { icon: 'i-lucide-message-circle', color: 'text-success', label: 'Последний XP за чат', value: formatDate(lastXpAt) },
+  ];
+  // Стример и бот — не зрители
+  if (isStreamer || isBot) return dates;
+  const follow = isFollower
+    ? { icon: 'i-lucide-heart', color: 'text-info', label: 'Фолловит с', value: formatDate(followedAt) }
+    : {
+        icon: 'i-lucide-heart-off',
+        color: 'text-dimmed',
+        label: 'Фолловинг',
+        value: isFollower === false ? 'Не фолловит' : 'Неизвестно',
+      };
+  return [...dates, follow];
+});
+
 const stats = computed(() => {
   const data = details.value;
   if (!data) return [];
@@ -116,11 +137,17 @@ const columns = [
             </span>
           </div>
           <UProgress :model-value="level.done" :max="level.size" />
-          <p class="text-sm text-muted">
-            Первый раз в базе: {{ formatDate(details.viewer.createdAt) }}. Последний XP за чат:
-            {{ formatDate(details.viewer.lastXpAt) }}.
-            <template v-if="details.viewer.followedAt"> Фолловит с {{ formatDate(details.viewer.followedAt) }}.</template>
-          </p>
+          <dl class="mt-1 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-for="fact in facts" :key="fact.label" class="flex items-center gap-3 rounded-md bg-elevated/50 p-3">
+              <span class="flex size-10 shrink-0 items-center justify-center rounded-md bg-elevated">
+                <UIcon :name="fact.icon" class="size-5" :class="fact.color" />
+              </span>
+              <div class="min-w-0">
+                <dt class="text-xs text-muted">{{ fact.label }}</dt>
+                <dd class="font-semibold text-highlighted tabular-nums">{{ fact.value }}</dd>
+              </div>
+            </div>
+          </dl>
         </div>
       </UCard>
 
