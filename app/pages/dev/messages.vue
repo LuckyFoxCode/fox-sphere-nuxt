@@ -1,34 +1,55 @@
 <script setup lang="ts">
 // Все фразы бота на трёх языках рядом, с примерами значений: для проверки переводов.
-import { BOT_LANG, LANGS, MESSAGES, type BotMessages } from '#shared/i18n';
+import { BOT_LANG, LANGS, MESSAGES, type BotMessages, type Lang } from '#shared/i18n';
+import textCommands from '~~/prisma/seed/commands.default.json';
 
 const NAME = 'Fox';
 const PREFIX = '!';
 
-type Row = [label: string, render: (t: BotMessages) => string];
+type Row = [label: string, render: (t: BotMessages, lang: Lang) => string];
 
-const SECTIONS: { title: string; rows: Row[] }[] = [
+// Простые команды лежат не в словарях, а в базе; здесь показан шаблон, которым её заполняет сид
+const textResponse = (name: string, lang: Lang, index: number) =>
+  textCommands
+    .find((command) => command.name === name && command.lang === lang)
+    ?.responses[index]?.replaceAll('{user}', NAME)
+    .replaceAll('{prefix}', PREFIX)
+    .replaceAll('{version}', '0.1.0') ?? '— нет перевода';
+
+const TEXT_ROWS: Row[] = textCommands
+  .filter((command) => command.lang === 'en')
+  .flatMap(({ name, responses }) =>
+    responses.map((_, index): Row => [
+      responses.length > 1 ? `!${name} ${index + 1}` : `!${name}`,
+      (_t, lang) => textResponse(name, lang, index),
+    ]),
+  );
+
+const SECTIONS: { title: string; description: string; rows: Row[] }[] = [
   {
     title: 'Уровни и события',
+    description: 'Что бот пишет сам: новые уровни, follow, рейд и награды за баллы канала.',
     rows: [
       ['Новый уровень зрителя', (t) => t.levelUp(NAME, 5)],
       ['Новый уровень стрима', (t) => t.streamLevelUp(11)],
       ['Follow', (t) => t.follow(NAME)],
       ['Рейд', (t) => t.raid(NAME, 42)],
       ['Рейд на 1 зрителя', (t) => t.raid(NAME, 1)],
+      ['Награда за баллы', (t) => t.reward(NAME, 'Hydrate')],
     ],
   },
   {
-    title: 'Монеты и профиль',
+    title: 'Монеты',
+    description: 'Баланс зрителя по команде !coins. Карточка !profile показывается на оверлее и в чат не пишет.',
     rows: [
       ['!coins', (t) => t.coins(NAME, 250)],
       ['!coins, 1 монета', (t) => t.coins(NAME, 1)],
       ['!coins, 3 монеты', (t) => t.coins(NAME, 3)],
-      ['!profile', (t) => t.profile(NAME, { lvl: 5, xp: 120, xpToNext: 500, coins: 250, rank: 3 })],
     ],
   },
   {
     title: 'Рулетка',
+    description: 'Игра на монеты: спин командой !spin и статистика зрителя по !spinstats.',
     rows: [
       ['Кулдаун', (t) => t.spin.cooldown(NAME, 12, PREFIX)],
       ['Не хватает монет', (t) => t.spin.notEnough(NAME, 100, 40)],
@@ -42,6 +63,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
   },
   {
     title: 'Рыбалка',
+    description: 'Бесплатная игра !fish: заброс удочки и улов с монетами, XP или сундуком в банк.',
     rows: [
       ['Заброс', (t) => t.fish.cast(NAME)],
       ['Уже рыбачит', (t) => t.fish.already(NAME)],
@@ -58,6 +80,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
   },
   {
     title: 'Пиво',
+    description: 'Команда !pivo: обычная фраза или редкое золотое пиво.',
     rows: [
       ['Обычное 1', (t) => t.pivo.regular[0](NAME)],
       ['Обычное 2', (t) => t.pivo.regular[1](NAME)],
@@ -68,7 +91,8 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
-    title: 'VIP (!addvip, !removevip)',
+    title: 'VIP',
+    description: 'Выдача и снятие VIP командами !addvip и !removevip. Только стример и модераторы.',
     rows: [
       ['Выдан', (t) => t.vip.added('ModMike', NAME)],
       ['Снят', (t) => t.vip.removed('ModMike', NAME)],
@@ -80,7 +104,37 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
-    title: 'Буст XP (!xpboost)',
+    title: 'Founder',
+    description: 'Статус основателя с бонусом XP: !addfounder и !removefounder. Только стример и модераторы.',
+    rows: [
+      ['Выдан', (t) => t.founder.added('ModMike', NAME)],
+      ['Снят', (t) => t.founder.removed('ModMike', NAME)],
+      ['Без ника: !addfounder', (t) => t.founder.usage(NAME, PREFIX, 'addfounder')],
+      ['Без ника: !removefounder', (t) => t.founder.usage(NAME, PREFIX, 'removefounder')],
+      ['Ник не найден', (t) => t.founder.notFound('nobody')],
+      ['Нет прав', (t) => t.founder.denied(NAME)],
+      ['Не получилось', (t) => t.founder.failed(NAME)],
+    ],
+  },
+  {
+    title: 'Герои',
+    description: 'Покупка героя за монеты (!buy hero) и смена активного (!use hero). Витрина !shop открывается на оверлее.',
+    rows: [
+      ['!buy без имени', (t) => t.hero.buyUsage(NAME, PREFIX)],
+      ['!use без имени', (t) => t.hero.useUsage(NAME, PREFIX)],
+      ['Нет такого героя', (t) => t.hero.unknown(NAME, 'Assassin, Robber')],
+      ['Уже куплен', (t) => t.hero.alreadyOwned(NAME, 'Robber')],
+      ['Не хватает монет', (t) => t.hero.notEnough(NAME, 'Robber', 300, 100, 200)],
+      ['Куплен', (t) => t.hero.bought(NAME, 'Robber', 300, 450, PREFIX)],
+      ['Получен бесплатно', (t) => t.hero.bought(NAME, 'Assassin', 0, 450, PREFIX)],
+      ['Ещё не куплен', (t) => t.hero.notOwned(NAME, 'Robber', PREFIX)],
+      ['Уже надет', (t) => t.hero.alreadyActive(NAME, 'Robber')],
+      ['Надет', (t) => t.hero.equipped(NAME, 'Robber')],
+    ],
+  },
+  {
+    title: 'Буст XP',
+    description: 'Временное умножение XP за сообщения командой !xpboost. Только стример и модераторы.',
     rows: [
       ['Включён', (t) => t.xpBoost.started(NAME, 30, 2)],
       ['Включён на 1 минуту', (t) => t.xpBoost.started(NAME, 1, 2)],
@@ -91,7 +145,8 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
-    title: 'Таймер (!timer, !stoptimer)',
+    title: 'Таймер',
+    description: 'Таймер на оверлее: запуск !timer и остановка !stoptimer. Только стример и модераторы.',
     rows: [
       ['Запущен', (t) => t.timer.started(NAME, 60, 'Скоро вернусь')],
       ['Запущен на 1 минуту', (t) => t.timer.started(NAME, 1, 'BRB')],
@@ -101,7 +156,8 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     ],
   },
   {
-    title: 'Лотерея VIP (!ticket, !tickets, !runlottery)',
+    title: 'Лотерея VIP',
+    description: 'Билеты за недельный XP (!ticket, !tickets) и розыгрыш временного VIP (!runlottery, только стример).',
     rows: [
       ['Билет получен', (t) => t.lottery.ticketEarned(NAME)],
       ['!ticket: прогресс', (t) => t.lottery.ticketProgress(NAME, 37, 100)],
@@ -119,6 +175,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
   },
   {
     title: 'Лотерея на оверлее',
+    description: 'Надписи сцены розыгрыша и алерта билета, в чат не идут.',
     rows: [
       ['Подпись и заголовок', (t) => `${t.lotteryScene.label} / ${t.lotteryScene.title}`],
       ['Фазы', (t) => `${t.lotteryScene.intro} → ${t.lotteryScene.drawing} → ${t.lotteryScene.finale}`],
@@ -129,10 +186,16 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
   },
   {
     title: 'Алерт сундука на оверлее',
+    description: 'Надписи алерта, когда на рыбалке пойман сундук, в чат не идут.',
     rows: [
       ['Лента', (t) => t.chestAlert.label],
       ['Сумма в банк', (t) => t.chestAlert.toBank(200)],
     ],
+  },
+  {
+    title: 'Текстовые команды',
+    description: 'Из шаблона prisma/seed/commands.default.json. В базе тексты могут отличаться: сид не трогает записи, которые там уже есть.',
+    rows: TEXT_ROWS,
   },
 ];
 </script>
@@ -142,18 +205,19 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
     <h1 class="text-2xl font-bold">Фразы бота</h1>
     <p class="mt-1 text-sm text-sticker-muted">
       Сейчас бот отвечает на <code>{{ BOT_LANG }}</code> (<code>BOT_LANG</code> в <code>shared/i18n/index.ts</code>).
-      Тексты — в файлах <code>shared/i18n/</code>.
+      Тексты — в файлах <code>shared/i18n/</code>, текстовые команды — в базе (внизу страницы).
       <NuxtLink class="underline" to="/dev/events">Эмулятор событий</NuxtLink>
     </p>
 
-    <section v-for="section in SECTIONS" :key="section.title" class="mt-6">
-      <h2 class="text-lg font-bold">{{ section.title }}</h2>
-      <div class="mt-2 flex flex-col gap-y-2">
+    <section v-for="section in SECTIONS" :key="section.title" class="mt-10">
+      <h2 class="text-xl font-bold">{{ section.title }}</h2>
+      <p class="mt-1 text-sm text-sticker-muted">{{ section.description }}</p>
+      <div class="mt-3 flex flex-col gap-y-2">
         <article v-for="[label, render] in section.rows" :key="label" class="rounded-lg bg-sticker-track p-3">
-          <h3 class="text-xs font-bold tracking-widest text-sticker-muted uppercase">{{ label }}</h3>
-          <div class="mt-1 grid gap-x-4 gap-y-1 lg:grid-cols-3">
+          <h3 class="text-sm leading-6 font-bold"><CommandLabel :text="label" /></h3>
+          <div class="mt-2 grid gap-x-4 gap-y-1 lg:grid-cols-3">
             <p v-for="lang in LANGS" :key="lang" :lang="lang" class="text-sm">
-              <span class="mr-2 text-sticker-muted">{{ lang }}</span>{{ render(MESSAGES[lang]) }}
+              <span class="mr-2 text-sticker-muted">{{ lang }}</span>{{ render(MESSAGES[lang], lang) }}
             </p>
           </div>
         </article>
