@@ -31,6 +31,8 @@ export const registerVipCommands = (registry: CommandRegistry, deps: VipDeps): v
     const t = messages().vip;
 
     if (!roles.isBroadcaster && !roles.isMod) {
+      // Общий кулдаун не должен достаться отказу: иначе зритель блокирует команду модератору
+      ctx.releaseCooldown();
       await reply(t.denied(displayName));
       return;
     }
