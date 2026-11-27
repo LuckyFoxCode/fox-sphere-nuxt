@@ -199,7 +199,7 @@ XP и уровень зрителя бот хранит в базе; о ново
 
 **Что есть.** Пульт эфира: буст XP на 5–60 минут и выключение (prod-бот пишет в чат ту же фразу, что на `!xpboost`); VIP-лотерея — билеты, прошлые победители и розыгрыш с подтверждением (то же, что `!runlottery`, нужен включённый бот); тестовые алерты и карточки на оверлей. Тесты ничего не пишут в базу и чат, работают и в prod без эмулятора, но видны на стриме.
 
-**Настройки** (`/admin/settings`). Язык ответов бота (en / uk / ru); цвета админки из готовых наборов (выбор запоминается в браузере, наборы — `app/utils/adminPalettes.ts`); подключения: отвечает ли бот, в чате ли он, сохранены ли входы Twitch бота и стримера, с кнопками повторного входа (после него бота нужно перезапустить). Сами токены в браузер не передаются.
+**Настройки** (`/admin/settings`). Язык ответов бота (en / uk / ru); цвета админки из готовых наборов (выбор запоминается в браузере, наборы — `app/utils/adminPalettes.ts`); подключения: отвечает ли бот, в чате ли он, сохранены ли входы Twitch бота и стримера, с кнопками повторного входа (после него бота нужно перезапустить). Сами токены в браузер не передаются. Там же копия базы: кнопка сохраняет базу этого окружения в `data/<имя>.backup-<дата>.db` (целостно, даже пока бот пишет) и показывает список копий; старые не удаляются, скачать через браузер нельзя, внутри есть токены Twitch. Чтобы вернуть копию: остановите сайт и бота, удалите файлы `<имя>.db-wal` и `<имя>.db-shm`, замените `<имя>.db` копией и запустите снова.
 
 > После обновления проекта выполните `pnpm db:push:dev` (для боевой базы `pnpm db:push:prod`) до запуска: в `SystemState` добавилось поле `botLang`, без него бот и сайт не прочитают состояние стрима.
 
@@ -211,7 +211,7 @@ XP и уровень зрителя бот хранит в базе; о ново
 
 **Палитра** — `app/app.config.ts` (`primary` — акцент, `neutral` — фоны и текст; любой цвет Tailwind), свои оттенки и скругления — `app/assets/css/admin.css`. Оверлеи эти настройки не затрагивают: стили админки подключают только её layout'ы (`app/layouts/`).
 
-Код: `app/pages/admin/`, `app/components/admin/`, `server/api/admin/`, `server/utils/admin-session.ts`, `bot/src/internal.ts`, `bot/src/admin.ts`, `shared/admin.ts`, `shared/testEvents.ts`; раздел команд — `shared/commands.ts` (список команд из кода с ролями; новую команду бота нужно добавить туда, иначе не пройдёт проверка типов), `server/utils/text-commands.ts`; раздел зрителей — `shared/viewers.ts`, `server/utils/admin-viewers.ts`; настройки — `shared/settings.ts`, `server/utils/admin-settings.ts`, `bot/src/language.ts`.
+Код: `app/pages/admin/`, `app/components/admin/`, `server/api/admin/`, `server/utils/admin-session.ts`, `bot/src/internal.ts`, `bot/src/admin.ts`, `shared/admin.ts`, `shared/testEvents.ts`; раздел команд — `shared/commands.ts` (список команд из кода с ролями; новую команду бота нужно добавить туда, иначе не пройдёт проверка типов), `server/utils/text-commands.ts`; раздел зрителей — `shared/viewers.ts`, `server/utils/admin-viewers.ts`; настройки — `shared/settings.ts`, `server/utils/admin-settings.ts`, `server/utils/db-backup.ts`, `bot/src/language.ts`.
 
 ## Анонсы и шаутауты
 

@@ -10,3 +10,8 @@ export type AdminAccount = {
 };
 
 export type AdminSettings = { botLang: Lang; accounts: AdminAccount[] };
+
+export type AdminBackup = { name: string; createdAt: string; size: number };
+
+// Копии базы текущего окружения: папка на этом компьютере и файлы в ней, новые сверху
+export type AdminBackups = { folder: string; database: string; items: AdminBackup[] };

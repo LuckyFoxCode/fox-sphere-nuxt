@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Настройки: язык бота, цвета админки и подключения. Состояние бота и входы обновляются раз в 5 с.
+// Настройки: язык бота, цвета админки, подключения и копия базы. Состояние бота и входы обновляются раз в 5 с.
 import type { AdminStreamState } from '#shared/admin';
 import type { AdminSettings } from '#shared/settings';
 
@@ -61,7 +61,10 @@ onBeforeUnmount(() => {
         <AdminLanguageCard :current="settings?.botLang ?? null" @changed="loadSettings" />
         <AdminPaletteCard />
       </div>
-      <AdminConnectionsCard :accounts="settings?.accounts ?? []" :state="state" :problem="botProblem" />
+      <div class="flex flex-col gap-4">
+        <AdminConnectionsCard :accounts="settings?.accounts ?? []" :state="state" :problem="botProblem" />
+        <AdminBackupCard />
+      </div>
     </div>
   </AdminPage>
 </template>
