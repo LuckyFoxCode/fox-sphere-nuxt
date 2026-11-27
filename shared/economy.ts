@@ -30,3 +30,21 @@ export const TIMER_CONFIG = {
 
 // Монет за сообщения нет намеренно (это абьюз): они приходят из стрима, рулетки, рыбалки,
 // обмена баллов канала. За сообщение даётся только XP.
+
+// Watch streak: награды на 3, 5, 7 и затем на каждом пятом от 10 (из старого user.constants.ts).
+// XP и монеты растут линейно от значения стрика; если рубеж уже брали (WatchStreak), выплата вдвое меньше.
+export const WATCH_STREAK_REWARD = {
+  XP_PER_STREAK: 7,
+  COINS_PER_STREAK: 100,
+} as const;
+
+export const isWatchStreakRewardLevel = (streak: number): boolean =>
+  streak === 3 || streak === 5 || streak === 7 || (streak >= 10 && streak % 5 === 0);
+
+export const watchStreakReward = (streak: number, isRepeat: boolean): { xp: number; coins: number } => {
+  const divisor = isRepeat ? 2 : 1;
+  return {
+    xp: Math.floor((streak * WATCH_STREAK_REWARD.XP_PER_STREAK) / divisor),
+    coins: Math.floor((streak * WATCH_STREAK_REWARD.COINS_PER_STREAK) / divisor),
+  };
+};

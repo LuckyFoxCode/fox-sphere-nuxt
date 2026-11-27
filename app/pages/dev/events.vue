@@ -42,6 +42,7 @@ import {
 } from '#shared/roulette';
 import { DEFAULT_HERO_ID, HEROES } from '#shared/heroes';
 import { TIMER_COLORS, type TimerColor } from '#shared/events';
+import { watchStreakReward } from '#shared/economy';
 import { buildStreamState, getLevelRange, getStreamLevel } from '#shared/xp';
 import type { ProfileShowPayload, ShopShowPayload } from '#shared/events';
 import { PROFILE_SAMPLE, PROFILE_SPARSE } from '~/utils/profileSample';
@@ -122,6 +123,7 @@ type DevEvent =
   | 'dev:reward-redeem'
   | 'dev:sub'
   | 'dev:bits'
+  | 'dev:watch-streak'
   | 'dev:fishing-chest'
   | 'dev:golden-beer'
   | 'dev:add-vip'
@@ -354,6 +356,7 @@ const subTier = ref<SubTier>('1000');
 const subMonths = ref(6);
 const giftAmount = ref(5);
 const bitsAmount = ref(100);
+const streakValue = ref(7);
 
 const alertUser = () => ({ userId: `dev-${username.value.toLowerCase()}`, username: username.value });
 
@@ -374,6 +377,27 @@ const sendSub = (payload: SubPayload) => send('dev:sub', payload);
 const subNew = () => sendSub({ kind: 'new', ...alertUser(), tier: subTier.value });
 const resub = () => sendSub({ kind: 'resub', ...alertUser(), tier: subTier.value, months: subMonths.value });
 const sendBits = (name: string | null) => send('dev:bits', { username: name, bits: bitsAmount.value });
+// Watch streak: алерт с теми же полями, что шлёт бот; награда считается по тем же правилам (shared/economy.ts)
+const watchStreakAlert = (isRepeat = false, streak = streakValue.value) => {
+  const { xp, coins } = watchStreakReward(streak, isRepeat);
+  send('dev:watch-streak', {
+    ...alertUser(),
+    streakValue: streak,
+    xpAwarded: xp,
+    coinsAwarded: coins,
+    isRepeat,
+  });
+};
+// Плашка стрика в чате: сообщение с полем watchStreak, как при USERNOTICE от Twitch
+const watchStreakChat = (streak = streakValue.value) =>
+  send(
+    'dev:chat-message',
+    chatMessage({ text: 'Дошёл до рубежа!', watchStreak: { value: streak, reward: streak * 50 } }),
+  );
+const watchStreakBoth = () => {
+  watchStreakChat();
+  watchStreakAlert();
+};
 const giftSubs = (gifter: string | null) =>
   sendSub({ kind: 'gift', username: gifter, tier: subTier.value, amount: giftAmount.value });
 
@@ -412,6 +436,7 @@ const allAlerts = () => {
   resub();
   giftSubs(username.value);
   sendBits(username.value);
+  watchStreakAlert();
   chest();
   goldenBeer();
   vipUnlocked();
@@ -977,6 +1002,15 @@ const connectionLabel = { connecting: 'подключаюсь…', connected: '�
         </label>
         <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="sendBits(username)">Bits</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="sendBits(null)">Анонимные Bits</button>
+
+        <label class="flex flex-col gap-y-1 text-xs font-bold tracking-widest text-sticker-muted uppercase">
+          Watch streak (стримов подряд)
+          <input v-model.number="streakValue" type="number" min="1" class="w-full rounded-lg bg-sticker-track px-3 py-2 text-base text-sticker-ink" />
+        </label>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="watchStreakBoth">Watch streak: плашка и алерт</button>
+        <button class="rounded-lg bg-sticker-edge px-3 py-2 font-bold text-sticker-body" @click="watchStreakAlert()">Только алерт (new)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="watchStreakAlert(true)">Алерт повторного рубежа (половина)</button>
+        <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="watchStreakChat()">Только плашка в чате</button>
         <button class="rounded-lg bg-sticker-track px-3 py-2 font-bold" @click="allAlerts">Все подряд (очередь)</button>
       </section>
 

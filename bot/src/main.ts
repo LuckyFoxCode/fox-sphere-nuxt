@@ -1,4 +1,4 @@
-import { ChatClient, type ChatMessage } from '@twurple/chat';
+import { ChatClient, type ChatMessage, type UserNotice } from '@twurple/chat';
 import { createAnnouncer } from './announcements';
 import { createAuth } from './auth';
 import { createBadgeResolver } from './badges';
@@ -11,6 +11,7 @@ import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
 import { language, messages } from './language';
 import { awardLotteryXp } from './lottery';
+import { awardWatchStreak } from './watchStreak';
 import { getNowPlaying, startMusicReader } from './music';
 import { prisma } from './db';
 import { emitEvent, startSocketServer, stopSocketServer } from './socket';
@@ -87,7 +88,7 @@ if (!config.enabled) {
 
   // Общая часть payload `chat:message`; роли и бейджи дописываются по месту
   const baseChatPayload = (
-    msg: ChatMessage,
+    msg: ChatMessage | UserNotice,
     text: string,
   ): Pick<
     ChatMessagePayload,
@@ -110,7 +111,8 @@ if (!config.enabled) {
     text,
     emotes: Object.fromEntries(msg.emoteOffsets),
     timestamp: msg.date.getTime(),
-    isHighlight: msg.isHighlight,
+    // У USERNOTICE (рубеж стрика) подсветки нет
+    isHighlight: 'isHighlight' in msg ? msg.isHighlight : false,
     isAction: false,
   });
 
@@ -287,6 +289,72 @@ if (!config.enabled) {
       }
     } catch (error) {
       console.error('[bot] ошибка обработки сообщения:', error);
+    }
+  });
+
+  // Рубеж watch streak: Twitch присылает его USERNOTICE-ом, когда зритель делится стриком в чате.
+  // Плашка в чате показывается на любом значении, награда и алерт только на рубежах 3, 5, 7 и каждом 5-м с 10.
+  chat.onViewerMilestone(async (_channel, user, milestone, msg) => {
+    if (milestone.categoryName !== 'watch-streak' || !milestone.value) return;
+    const info = msg.userInfo;
+    const streak = milestone.value;
+    console.log(`[streak] ${info.displayName}: ${streak} стримов подряд`);
+
+    try {
+      const needsFollowCheck = !info.isBroadcaster && !info.isSubscriber;
+      const roles = {
+        isMod: info.isMod,
+        isSubscriber: info.isSubscriber,
+        isBroadcaster: info.isBroadcaster,
+        isVip: info.isVip,
+        isFollower: needsFollowCheck ? await isFollower(info.userId) : false,
+      };
+      const viewer = await ensureViewer(info.userId, info.displayName, roles);
+
+      emitEvent('chat:message', {
+        ...baseChatPayload(msg, milestone.message ?? ''),
+        badges: badges.urls(info.badges),
+        userLvl: viewer.lvl,
+        isMod: roles.isMod,
+        isFollower: roles.isFollower,
+        isFounder: viewer.isFounder,
+        isSubscriber: roles.isSubscriber,
+        isVip: roles.isVip,
+        isPermanentVip: viewer.isPermanentVip || viewer.isLuckyVip,
+        isBroadcaster: roles.isBroadcaster,
+        isBot: false,
+        hero: {
+          heroId: await getActiveHeroId(viewer.id).catch((error: unknown) => {
+            console.error(`[hero] герой ${info.displayName} не определён, беру ${DEFAULT_HERO_ID}:`, error);
+            return DEFAULT_HERO_ID;
+          }),
+        },
+        // reward — баллы канала от Twitch за этот рубеж, к нашим монетам они не относятся
+        watchStreak: { value: streak, reward: milestone.reward ?? 0 },
+      });
+
+      const award = await awardWatchStreak(viewer, streak);
+      if (!award) return;
+      console.log(
+        `[streak] ${info.displayName}: +${award.coins} монет, +${award.xp} XP${award.isRepeat ? ' (повтор рубежа)' : ''}`,
+      );
+      emitEvent('twitch:watch-streak', {
+        userId: info.userId,
+        username: info.displayName || user,
+        streakValue: streak,
+        xpAwarded: award.xp,
+        coinsAwarded: award.coins,
+        isRepeat: award.isRepeat,
+      });
+
+      // XP зрителю с пересчётом уровня и стриму, как у приза рулетки; в чат о level-up пишет общий код
+      if (award.xp > 0) {
+        const reply = (text: string) => chat.say(channel, text);
+        const xpAward = await awardBonusXp(viewer.id, award.xp);
+        await showXpAward(info.displayName, xpAward, reply, await tryAddStreamXp(award.xp));
+      }
+    } catch (error) {
+      console.error(`[streak] рубеж ${streak} для ${info.displayName} не обработан:`, error);
     }
   });
 

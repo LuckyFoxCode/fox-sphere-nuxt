@@ -90,6 +90,18 @@ export type SubPayload =
 // Bits (cheer): `bits` — сколько отправлено, `username: null` — анонимно. Текст сообщения в алерт не идёт.
 export type BitsPayload = { username: string | null; bits: number };
 
+// Watch streak (рубеж стрика, по которому есть награда). `streakValue` — сколько стримов подряд,
+// `xpAwarded` и `coinsAwarded` — что начислено (0, если выплаты не было), `isRepeat` — рубеж этот
+// зритель уже брал раньше: выплата вдвое меньше, а на наклейке нет метки «new».
+export type WatchStreakPayload = {
+  userId: string;
+  username: string;
+  streakValue: number;
+  xpAwarded: number;
+  coinsAwarded: number;
+  isRepeat: boolean;
+};
+
 // Сундук из рыбалки: `coinAmount` монет ушли в банк рулетки, сам банк приходит отдельно
 // (`stream:jackpot-updated`). `lang` — язык бота, на нём подписи алерта.
 export type FishingChestPayload = {
@@ -277,6 +289,7 @@ export type ServerToClientEvents = {
   'twitch:reward-redeem': (payload: RewardRedeemPayload) => void;
   'twitch:sub': (payload: SubPayload) => void;
   'twitch:bits': (payload: BitsPayload) => void;
+  'twitch:watch-streak': (payload: WatchStreakPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
@@ -321,6 +334,7 @@ export type ClientToServerEvents = {
   'dev:reward-redeem': (payload: unknown, ack?: DevAck) => void;
   'dev:sub': (payload: unknown, ack?: DevAck) => void;
   'dev:bits': (payload: unknown, ack?: DevAck) => void;
+  'dev:watch-streak': (payload: unknown, ack?: DevAck) => void;
   'dev:fishing-chest': (payload: unknown, ack?: DevAck) => void;
   'dev:golden-beer': (payload: unknown, ack?: DevAck) => void;
   'dev:add-vip': (payload: unknown, ack?: DevAck) => void;
@@ -433,6 +447,15 @@ export const isRewardRedeemPayload = (value: unknown): value is RewardRedeemPayl
 
 export const isBitsPayload = (value: unknown): value is BitsPayload =>
   isRecord(value) && (value.username === null || isNonEmptyString(value.username)) && isInt(value.bits, 1);
+
+export const isWatchStreakPayload = (value: unknown): value is WatchStreakPayload =>
+  isRecord(value) &&
+  isNonEmptyString(value.userId) &&
+  isNonEmptyString(value.username) &&
+  isInt(value.streakValue, 1) &&
+  isInt(value.xpAwarded, 0) &&
+  isInt(value.coinsAwarded, 0) &&
+  typeof value.isRepeat === 'boolean';
 
 const SUB_TIERS: readonly unknown[] = ['1000', '2000', '3000'];
 

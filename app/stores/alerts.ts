@@ -9,6 +9,7 @@ import type {
   BitsPayload,
   RewardRedeemPayload,
   SubPayload,
+  WatchStreakPayload,
 } from '#shared/events';
 import type { AlertView } from '~/utils/alerts';
 
@@ -85,6 +86,7 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onRewardRedeem = (payload: RewardRedeemPayload) => push(rewardAlert(payload));
   const onSub = (payload: SubPayload) => push(subAlert(payload));
   const onBits = (payload: BitsPayload) => push(bitsAlert(payload));
+  const onWatchStreak = (payload: WatchStreakPayload) => push(watchStreakAlert(payload));
   const onFishingChest = (payload: FishingChestPayload) => push(chestAlert(payload));
   const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
 
@@ -98,6 +100,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     onRewardRedeem,
     onSub,
     onBits,
+    onWatchStreak,
     onFishingChest,
     onGoldenBeer,
     onAddVip,

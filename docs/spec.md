@@ -199,6 +199,7 @@ model TwitchToken {            // без изменений по смыслу
 | `profile:show`, `shop:show` | окна профиля и магазина |
 | `twitch:follow`, `twitch:raid`, `twitch:reward-redeem`, `twitch:add-vip`, `twitch:watch-streak`, `twitch:golden-beer` | хаб событий (стикеры) |
 | `twitch:timer`, `twitch:timer-stop` | таймер |
+| `twitch:watch-streak` | алерт стрика: `{userId, username, streakValue, xpAwarded, coinsAwarded, isRepeat}`; плашка в чате идёт отдельно, полем `watchStreak` в `chat:message` |
 | `fishing:chest` | алерты: сундук из рыбалки (новое, в старом проекте не было) |
 | `music:now-playing` (`null` = скрыть) | карточка «играет сейчас», скрывается через 45с тишины, отбрасывает payload старше 45с |
 

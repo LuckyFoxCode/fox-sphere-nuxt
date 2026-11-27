@@ -14,8 +14,8 @@ import type { AlertKind } from "~/utils/alerts";
 // Громкость из старого fox-sphere; точнее настраивается в микшере OBS
 const VOLUME = 0.5;
 
-// У сундука своя наклейка (ChestAlert), у пива вместо значка арт ступени
-const ICONS: Record<Exclude<AlertKind, "chest" | "beer">, Component> = {
+// У сундука своя наклейка (ChestAlert), у пива и стрика вместо значка арт
+const ICONS: Record<Exclude<AlertKind, "chest" | "beer" | "streak">, Component> = {
   follow: IconPaw,
   raid: IconLightning,
   reward: IconGift,
@@ -62,7 +62,9 @@ watch(
       :paper="alerts.current.paper"
       :motion="alerts.current.kind"
       :icon="
-        alerts.current.kind === 'beer' ? undefined : ICONS[alerts.current.kind]
+        alerts.current.kind === 'beer' || alerts.current.kind === 'streak'
+          ? undefined
+          : ICONS[alerts.current.kind]
       "
       :media="alerts.current.media"
       :tag="alerts.current.tag"

@@ -12,13 +12,15 @@ import type {
   RewardRedeemPayload,
   SubPayload,
   SubTier,
+  WatchStreakPayload,
 } from '#shared/events';
+import { achievementArtPath, achievementLevel, findCategory } from '#shared/achievements';
 import { MESSAGES } from '#shared/i18n';
 import { goldenBeerArtPath, goldenBeerTierLabel } from '#shared/pivo';
 
 // chest — сундук из рыбалки: у него своя наклейка (ChestAlert), у остальных — EventSticker.
 // beer — золотое пиво: на пластине не значок, а арт ступени
-export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket' | 'bits';
+export type AlertKind = 'follow' | 'raid' | 'reward' | 'sub' | 'chest' | 'beer' | 'vip' | 'ticket' | 'bits' | 'streak';
 
 export interface AlertView {
   kind: AlertKind;
@@ -48,6 +50,8 @@ const CHEST_ALERT_DURATION_MS = 5500;
 const CHEST_SOUND_DELAY_MS = 300;
 // Золотое пиво висит дольше: на пластине арт ступени, его надо успеть рассмотреть (как в старом проекте)
 const BEER_ALERT_DURATION_MS = 7000;
+// Watch streak тоже 7 с, как в старом проекте: на пластине арт рубежа
+const STREAK_ALERT_DURATION_MS = 7000;
 
 export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   follow: '/assets/sound/follow.mp3',
@@ -67,6 +71,9 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   ticket: '/assets/sound/ticket.mp3',
   // В старом проекте Bits не было: bits.mp3 синтезирован (короткий «звяк монеты»)
   bits: '/assets/sound/bits.mp3',
+  // streak.mp3 из старого проекта занят сундуком, поэтому у стрика свой звук: watch-streak.mp3
+  // синтезирован (бодрый восходящий аккорд, около 1,3 с), чужих файлов и лицензий нет
+  streak: '/assets/sound/watch-streak.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -171,6 +178,47 @@ export const bitsAlert = ({ username, bits }: BitsPayload): AlertView => ({
   sound: ALERT_SOUNDS.bits,
   durationMs: ALERT_DURATION_MS,
 });
+
+// Арт рубежа: streak-N.webp берётся по ближайшему порогу каталога достижений не выше стрика
+// (25 стримов → streak-20). Меньше первого порога стрика не бывает: награда начинается с 3.
+const watchStreakArt = (streak: number): string | null => {
+  const category = findCategory('watch-streak');
+  if (!category) return null;
+  const level = achievementLevel(category.thresholds, streak);
+  return level > 0 ? achievementArtPath(category, level) : null;
+};
+
+// Watch streak: синяя бумага, `x{N}` в плитке, метка «new», пока рубеж не повторный; арт — как у ачивки
+export const watchStreakAlert = ({ username, streakValue, xpAwarded, coinsAwarded, isRepeat }: WatchStreakPayload): AlertView => {
+  const art = watchStreakArt(streakValue);
+  const chips = [
+    ...(xpAwarded > 0 ? [`+${xpAwarded} XP`] : []),
+    ...(coinsAwarded > 0 ? [`+${coinsAwarded} coins`] : []),
+  ];
+  return {
+    kind: 'streak',
+    paper: 'bg-paper-blue',
+    label: 'stream streak',
+    title: username,
+    detail: streakFlavor(streakValue),
+    stat: { value: `x${streakValue}`, unit: 'streams' },
+    chips: chips.length > 0 ? chips : undefined,
+    media: art ? { src: art, alt: `Watch streak achievement: ${streakValue} streams in a row` } : undefined,
+    tag: isRepeat ? undefined : 'new',
+    sound: ALERT_SOUNDS.streak,
+    durationMs: STREAK_ALERT_DURATION_MS,
+  };
+};
+
+// Подпись под ником, как в старом TwitchWatchStreak.vue
+const streakFlavor = (streak: number): string => {
+  if (streak === 3) return 'the fire ignites';
+  if (streak === 5) return 'streak machine';
+  if (streak === 7) return 'unstoppable';
+  if (streak % 10 === 0) return 'a jubilee run';
+  if (streak % 5 === 0) return 'a round number';
+  return 'streams in a row';
+};
 
 export const subAlert = (sub: SubPayload): AlertView => {
   const common = {
