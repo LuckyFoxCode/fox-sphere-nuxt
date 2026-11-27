@@ -1,4 +1,6 @@
 // Переменные окружения бота. dev:bot запускается через dotenv-cli и берёт .env.development.
+import { resolveCommandPrefix } from '../../shared/commands';
+
 const need = (name: string): string => {
   const value = process.env[name];
   if (!value) throw new Error(`${name} не задан (см. .env.example)`);
@@ -18,7 +20,7 @@ export const config = {
   // dev — "!t" (!tcoins, !tprofile), prod — "!": тестовый бот не пересекается со старым в одном чате.
   // Значение берётся из COMMAND_PREFIX; если не задано, по умолчанию безопасный "!t",
   // и только NODE_ENV=production даёт "!".
-  prefix: process.env.COMMAND_PREFIX || (process.env.NODE_ENV === 'production' ? '!' : '!t'),
+  prefix: resolveCommandPrefix(process.env.COMMAND_PREFIX, process.env.NODE_ENV),
   // Лотерея: менять ли VIP на самом Twitch. По умолчанию только в prod: dev-база — копия боевой, и
   // розыгрыш в ней иначе снимал бы и выдавал настоящие VIP зрителям канала. Включить в dev: true
   lotteryTwitchVip: process.env.LOTTERY_TWITCH_VIP

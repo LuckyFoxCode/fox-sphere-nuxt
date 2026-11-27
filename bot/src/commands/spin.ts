@@ -1,6 +1,7 @@
 // Команды рулетки: !spin и !spinstats. Алиасы и кулдауны — из старого fox-sphere, тексты — shared/i18n.
 import type { ChatAnnounceColor, RouletteSpinResultPayload } from '../../../shared/events';
 import { ROULETTE_PRICE, SPIN_COOLDOWN_MS, SPIN_STATS_COOLDOWN_MS } from '../../../shared/roulette';
+import { codeCommand } from '../../../shared/commands';
 import { getJackpot } from '../bank';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
@@ -62,8 +63,7 @@ export const registerSpinCommands = (registry: CommandRegistry, deps: SpinDeps):
   };
 
   registry.register({
-    name: 'spin',
-    aliases: ['roll', 'спин', 'лудка'],
+    ...codeCommand('spin'),
     cooldownMs: SPIN_COOLDOWN_MS,
     cooldownMessage: (name, seconds) => messages().spin.cooldown(name, seconds, prefix),
     run: async (ctx) => {
@@ -104,7 +104,7 @@ export const registerSpinCommands = (registry: CommandRegistry, deps: SpinDeps):
   });
 
   registry.register({
-    name: 'spinstats',
+    ...codeCommand('spinstats'),
     cooldownMs: SPIN_STATS_COOLDOWN_MS,
     run: async ({ viewer, displayName, reply }) => {
       if (viewer.spinsCount === 0) {

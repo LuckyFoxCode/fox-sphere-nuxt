@@ -2,6 +2,7 @@
 // фраза в чат; золото (5%) ещё пишет в счётчик зрителя и показывает алерт.
 import { randomInt } from 'node:crypto';
 import { PIVO_COOLDOWN_MS, PIVO_MESSAGE_VARIANTS, pickPivoOutcome } from '../../../shared/pivo';
+import { codeCommand } from '../../../shared/commands';
 import { grantGoldenBeer } from '../pivo';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
@@ -16,8 +17,7 @@ export const registerPivoCommand = (registry: CommandRegistry, deps: PivoDeps = 
   const { random = randomInt } = deps;
 
   registry.register({
-    name: 'pivo',
-    aliases: ['пиво', 'beer'],
+    ...codeCommand('pivo'),
     cooldownMs: PIVO_COOLDOWN_MS,
     run: async ({ viewer, displayName, reply }) => {
       // Бросок первым, запись только при золоте: 95% вызовов не трогают базу

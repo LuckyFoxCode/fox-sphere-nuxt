@@ -4,6 +4,7 @@
 // отвечал не в тот адрес и молчал).
 import { TIMER_CONFIG } from '../../../shared/economy';
 import { TIMER_TITLE_MAX } from '../../../shared/events';
+import { codeCommand } from '../../../shared/commands';
 import { messages } from '../language';
 import { DEFAULT_TIMER_COLOR, isTimerColor, startTimer, stopTimer } from '../streamTimer';
 import type { CommandRegistry } from './registry';
@@ -12,8 +13,7 @@ const TIMER_COOLDOWN_MS = 10_000;
 
 export const registerTimerCommands = (registry: CommandRegistry, prefix: string): void => {
   registry.register({
-    name: 'timer',
-    aliases: ['counter', 'таймер'],
+    ...codeCommand('timer'),
     cooldownMs: TIMER_COOLDOWN_MS,
     cooldownScope: 'global',
     run: async ({ displayName, roles, args, reply, releaseCooldown }) => {
@@ -42,8 +42,7 @@ export const registerTimerCommands = (registry: CommandRegistry, prefix: string)
   });
 
   registry.register({
-    name: 'stoptimer',
-    aliases: ['timer-remove', 'timer-stop', 'таймер-стоп'],
+    ...codeCommand('stoptimer'),
     cooldownMs: TIMER_COOLDOWN_MS,
     cooldownScope: 'global',
     run: async ({ displayName, roles, reply, releaseCooldown }) => {

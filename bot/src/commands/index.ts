@@ -1,3 +1,4 @@
+import { codeCommand } from '../../../shared/commands';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
 import { registerXpBoostCommand } from './boost';
@@ -27,8 +28,7 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & { lott
   registerTimerCommands(registry, deps.prefix);
 
   registry.register({
-    name: 'coins',
-    aliases: ['balance', 'монеты'],
+    ...codeCommand('coins'),
     cooldownMs: 5000,
     run: async ({ viewer, displayName, reply }) => {
       await reply(messages().coins(displayName, viewer.coins));
@@ -37,8 +37,7 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & { lott
 
   // Карточка на оверлее: герой, уровень, статы и самые редкие ачивки. В чат ничего не пишем: смотреть её на стриме
   registry.register({
-    name: 'profile',
-    aliases: ['профиль'],
+    ...codeCommand('profile'),
     cooldownMs: 10_000,
     run: async ({ viewer, displayName, color, roles }) => {
       emitEvent('profile:show', await buildProfilePayload(viewer, { displayName, color, roles }));

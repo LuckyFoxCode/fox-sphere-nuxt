@@ -1,3 +1,4 @@
+import type { CodeCommandName } from '../../../shared/commands';
 import type { Command, CommandContext } from './types';
 
 // Один канал: ключ кулдауна — только команда + twitchId зрителя.
@@ -14,7 +15,8 @@ export class CommandRegistry {
     this.fallback = lookup;
   }
 
-  register(command: Command) {
+  // Команда из кода должна быть в каталоге shared/commands.ts: по нему её показывает админка
+  register(command: Command & { name: CodeCommandName }) {
     for (const name of [command.name, ...(command.aliases ?? [])]) {
       this.byName.set(name.toLowerCase(), command);
     }

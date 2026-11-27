@@ -2,13 +2,14 @@
 // множитель ×2 и `off` / `cancel` — из старого fox-sphere. Кулдауна у старой команды не было;
 // 3 с здесь только от двойной отправки.
 import { BOOST_CONFIG } from '../../../shared/economy';
+import { codeCommand } from '../../../shared/commands';
 import { messages } from '../language';
 import { activateXpBoost, cancelXpBoost, getActiveXpBoost } from '../xpBoost';
 import type { CommandRegistry } from './registry';
 
 export const registerXpBoostCommand = (registry: CommandRegistry, prefix: string): void => {
   registry.register({
-    name: 'xpboost',
+    ...codeCommand('xpboost'),
     cooldownMs: 3000,
     cooldownScope: 'global',
     run: async ({ displayName, roles, args, reply, releaseCooldown }) => {

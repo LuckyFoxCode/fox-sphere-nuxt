@@ -3,6 +3,7 @@
 // уже знает нужный статус, команда не падает, а просто приводит базу в порядок; об отказе Twitch
 // бот пишет в чат (раньше молчал).
 import type { ApiClient } from '@twurple/api';
+import { codeCommand } from '../../../shared/commands';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
 import { setPermanentVip } from '../vip';
@@ -79,16 +80,14 @@ export const registerVipCommands = (registry: CommandRegistry, deps: VipDeps): v
   };
 
   registry.register({
-    name: 'addvip',
-    aliases: ['vip'],
+    ...codeCommand('addvip'),
     cooldownMs: VIP_COOLDOWN_MS,
     cooldownScope: 'global',
     run: run('add', 'addvip'),
   });
 
   registry.register({
-    name: 'removevip',
-    aliases: ['rvip'],
+    ...codeCommand('removevip'),
     cooldownMs: VIP_COOLDOWN_MS,
     cooldownScope: 'global',
     run: run('remove', 'removevip'),

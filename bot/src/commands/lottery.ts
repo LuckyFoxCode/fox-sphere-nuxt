@@ -16,6 +16,7 @@ import {
   LOTTERY_REVEAL_AT_MS,
   LOTTERY_SCENE_MS,
 } from '../../../shared/lottery';
+import { codeCommand } from '../../../shared/commands';
 import { prisma } from '../db';
 import { language, messages } from '../language';
 import { buildDrawPayload, getTicketHolders, runDraw, type DrawOutcome } from '../lottery';
@@ -188,8 +189,7 @@ export const createLotteryRunner = (deps: LotteryDeps): LotteryRunner => {
 
 export const registerLotteryCommands = (registry: CommandRegistry, runner: LotteryRunner): void => {
   registry.register({
-    name: 'ticket',
-    aliases: ['билет'],
+    ...codeCommand('ticket'),
     cooldownMs: TICKET_COOLDOWN_MS,
     run: async ({ viewer, displayName, reply }) => {
       const t = messages().lottery;
@@ -204,8 +204,7 @@ export const registerLotteryCommands = (registry: CommandRegistry, runner: Lotte
   });
 
   registry.register({
-    name: 'tickets',
-    aliases: ['розыгрыш'],
+    ...codeCommand('tickets'),
     cooldownMs: TICKET_COOLDOWN_MS,
     cooldownScope: 'global',
     run: async ({ reply }) => {
@@ -233,8 +232,7 @@ export const registerLotteryCommands = (registry: CommandRegistry, runner: Lotte
   });
 
   registry.register({
-    name: 'runlottery',
-    aliases: ['lottery', 'лотерея'],
+    ...codeCommand('runlottery'),
     cooldownMs: RUN_COOLDOWN_MS,
     run: async ({ displayName, roles, reply, releaseCooldown }) => {
       const t = messages().lottery;

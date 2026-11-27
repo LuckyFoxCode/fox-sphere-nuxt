@@ -2,6 +2,7 @@
 // те же, что у !addvip: стример или модератор, общий кулдаун 10 с. Twitch ничего не меняется,
 // только база, поэтому токен стримера не нужен.
 import type { ApiClient } from '@twurple/api';
+import { codeCommand } from '../../../shared/commands';
 import { setFounder } from '../founder';
 import { messages } from '../language';
 import type { CommandRegistry } from './registry';
@@ -54,14 +55,14 @@ export const registerFounderCommands = (registry: CommandRegistry, deps: Founder
   };
 
   registry.register({
-    name: 'addfounder',
+    ...codeCommand('addfounder'),
     cooldownMs: FOUNDER_COOLDOWN_MS,
     cooldownScope: 'global',
     run: run('add', 'addfounder'),
   });
 
   registry.register({
-    name: 'removefounder',
+    ...codeCommand('removefounder'),
     cooldownMs: FOUNDER_COOLDOWN_MS,
     cooldownScope: 'global',
     run: run('remove', 'removefounder'),

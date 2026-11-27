@@ -9,6 +9,7 @@ import {
   fishCatchMessage,
   pickCatch,
 } from '../../../shared/fishing';
+import { codeCommand } from '../../../shared/commands';
 import { grantCatch } from '../fishing';
 import { language, messages } from '../language';
 import { emitEvent } from '../socket';
@@ -50,8 +51,7 @@ export const registerFishCommand = (registry: CommandRegistry, deps: FishDeps): 
   };
 
   registry.register({
-    name: 'fish',
-    aliases: ['рыбачить', 'рыбалка'],
+    ...codeCommand('fish'),
     cooldownMs: FISH_COOLDOWN_MS,
     cooldownMessage: (name, seconds) => messages().fish.cooldown(name, seconds),
     run: async (ctx) => {

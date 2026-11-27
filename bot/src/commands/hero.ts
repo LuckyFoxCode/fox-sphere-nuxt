@@ -2,6 +2,7 @@
 // !витрина). Каталог, цены и разбор аргументов — из старого fox-sphere. Отличия: витрина — окно на оверлее
 // (`shop:show`, в чат ничего не пишем), а смену героя оверлей узнаёт из `hero:changed`.
 import { findHeroByTerm, HEROES } from '../../../shared/heroes';
+import { codeCommand } from '../../../shared/commands';
 import { buyHero, equipHero, getActiveHeroId, listOwnedHeroIds } from '../heroes';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
@@ -25,8 +26,7 @@ const heroNames = (): string => HEROES.map((hero) => hero.name).join(', ');
 
 export const registerHeroCommands = (registry: CommandRegistry, prefix: string): void => {
   registry.register({
-    name: 'buy',
-    aliases: ['купить'],
+    ...codeCommand('buy'),
     cooldownMs: BUY_COOLDOWN_MS,
     run: async ({ viewer, displayName, args, reply, releaseCooldown }) => {
       const t = messages().hero;
@@ -60,8 +60,7 @@ export const registerHeroCommands = (registry: CommandRegistry, prefix: string):
   });
 
   registry.register({
-    name: 'use',
-    aliases: ['надеть', 'активировать'],
+    ...codeCommand('use'),
     cooldownMs: USE_COOLDOWN_MS,
     run: async ({ viewer, displayName, args, reply, releaseCooldown }) => {
       const t = messages().hero;
@@ -96,8 +95,7 @@ export const registerHeroCommands = (registry: CommandRegistry, prefix: string):
   });
 
   registry.register({
-    name: 'shop',
-    aliases: ['магазин', 'витрина'],
+    ...codeCommand('shop'),
     cooldownMs: SHOP_COOLDOWN_MS,
     // Кулдаун на зрителя: окно личное (баланс и коллекция), а очередь на оверлее не даст им наложиться
     run: async ({ viewer, displayName }) => {
