@@ -1,36 +1,9 @@
-// Примеры карточки профиля для страниц /dev: полная и «новичок без героя». Только для эмулятора.
+// Примеры карточки профиля для страниц /dev: полная и «новичок без героя».
+// Полная живёт в shared/testEvents.ts: ту же карточку шлют тестовые кнопки админки.
 import type { ProfileShowPayload } from '#shared/events';
+import { PROFILE_SAMPLE } from '#shared/testEvents';
 
-export const PROFILE_SAMPLE: ProfileShowPayload = {
-  userId: 'dev-luckyfoxcode',
-  username: 'luckyfoxcode',
-  displayName: 'LuckyFoxCode',
-  color: '#ff6a3d',
-  lvl: 14,
-  xp: 620,
-  startXp: 450,
-  maxXp: 750,
-  coins: 4180,
-  heroId: 'assassin',
-  heroLevel: 7,
-  bestStreak: 60,
-  goldenBeers: 13,
-  isBroadcaster: false,
-  isMod: false,
-  isFounder: true,
-  isSubscriber: true,
-  isVip: false,
-  isPermanentVip: false,
-  isLuckyVip: true,
-  isFollower: true,
-  earned: 17,
-  badges: [
-    { category: 'jackpot', level: 2, rarity: 2, value: 2 },
-    { category: 'prize1000', level: 3, rarity: 3, value: 5 },
-    { category: 'golden-beer', level: 5, rarity: 5, value: 13 },
-    { category: 'watch-streak', level: 9, rarity: 4, value: 60 },
-  ],
-};
+export { PROFILE_SAMPLE };
 
 export const PROFILE_SPARSE: ProfileShowPayload = {
   ...PROFILE_SAMPLE,

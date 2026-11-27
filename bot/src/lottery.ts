@@ -51,6 +51,10 @@ const SELECT_PERSON = { twitchId: true, username: true } as const;
 export const getTicketHolders = (): Promise<LotteryPerson[]> =>
   prisma.viewer.findMany({ where: { hasTicket: true }, select: SELECT_PERSON, orderBy: { id: 'asc' } });
 
+// Победители последнего розыгрыша: временный VIP держится до следующего
+export const getLotteryWinners = (): Promise<LotteryPerson[]> =>
+  prisma.viewer.findMany({ where: { isLuckyVip: true }, select: SELECT_PERSON, orderBy: { id: 'asc' } });
+
 export type DrawOutcome =
   | { kind: 'empty'; oldWinners: LotteryPerson[] }
   | {

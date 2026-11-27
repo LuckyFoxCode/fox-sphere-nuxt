@@ -1,4 +1,5 @@
 // Лотерея VIP: !ticket (алиас !билет), !tickets (!розыгрыш) и !runlottery (!lottery, !лотерея).
+// Сам запуск розыгрыша (createLotteryRunner) общий с кнопкой в админке.
 // Названия, алиасы, права (розыгрыш запускает только стример), правила и кулдауны — из старого
 // fox-sphere; сцена на оверлее новая (shared/lottery.ts): её длительность не зависит от числа участников.
 // Новое по сравнению со старым: победители пишутся в чат в момент, когда встал последний барабан
@@ -27,7 +28,6 @@ const RUN_COOLDOWN_MS = 5000;
 // Между строками «Place #N» в чате: Twitch не любит очередь из пяти сообщений за один миг
 
 export type LotteryDeps = {
-  prefix: string;
   api: ApiClient;
   // Канал (TWITCH_USER_ID): VIP выдаётся от его имени
   streamerId: string;
@@ -55,7 +55,15 @@ export const playParticipants = (payload: LotteryParticipantsPayload): void =>
     await sleep(LOTTERY_PARTICIPANTS_SHOW_MS + LOTTERY_GAP_MS);
   });
 
-export const registerLotteryCommands = (registry: CommandRegistry, deps: LotteryDeps): void => {
+export type LotteryRunner = {
+  twitchVip: boolean;
+  isRunning: () => boolean;
+  // false — розыгрыш уже поставлен в очередь или идёт, второй не начат
+  start: () => boolean;
+};
+
+// Один запуск розыгрыша на всех, кто может его начать: `!runlottery` и кнопка в админке
+export const createLotteryRunner = (deps: LotteryDeps): LotteryRunner => {
   const { api, streamerId, ensureBroadcaster, announce, say, twitchVip } = deps;
   // Розыгрыш поставлен в очередь или идёт: второй запуск поверх не принимается
   let running = false;
@@ -158,6 +166,27 @@ export const registerLotteryCommands = (registry: CommandRegistry, deps: Lottery
     }
   };
 
+  return {
+    twitchVip,
+    isRunning: () => running,
+    start: () => {
+      if (running) return false;
+      running = true;
+      onStage(async () => {
+        try {
+          await runOnStage();
+        } catch (error) {
+          console.error('[lottery] розыгрыш не удался:', error);
+        } finally {
+          running = false;
+        }
+      });
+      return true;
+    },
+  };
+};
+
+export const registerLotteryCommands = (registry: CommandRegistry, runner: LotteryRunner): void => {
   registry.register({
     name: 'ticket',
     aliases: ['билет'],
@@ -214,22 +243,10 @@ export const registerLotteryCommands = (registry: CommandRegistry, deps: Lottery
         await reply(messages().denied(displayName));
         return;
       }
-      if (running) {
+      if (!runner.start()) {
         releaseCooldown();
         await reply(t.alreadyRunning(displayName));
-        return;
       }
-
-      running = true;
-      onStage(async () => {
-        try {
-          await runOnStage();
-        } catch (error) {
-          console.error('[lottery] розыгрыш не удался:', error);
-        } finally {
-          running = false;
-        }
-      });
     },
   });
 };

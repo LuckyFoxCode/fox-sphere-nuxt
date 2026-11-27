@@ -7,7 +7,7 @@ Twitch-бот и оверлей для OBS: Nuxt 4 + Pinia + Tailwind 4, бот 
 
 ```
 app/        Nuxt: pages, stores (Pinia); /overlay — страница для OBS (прозрачный фон, ssr: false)
-server/     Nitro: вход через Twitch (OAuth)
+server/     Nitro: вход через Twitch (OAuth) и API админки
 bot/        бот (отдельный pnpm-пакет)
 shared/     общий код бота и Nuxt
 prisma/     schema.prisma (SQLite)
@@ -181,6 +181,29 @@ XP и уровень зрителя бот хранит в базе; о ново
 - Стример: `http://localhost:3001/auth/twitch/broadcaster/login` (нужен `TWITCH_USER_ID`). Права: `shared/twitch.ts`.
 - Оба входа используют один Redirect URL `http://localhost:3001/auth/twitch/callback`. Права запрашиваются в ссылке авторизации, в консоли dev.twitch.tv их настраивать не нужно.
 - Один аккаунт = одна строка `TwitchToken`. Если бот и стример — один аккаунт (`TWITCH_BOT_ID` пуст или равен `TWITCH_USER_ID`), оба входа просят права обеих ролей.
+
+## Админка
+
+`http://localhost:3001/admin` (prod: порт 3000). Интерфейс на Nuxt UI, пускают только стримера.
+
+**Настройка** в `.env.development` и `.env.production`:
+
+1. `ADMIN_SESSION_SECRET` и `INTERNAL_SECRET`: две разные случайные строки не короче 32 символов. С `CHANGE_ME` вход закрыт. Сгенерировать одну:
+
+   ```bash
+   node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+   ```
+
+2. `TWITCH_USER_ID` — ваш Twitch ID (или `ADMIN_TWITCH_USER_ID`, если пускать нужно другой аккаунт). Вход идёт через тот же `TWITCH_BOT_REDIRECT_URI`, в консоли Twitch добавлять ничего не нужно.
+3. Перезапустите и сайт, и бота: переменные читаются при запуске.
+
+**Что есть.** Пульт эфира: буст XP на 5–60 минут и выключение (prod-бот пишет в чат ту же фразу, что на `!xpboost`); VIP-лотерея — билеты, прошлые победители и розыгрыш с подтверждением (то же, что `!runlottery`, нужен включённый бот); тестовые алерты и карточки на оверлей. Тесты ничего не пишут в базу и чат, работают и в prod без эмулятора, но видны на стриме. Разделы «Команды», «Зрители» и «Настройки» пока пустые.
+
+**Как защищено.** Вход не просит у Twitch прав и не сохраняет токен, только сверяет ID. Сессия — зашифрованная cookie на 7 дней, ID проверяется на каждой странице и запросе; смена `ADMIN_SESSION_SECRET` завершает все сессии. Браузер говорит только с Nuxt, а тот — с ботом по `/internal/*` на порту сокета с `INTERNAL_SECRET`. Открывайте админку по тому же адресу, что в Redirect URL (`localhost`, не `127.0.0.1`).
+
+**Палитра** — `app/app.config.ts` (`primary` — акцент, `neutral` — фоны и текст; любой цвет Tailwind), свои оттенки и скругления — `app/assets/css/admin.css`. Оверлеи эти настройки не затрагивают: стили админки подключают только её layout'ы (`app/layouts/`).
+
+Код: `app/pages/admin/`, `app/components/admin/`, `server/api/admin/`, `server/utils/admin-session.ts`, `bot/src/internal.ts`, `bot/src/admin.ts`, `shared/admin.ts`, `shared/testEvents.ts`.
 
 ## Анонсы и шаутауты
 

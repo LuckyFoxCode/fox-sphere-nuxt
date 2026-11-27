@@ -1,4 +1,10 @@
 @import 'tailwindcss';
+/* Классы админки сюда не собираются: у неё свои стили (admin.css) */
+@source not '../../layouts';
+@source not '../../pages/admin';
+@source not '../../components/admin';
+@source not '../../composables/admin.ts';
+@source not '../../app.config.ts';
 /* Шрифты локально (пакеты fontsource), чтобы OBS не зависел от сети */
 @import '@fontsource-variable/quicksand';
 @import '@fontsource-variable/rubik';
@@ -67,6 +73,12 @@
     font-family: var(--font-rubik);
     color: var(--text-main);
     -webkit-font-smoothing: antialiased;
+  }
+  /* `pnpm dev` подключает стили админки и на остальных страницах: их фон и схему цветов body возвращаем.
+     Админку отличает класс dark на html */
+  html:not(.dark) body {
+    background-color: transparent;
+    color-scheme: normal;
   }
 
   /* Вход и выход наклейки: 180 мс / 140 мс (DESIGN.md 2.4). Только Vue <Transition name="sticker-slap"> */

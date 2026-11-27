@@ -1,4 +1,5 @@
 import { ChatClient, type ChatMessage, type UserNotice } from '@twurple/chat';
+import { createAdminActions, type LiveBot } from './admin';
 import { createAnnouncer } from './announcements';
 import { createAuth } from './auth';
 import { createBadgeResolver } from './badges';
@@ -6,7 +7,7 @@ import { getJackpot } from './bank';
 import { createBotOverlayChat } from './botMessages';
 import { createRegistry } from './commands';
 import { buildProfilePayload } from './commands/profile';
-import { playLotteryScene, playParticipants } from './commands/lottery';
+import { createLotteryRunner, playLotteryScene, playParticipants } from './commands/lottery';
 import { config } from './config';
 import { startEventSub } from './eventsub';
 import { createFollowerChecker } from './followers';
@@ -33,6 +34,9 @@ import { awardBonusXp, awardMessageXp, ensureViewer } from './viewers';
 // Одна очередь вращений на настоящие спины и эмулятор
 const playSpin = createSpinStage();
 
+// Заполняется ниже, когда бот включён: пульту админки для розыгрыша и фраз в чат нужен Twitch
+let liveBot: LiveBot | null = null;
+
 await startSocketServer({
   getStreamState,
   getJackpot,
@@ -49,6 +53,7 @@ await startSocketServer({
   // Эмулятор лотереи: сцена и список встают в ту же очередь, что и рулетка; база и Twitch не трогаются
   playDevLottery: playLotteryScene,
   playDevParticipants: playParticipants,
+  admin: createAdminActions(() => liveBot),
 });
 
 // Виджет «сейчас играет» не зависит от Twitch: читатель работает и при BOT_ENABLED=false
@@ -213,6 +218,24 @@ if (!config.enabled) {
       return null;
     });
 
+  // Обычное сообщение в чат канала (не ответ на команду): в чате и в виджете чата на оверлее
+  const say = async (text: string) => {
+    console.log(`[bot] в чат: ${text}`);
+    await chat.say(channel, text);
+    await showBotMessage(text);
+  };
+
+  // Розыгрыш один на команду `!runlottery` и кнопку в админке
+  const lottery = createLotteryRunner({
+    api,
+    streamerId: config.streamerId,
+    ensureBroadcaster,
+    announce: announcer.announce,
+    say,
+    twitchVip: config.lotteryTwitchVip,
+  });
+  liveBot = { isChatConnected: () => chat.isConnected, say, lottery };
+
   const registry = createRegistry({
     prefix: config.prefix,
     playSpin,
@@ -220,12 +243,7 @@ if (!config.enabled) {
     streamerId: config.streamerId,
     ensureBroadcaster,
     announce: announcer.announce,
-    twitchVip: config.lotteryTwitchVip,
-    say: async (text) => {
-      console.log(`[bot] в чат: ${text}`);
-      await chat.say(channel, text);
-      await showBotMessage(text);
-    },
+    lottery,
     awardPrizeXp: async ({ viewer, displayName, reply }, xp) => {
       const award = await awardBonusXp(viewer.id, xp);
       const stream = await tryAddStreamXp(xp);

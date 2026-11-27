@@ -64,6 +64,10 @@ onBeforeUnmount(() => clearTimeout(resetTimer));
       <section class="mt-10 border-t border-line pt-6">
         <h2 class="text-lg font-semibold">Инструменты</h2>
         <p class="mt-2 text-sm text-text-second">
+          <a class="text-link hover:underline" href="/admin">Админка</a>
+          — пульт эфира: буст XP, VIP-лотерея, тестовые алерты. Вход только для стримера.
+        </p>
+        <p class="mt-2 text-sm text-text-second">
           <NuxtLink class="text-link hover:underline" to="/dev/events">Эмулятор событий</NuxtLink>
           — проверка виджетов без Twitch. Нужен запущенный бот, в prod по умолчанию выключен. События видит и OBS.
         </p>

@@ -4,7 +4,7 @@ import { registerXpBoostCommand } from './boost';
 import { registerFishCommand } from './fish';
 import { registerFounderCommands } from './founder';
 import { registerHeroCommands } from './hero';
-import { registerLotteryCommands, type LotteryDeps } from './lottery';
+import { registerLotteryCommands, type LotteryRunner } from './lottery';
 import { registerPivoCommand } from './pivo';
 import { buildProfilePayload } from './profile';
 import { registerVipCommands, type VipDeps } from './vip';
@@ -13,7 +13,7 @@ import { registerSpinCommands, type SpinDeps } from './spin';
 import { registerTimerCommands } from './timer';
 import { createTextCommands } from './text';
 
-export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & Omit<LotteryDeps, 'prefix'>) => {
+export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & { lottery: LotteryRunner }) => {
   const registry = new CommandRegistry(deps.prefix);
 
   registerSpinCommands(registry, deps);
@@ -22,7 +22,7 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & Omit<L
   registerHeroCommands(registry, deps.prefix);
   registerVipCommands(registry, deps);
   registerFounderCommands(registry, deps);
-  registerLotteryCommands(registry, deps);
+  registerLotteryCommands(registry, deps.lottery);
   registerXpBoostCommand(registry, deps.prefix);
   registerTimerCommands(registry, deps.prefix);
 

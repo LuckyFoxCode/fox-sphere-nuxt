@@ -1,0 +1,25 @@
+/* Стили админки. Подключают их только layouts/admin*.vue: на страницы оверлеев они не попадают.
+   Цвета выбираются в app/app.config.ts. */
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+/* Свой оттенок: раскомментируйте, задайте всю шкалу 50-950 и впишите 'fox' в app/app.config.ts.
+@theme static {
+  --color-fox-50: #fff7ed;
+  --color-fox-100: #ffedd5;
+  --color-fox-200: #fed7aa;
+  --color-fox-300: #fdba74;
+  --color-fox-400: #fb923c;
+  --color-fox-500: #f97316;
+  --color-fox-600: #ea580c;
+  --color-fox-700: #c2410c;
+  --color-fox-800: #9a3412;
+  --color-fox-900: #7c2d12;
+  --color-fox-950: #431407;
+}
+*/
+
+/* Скругления и фоны тёмной темы: переменные Nuxt UI */
+:root {
+  --ui-radius: 0.5rem;
+}

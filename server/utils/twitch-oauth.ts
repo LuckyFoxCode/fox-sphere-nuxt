@@ -2,10 +2,16 @@ import { randomBytes } from 'node:crypto';
 import type { H3Event } from 'h3';
 import { scopesFor, type TokenRole } from '../../shared/twitch';
 
-// Общая часть двух входов: бота (/auth/twitch/login) и стримера (/auth/twitch/broadcaster/login).
-// Оба возвращаются на один и тот же Redirect URL; роль запоминается в cookie.
+// Общая часть входов: бота (/auth/twitch/login), стримера (/auth/twitch/broadcaster/login) и админки
+// (/auth/twitch/admin/login). Все возвращаются на один и тот же Redirect URL; роль запоминается в cookie.
 // Секреты читаем из process.env напрямую, а не из runtimeConfig, чтобы они не попали в сборку.
-export const startTwitchLogin = (event: H3Event, role: TokenRole) => {
+// `admin` — только узнать, кто вошёл: без прав и без сохранения токена
+export type LoginRole = TokenRole | 'admin';
+
+export const isLoginRole = (value: unknown): value is LoginRole =>
+  value === 'bot' || value === 'broadcaster' || value === 'admin';
+
+export const startTwitchLogin = (event: H3Event, role: LoginRole) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const redirectUri = process.env.TWITCH_BOT_REDIRECT_URI;
   if (!clientId || !redirectUri) {
@@ -32,7 +38,7 @@ export const startTwitchLogin = (event: H3Event, role: TokenRole) => {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: scopesFor(role, botId, userId).join(' '),
+    scope: role === 'admin' ? '' : scopesFor(role, botId, userId).join(' '),
     state,
     force_verify: 'true', // всегда показывать выбор аккаунта: легко залогиниться не тем
   });

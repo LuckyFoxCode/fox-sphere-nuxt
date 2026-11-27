@@ -1,5 +1,7 @@
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
+import { createInternalHandler, type AdminActions } from './internal';
+import { INTERNAL_PREFIX } from '../../shared/admin';
 import {
   isAddVipPayload,
   isChatMessagePayload,
@@ -50,7 +52,14 @@ const devEvents = process.env.DEV_EVENTS
   ? process.env.DEV_EVENTS === 'true'
   : process.env.NODE_ENV !== 'production';
 
+// Внутренний API админки: вызывает только сервер Nuxt, с общим секретом INTERNAL_SECRET
+const handleInternal = createInternalHandler(process.env.INTERNAL_SECRET, () => sources.admin);
+
 const httpServer = createServer((req, res) => {
+  if (req.url?.startsWith(`${INTERNAL_PREFIX}/`)) {
+    void handleInternal(req, res);
+    return;
+  }
   if (req.url === '/health') {
     res.writeHead(200, { 'content-type': 'text/plain' });
     res.end('ok');
@@ -93,6 +102,7 @@ type SocketSources = {
   playDevSpin: (result: RouletteSpinResultPayload) => void;
   playDevLottery: (payload: LotteryDrawPayload) => void;
   playDevParticipants: (payload: LotteryParticipantsPayload) => void;
+  admin: AdminActions;
 };
 let sources: SocketSources;
 
