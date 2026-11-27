@@ -7,6 +7,7 @@ export default defineAppConfig({
       primary: 'amber', // акцент: главные кнопки, активный пункт меню
       neutral: 'stone', // фоны, рамки и текст
       // Остальные роли можно переопределить здесь же: secondary, success, info, warning, error
+      secondary: 'pink', // метка VIP (как рамка VIP в чате); по умолчанию совпадал бы с info
       warning: 'orange', // иначе предупреждения сливаются с янтарным акцентом
     },
   },

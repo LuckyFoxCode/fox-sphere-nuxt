@@ -7,6 +7,14 @@ export type AchievementCounter = 'spins' | 'jackpots' | 'prize500' | 'prize1000'
 
 export type AchievementCounters = Record<AchievementCounter, number>;
 
+// Какие записи CoinHistory считать: приз ровно 500 или 1000 бывает только у сегментов coins500 и
+// coins1000 рулетки (рыбалка столько не даёт), джекпот пишется своей причиной
+export const ACHIEVEMENT_COIN_RECORDS = {
+  jackpots: { reason: 'JACKPOT' },
+  prize500: { reason: 'SPIN_PRIZE', amount: 500 },
+  prize1000: { reason: 'SPIN_PRIZE', amount: 1000 },
+} as const;
+
 export interface AchievementCategory {
   id: string;
   title: string;
