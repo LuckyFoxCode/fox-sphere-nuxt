@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import type { ApiClient } from '@twurple/api';
 import type { ChatMessagePayload } from '../../shared/events';
+import { DEFAULT_HERO_ID } from '../../shared/heroes';
+import { prisma } from './db';
+import { getActiveHeroId } from './heroes';
 import { emitEvent } from './socket';
 
 // Цвет ника бота, если свой он в Twitch не выбирал (как в старом fox-sphere)
@@ -56,6 +59,21 @@ export const createBotOverlayChat = ({
   // Запрашивается один раз; неудачная попытка не кэшируется
   let identity: ReturnType<typeof loadIdentity> | undefined;
 
+  // Герой бота на полосе героев, как в старом fox-sphere: надетый героем у записи бота в базе, а без
+  // записи — бесплатный. Если бот пишет с аккаунта стримера, героя не добавляем: полоса различает
+  // героев по id, и ответ бота переодел бы стримера в «SYSTEM BOT».
+  const loadHero = async (): Promise<Pick<ChatMessagePayload, 'hero' | 'userLvl'>> => {
+    if (botUserId === streamerId) return { userLvl: 1 };
+    try {
+      const viewer = await prisma.viewer.findUnique({ where: { twitchId: botUserId }, select: { id: true, lvl: true } });
+      const heroId = viewer ? await getActiveHeroId(viewer.id) : DEFAULT_HERO_ID;
+      return { userLvl: viewer?.lvl ?? 1, hero: { heroId } };
+    } catch (error) {
+      console.error('[chat] герой бота не определён, беру бесплатного:', error);
+      return { userLvl: 1, hero: { heroId: DEFAULT_HERO_ID } };
+    }
+  };
+
   // Не бросает исключений: сообщение в Twitch уже отправлено, сбой оверлея только пишется в лог
   return async (
     text: string,
@@ -64,6 +82,7 @@ export const createBotOverlayChat = ({
     try {
       identity ??= loadIdentity();
       const { username, displayName, color, isMod } = await identity;
+      const hero = await loadHero();
       emitEvent('chat:message', {
         id: randomUUID(),
         userId: botUserId,
@@ -74,7 +93,7 @@ export const createBotOverlayChat = ({
         badges: isMod ? badgeUrls(new Map([['moderator', '1']])) : [],
         emotes: {},
         timestamp: Date.now(),
-        userLvl: 1,
+        ...hero,
         isMod,
         isFollower: false,
         isFounder: false,
