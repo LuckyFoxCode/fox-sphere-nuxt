@@ -3,8 +3,13 @@
 import { ru } from '@nuxt/ui/locale';
 import '~/assets/css/admin.css';
 
-// Тема всегда тёмная (colorMode в Nuxt UI выключен)
-useHead({ htmlAttrs: { class: 'dark', lang: 'ru' }, title: 'Админка · fox-sphere' });
+// Тема всегда тёмная (colorMode в Nuxt UI выключен). Панель занимает весь экран и прокручивается внутри,
+// поэтому у самой страницы прокрутки нет (иначе в dev её добавляет элемент Nuxt DevTools)
+useHead({
+  htmlAttrs: { class: 'dark', lang: 'ru' },
+  bodyAttrs: { class: 'overflow-hidden' },
+  title: 'Админка · fox-sphere',
+});
 
 const sections = [
   { label: 'Пульт эфира', icon: 'i-lucide-radio', to: '/admin', exact: true },
