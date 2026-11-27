@@ -131,5 +131,39 @@
     "enabled": true,
     "cooldownMs": 10000,
     "scope": "global"
+  },
+  {
+    "name": "points",
+    "lang": "uk",
+    "aliases": [
+      "economy",
+      "coinsinfo",
+      "баллы",
+      "поинты",
+      "экономика"
+    ],
+    "responses": [
+      "🪙 Економіка • Заробляйте монети, дивлячись стрім і спілкуючись у чаті, та витрачайте їх на інтерактивні фічі! 🔮"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
+  },
+  {
+    "name": "points",
+    "lang": "ru",
+    "aliases": [
+      "economy",
+      "coinsinfo",
+      "баллы",
+      "поинты",
+      "экономика"
+    ],
+    "responses": [
+      "🪙 Экономика • Зарабатывайте монеты, смотря стрим и общаясь в чате, и тратьте их на интерактивные фичи! 🔮"
+    ],
+    "enabled": true,
+    "cooldownMs": 10000,
+    "scope": "global"
   }
 ]
