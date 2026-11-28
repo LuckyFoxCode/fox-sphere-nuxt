@@ -61,7 +61,7 @@ onBeforeUnmount(() => {
       :description="problem"
     />
 
-    <div class="grid items-start gap-4 xl:grid-cols-2">
+    <div class="grid items-start gap-4 lg:grid-cols-2">
       <div class="flex flex-col gap-4">
         <AdminLanguageCard :current="settings?.botLang ?? null" @changed="loadSettings" />
         <AdminWidgetsCard :states="widgets" @changed="loadSettings" />
