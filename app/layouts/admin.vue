@@ -13,6 +13,7 @@ useHead({
 
 const sections = [
   { label: 'Пульт эфира', icon: 'i-lucide-radio', to: '/admin', exact: true },
+  { label: 'Игры', icon: 'i-lucide-gamepad-2', to: '/admin/games' },
   { label: 'Команды', icon: 'i-lucide-terminal', to: '/admin/commands' },
   { label: 'Зрители', icon: 'i-lucide-users', to: '/admin/viewers' },
   { label: 'События', icon: 'i-lucide-party-popper', to: '/admin/events' },

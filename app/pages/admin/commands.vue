@@ -41,7 +41,8 @@ const reload = async (name: string): Promise<boolean> => {
 const filter = ref<CommandRole | 'all'>('all');
 const matches = (role: CommandRole) => filter.value === 'all' || filter.value === role;
 
-const query = ref('');
+// `?q=` приходит по кнопке «Команды» на странице «Игры»
+const query = ref(String(useRoute().query.q ?? ''));
 const categoryTitle = (id: string) => COMMAND_CATEGORIES.find((category) => category.id === id)?.title ?? '';
 // Поиск по имени и алиасам (с префиксом, с «!» или без), описанию и названию группы
 const found = (name: string, aliases: readonly string[], category: string, description = ''): boolean => {

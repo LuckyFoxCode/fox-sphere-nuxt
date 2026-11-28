@@ -62,7 +62,7 @@ export const CODE_COMMANDS = {
     category: 'hero',
     description: 'Сменить активного героя: use hero <имя>.',
   },
-  tower: { aliases: ['башня'], role: 'viewer', category: 'tower', description: 'Отправить героя на следующий этаж башни. Пять попыток в день.' },
+  tower: { aliases: ['башня'], role: 'viewer', category: 'tower', description: 'Отправить героя на следующий этаж башни. Попытки в день ограничены.' },
   shop: { aliases: ['магазин', 'витрина'], role: 'viewer', category: 'hero', description: 'Витрина героев на оверлее.' },
   ticket: { aliases: ['билет'], role: 'viewer', category: 'lottery', description: 'Свой билет или прогресс до него.' },
   tickets: { aliases: ['розыгрыш'], role: 'viewer', category: 'lottery', description: 'У кого уже есть билеты.' },

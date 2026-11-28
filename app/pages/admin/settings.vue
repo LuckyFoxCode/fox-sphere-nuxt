@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Настройки по вкладкам: сцена (виджеты, бонус башни), бот (язык, подключения), панель и данные (цвета, копия базы). Состояние бота и входы обновляются раз в 5 с.
+// Настройки по вкладкам: сцена (виджеты), бот (язык, подключения), панель и данные (цвета, копия базы). Состояние бота и входы обновляются раз в 5 с.
 import type { AdminStreamState } from '#shared/admin';
 import type { AdminSettings } from '#shared/settings';
 import type { WidgetStates } from '#shared/widgets';
@@ -77,7 +77,6 @@ onBeforeUnmount(() => {
 
     <div v-if="tab === 'scene'" class="grid items-start gap-4 lg:grid-cols-2">
       <AdminWidgetsCard :states="widgets" @changed="loadSettings" />
-      <AdminTowerBonusCard />
     </div>
     <div v-else-if="tab === 'bot'" class="grid items-start gap-4 lg:grid-cols-2">
       <AdminLanguageCard :current="settings?.botLang ?? null" @changed="loadSettings" />
