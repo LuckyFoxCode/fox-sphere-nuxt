@@ -81,9 +81,9 @@ onBeforeUnmount(() => {
       class="font-quicksand pointer-events-none absolute right-3 bottom-64 rounded-2xl border-2 border-sticker-edge bg-sticker-body/95 text-sticker-ink shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
       :style="{ width: ARENA_WIDTH + 'px' }"
     >
-      <div class="flex items-center justify-between gap-3 border-b-2 border-sticker-edge/60 px-4 py-2">
-        <div class="text-sm font-extrabold tracking-wide uppercase">{{ title }}</div>
-        <div class="truncate text-sm font-semibold text-sticker-muted">{{ fight?.displayName }}</div>
+      <div class="flex items-center justify-between gap-3 border-b-2 border-sticker-edge/60 px-4 py-2.5">
+        <div class="text-base font-extrabold tracking-wide uppercase">{{ title }}</div>
+        <div class="truncate text-base font-bold text-sticker-ink/85">{{ fight?.displayName }}</div>
       </div>
 
       <div
@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
           ref="host"
           class="absolute inset-0"
         />
-        <div class="absolute top-3 left-4">
+        <div class="absolute top-2 left-4">
           <TowerHpBar
             :value="heroHp"
             :max="fight?.hero.maxHp ?? 1"
@@ -102,7 +102,7 @@ onBeforeUnmount(() => {
             align="left"
           />
         </div>
-        <div class="absolute top-3 right-4">
+        <div class="absolute top-2 right-4">
           <TowerHpBar
             :value="enemyHp"
             :max="fight?.enemy.maxHp ?? 1"
@@ -128,7 +128,7 @@ onBeforeUnmount(() => {
 
       <div
         v-if="fight?.queued.length"
-        class="truncate border-t-2 border-sticker-edge/60 px-4 py-1.5 text-xs font-semibold text-sticker-muted"
+        class="truncate border-t-2 border-sticker-edge/60 px-4 py-1.5 text-[13px] font-semibold text-sticker-muted"
       >
         Дальше: {{ fight.queued.join(', ') }}
       </div>

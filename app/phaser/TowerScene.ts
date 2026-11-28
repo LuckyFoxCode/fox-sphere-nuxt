@@ -6,7 +6,7 @@ import { getBossById } from '#shared/bosses';
 import { fightDurationMs, INTRO_MS, TOWER_CONFIG, TURN_MS } from '#shared/tower';
 
 export const ARENA_WIDTH = 520;
-export const ARENA_HEIGHT = 170;
+export const ARENA_HEIGHT = 182;
 const GROUND_Y = ARENA_HEIGHT - 6;
 const HERO_X = 120;
 const ENEMY_X = ARENA_WIDTH - 120;
