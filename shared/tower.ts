@@ -5,7 +5,7 @@ import { getHeroById, getHeroStats, HEROES, type HeroStats } from './heroes';
 import { getBossById } from './bosses';
 
 export const TOWER_CONFIG = {
-  ATTEMPTS_PER_DAY: 3,
+  ATTEMPTS_PER_DAY: 5,
   BOSS_EVERY: 5,
   // Пауза после последнего удара, пока играет падение и показывается итог
   END_PAUSE_MS: 1900,
