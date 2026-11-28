@@ -2,6 +2,7 @@
 import { toLang, type Lang } from '../../shared/i18n';
 import type { AdminAccount } from '../../shared/settings';
 import { isSameAccount } from '../../shared/twitch';
+import { parseWidgetsJson, type WidgetId, type WidgetStates } from '../../shared/widgets';
 
 const STATE_ID = 1;
 
@@ -29,3 +30,18 @@ export const getTwitchAccounts = async (): Promise<AdminAccount[]> => {
   if (isSameAccount(botId, userId)) return [account('both', userId)];
   return [account('bot', botId || userId), account('broadcaster', userId)];
 };
+
+export const getWidgets = async (): Promise<WidgetStates> => {
+  const row = await prisma.systemState.findUnique({ where: { id: STATE_ID }, select: { widgets: true } });
+  return parseWidgetsJson(row?.widgets);
+};
+
+// Читаем и пишем в одной транзакции, чтобы два быстрых щелчка не затёрли друг друга
+export const setWidget = async (id: WidgetId, enabled: boolean): Promise<WidgetStates> =>
+  prisma.$transaction(async (tx) => {
+    const row = await tx.systemState.findUnique({ where: { id: STATE_ID }, select: { widgets: true } });
+    const next = { ...parseWidgetsJson(row?.widgets), [id]: enabled };
+    const widgets = JSON.stringify(next);
+    await tx.systemState.upsert({ where: { id: STATE_ID }, create: { id: STATE_ID, widgets }, update: { widgets } });
+    return next;
+  });

@@ -1,19 +1,24 @@
 <script setup lang="ts">
-// Настройки: язык бота, цвета админки, подключения и копия базы. Состояние бота и входы обновляются раз в 5 с.
+// Настройки: язык бота, виджеты сцены, цвета админки, подключения и копия базы. Состояние бота и входы обновляются раз в 5 с.
 import type { AdminStreamState } from '#shared/admin';
 import type { AdminSettings } from '#shared/settings';
+import type { WidgetStates } from '#shared/widgets';
 
 definePageMeta({ layout: 'admin', middleware: 'admin' });
 
 const { leaveIfSignedOut } = useAdminApi();
 const settings = ref<AdminSettings | null>(null);
+const widgets = ref<WidgetStates | null>(null);
 const problem = ref('');
 const state = ref<AdminStreamState | null>(null);
 const botProblem = ref('');
 
 const loadSettings = async () => {
   try {
-    settings.value = await $fetch<AdminSettings>('/api/admin/settings');
+    [settings.value, widgets.value] = await Promise.all([
+      $fetch<AdminSettings>('/api/admin/settings'),
+      $fetch<WidgetStates>('/api/widgets'),
+    ]);
     problem.value = '';
   } catch (error) {
     if (!(await leaveIfSignedOut(error))) problem.value = adminErrorText(error);
@@ -59,6 +64,7 @@ onBeforeUnmount(() => {
     <div class="grid items-start gap-4 xl:grid-cols-2">
       <div class="flex flex-col gap-4">
         <AdminLanguageCard :current="settings?.botLang ?? null" @changed="loadSettings" />
+        <AdminWidgetsCard :states="widgets" @changed="loadSettings" />
         <AdminPaletteCard />
       </div>
       <div class="flex flex-col gap-4">
