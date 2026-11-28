@@ -68,6 +68,8 @@ export type TowerFightPayload = {
     tint: number | null;
   };
   turns: { by: 'hero' | 'enemy'; damage: number; heroHp: number; enemyHp: number }[];
+  // id бонуса дня (shared/towerBonus.ts), по которому считался бой
+  bonus: string;
   queued: string[];
 };
 

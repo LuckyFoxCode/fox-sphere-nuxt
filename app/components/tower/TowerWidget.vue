@@ -126,6 +126,13 @@ onBeforeUnmount(() => {
         </Transition>
       </div>
 
+      <div class="border-t-2 border-sticker-edge/60 px-4 py-1.5">
+        <TowerBonusChip
+          v-if="fight"
+          :id="fight.bonus"
+        />
+      </div>
+
       <div
         v-if="fight?.queued.length"
         class="truncate border-t-2 border-sticker-edge/60 px-4 py-1.5 text-[13px] font-semibold text-sticker-muted"

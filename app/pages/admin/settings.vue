@@ -66,6 +66,7 @@ onBeforeUnmount(() => {
         <AdminLanguageCard :current="settings?.botLang ?? null" @changed="loadSettings" />
         <AdminWidgetsCard :states="widgets" @changed="loadSettings" />
         <AdminPaletteCard />
+        <AdminTowerBonusCard />
       </div>
       <div class="flex flex-col gap-4">
         <AdminConnectionsCard :accounts="settings?.accounts ?? []" :state="state" :problem="botProblem" />

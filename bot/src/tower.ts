@@ -144,6 +144,7 @@ const toPayload = (entry: QueueEntry, outcome: Extract<TowerOutcome, { status: '
     hero: { name: hero.name, maxHp: outcome.fight.heroMaxHp },
     enemy: { kind: enemy.kind, spriteId: enemy.spriteId, name: enemy.name, maxHp: outcome.fight.enemyMaxHp, tint: enemy.tint },
     turns: outcome.fight.turns,
+    bonus: outcome.fight.bonus,
     queued: queue.map((next) => next.displayName),
   };
 };
