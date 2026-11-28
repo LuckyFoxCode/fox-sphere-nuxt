@@ -21,7 +21,10 @@ onBeforeUnmount(() => clearInterval(timer));
 <template>
   <UCard>
     <template #header>
-      <h2 class="text-lg font-semibold text-highlighted">Бонус башни</h2>
+      <h2 class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+        Бонус башни
+        <AdminFeatureBadges id="tower-bonus" />
+      </h2>
     </template>
     <div class="flex items-center gap-3">
       <TowerBonusIcon
