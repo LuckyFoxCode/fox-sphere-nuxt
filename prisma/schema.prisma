@@ -97,6 +97,7 @@ model SystemState {
   timerTitle        String?
   timerColor        String?
   timerEndsAt       DateTime?
+  timerPausedLeftMs Int? // остаток на паузе (мс); не null — таймер стоит, timerEndsAt при этом null
   botLang           String? // en | uk | ru, выбирается в админке; null — BOT_LANG из shared/i18n
   widgets           String? // JSON {id: boolean} — включённые виджеты сцены; null — значения по умолчанию из shared/widgets.ts
   updatedAt         DateTime  @updatedAt

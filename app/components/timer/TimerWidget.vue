@@ -26,6 +26,7 @@ watch(
       role="timer"
       :aria-label="`${timer.timer.title} — ${digits.join('')}`"
       class="gap-x-3 px-3 py-1.5"
+      :class="{ 'opacity-60': timer.paused }"
     >
       <h4 class="max-w-44 truncate text-sm leading-none font-bold text-sticker-ink">{{ timer.timer.title }}</h4>
       <div class="flex items-center gap-x-1">
@@ -40,6 +41,7 @@ watch(
       role="timer"
       :aria-label="`${timer.timer.title} — ${digits.join('')}`"
       class="w-full flex-col gap-y-2.5 px-3.5 pt-2.5 pb-3"
+      :class="{ 'opacity-60': timer.paused }"
     >
       <!-- Название печатается как набрал стример: без капитализации -->
       <h4 class="w-full truncate text-center text-base leading-none font-bold text-sticker-ink">

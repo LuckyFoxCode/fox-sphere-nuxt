@@ -6,7 +6,7 @@ import { resolveSocketPort } from '../../shared/events';
 const botError = (statusCode: number, error: string) =>
   createError({ statusCode, statusMessage: 'Bot request failed', data: { error } });
 
-type BotPath = '/state' | '/followers' | '/boost' | '/lottery' | '/test';
+type BotPath = '/state' | '/followers' | '/boost' | '/timer' | '/lottery' | '/test';
 
 export const callBot = async <T>(path: BotPath, body?: object): Promise<T> => {
   const secret = process.env.INTERNAL_SECRET;

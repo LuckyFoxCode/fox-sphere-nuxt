@@ -10,6 +10,7 @@ import { AdminError, type AdminActions } from './internal';
 import { language, messages } from './language';
 import { getLotteryWinners, getTicketHolders } from './lottery';
 import { emitEvent } from './socket';
+import { adjustTimer, getActiveTimer, pauseTimer, resumeTimer, startTimer, stopTimer, DEFAULT_TIMER_COLOR } from './streamTimer';
 import { activateXpBoost, cancelXpBoost, getActiveXpBoost } from './xpBoost';
 
 // То, что есть только у включённого бота (BOT_ENABLED=true): чат Twitch, розыгрыш и API Twitch
@@ -48,8 +49,9 @@ export const createAdminActions = (live: () => LiveBot | null): AdminActions => 
     getState: async (): Promise<AdminStreamState> => {
       const bot = live();
       const running = bot?.lottery.isRunning() ?? false;
-      const [boost, tickets, winners] = await Promise.all([
+      const [boost, timer, tickets, winners] = await Promise.all([
         getActiveXpBoost(),
+        getActiveTimer(),
         getTicketHolders(),
         getLotteryWinners(),
       ]);
@@ -58,6 +60,7 @@ export const createAdminActions = (live: () => LiveBot | null): AdminActions => 
         chatConnected: bot?.isChatConnected() ?? false,
         production: config.isProduction,
         boost,
+        timer,
         lottery: {
           running,
           twitchVip: config.lotteryTwitchVip,
@@ -89,6 +92,38 @@ export const createAdminActions = (live: () => LiveBot | null): AdminActions => 
       await activateXpBoost(request.minutes);
       console.log(`[admin] буст XP включён на ${request.minutes} мин`);
       await tellChat((name) => messages().xpBoost.started(name, request.minutes, BOOST_CONFIG.MULTIPLIER));
+    },
+
+    setTimer: async (request) => {
+      if (request.action === 'start') {
+        await startTimer({ minutes: request.minutes, color: DEFAULT_TIMER_COLOR, title: request.title });
+        console.log(`[admin] таймер "${request.title}" запущен на ${request.minutes} мин`);
+        return;
+      }
+      if (request.action === 'stop') {
+        if (!(await getActiveTimer())) throw new AdminError(409, 'таймер сейчас не идёт');
+        await stopTimer();
+        console.log('[admin] таймер остановлен');
+        return;
+      }
+      const done =
+        request.action === 'adjust'
+          ? await adjustTimer(request.minutes)
+          : request.action === 'pause'
+            ? await pauseTimer()
+            : await resumeTimer();
+      if (done) {
+        console.log(`[admin] таймер: ${request.action}`);
+        return;
+      }
+      throw new AdminError(
+        409,
+        request.action === 'adjust'
+          ? 'таймер не идёт или после правки остался бы меньше секунды (или больше суток)'
+          : request.action === 'pause'
+            ? 'таймер не идёт или уже на паузе'
+            : 'таймер не стоит на паузе',
+      );
     },
 
     runLottery: () => {

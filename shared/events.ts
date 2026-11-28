@@ -285,6 +285,8 @@ export type TimerPayload = {
   title: string;
   color: TimerColor;
   endsAt: number;
+  // Есть — таймер на паузе: остаток в мс, `endsAt` тогда только «сейчас + остаток» и не идёт
+  pausedLeftMs?: number;
 };
 
 // «Сейчас играет» (/overlay/music). Бот читает системную медиасессию Windows и шлёт состояние.
@@ -412,7 +414,8 @@ export const isTimerPayload = (value: unknown): value is TimerPayload =>
   value.title.length > 0 &&
   value.title.length <= TIMER_TITLE_MAX &&
   TIMER_COLOR_LIST.includes(value.color) &&
-  isInt(value.endsAt, 0, Number.MAX_SAFE_INTEGER);
+  isInt(value.endsAt, 0, Number.MAX_SAFE_INTEGER) &&
+  (value.pausedLeftMs === undefined || isInt(value.pausedLeftMs, 1, Number.MAX_SAFE_INTEGER));
 
 const ANNOUNCE_COLORS: readonly string[] = ['blue', 'green', 'orange', 'purple'];
 const CHAT_FLAGS = [

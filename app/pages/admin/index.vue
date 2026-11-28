@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Пульт эфира: буст XP, VIP-лотерея, тестовые алерты и карточки. Состояние бота обновляется раз в 3 с.
+// Пульт эфира: буст XP, таймер, VIP-лотерея, тестовые алерты и карточки. Состояние бота обновляется раз в 3 с.
 import type { AdminStreamState } from '#shared/admin';
 
 definePageMeta({ layout: 'admin', middleware: 'admin' });
@@ -58,6 +58,7 @@ onBeforeUnmount(() => {
     <div class="grid items-start gap-4 xl:grid-cols-2">
       <div class="flex flex-col gap-4">
         <AdminBoostCard :state="state" @changed="refresh" />
+        <AdminTimerCard :state="state" @changed="refresh" />
         <AdminTestCard :disabled="!state" />
       </div>
       <AdminLotteryCard :state="state" @changed="refresh" />

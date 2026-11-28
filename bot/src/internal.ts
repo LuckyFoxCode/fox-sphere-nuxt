@@ -3,6 +3,7 @@
 //   GET  /internal/state    состояние пульта
 //   GET  /internal/followers  фолловеры канала для раздела «Зрители»
 //   POST /internal/boost    включить или выключить буст XP
+//   POST /internal/timer    старт, пауза, продолжение, стоп и ±1 минута таймера
 //   POST /internal/lottery  запустить розыгрыш
 //   POST /internal/test     тестовый алерт или карточка на оверлей
 import { createHash, timingSafeEqual } from 'node:crypto';
@@ -12,9 +13,11 @@ import {
   isLotteryRunRequest,
   isUsableSecret,
   parseBoostRequest,
+  parseTimerRequest,
   type AdminStreamState,
   type BoostRequest,
   type BotFollowers,
+  type TimerRequest,
 } from '../../shared/admin';
 import { isTestEventKind, parseTestName, type TestEventKind } from '../../shared/testEvents';
 
@@ -32,6 +35,7 @@ export type AdminActions = {
   getState: () => Promise<AdminStreamState>;
   getFollowers: () => Promise<BotFollowers>;
   setBoost: (request: BoostRequest) => Promise<void>;
+  setTimer: (request: TimerRequest) => Promise<void>;
   runLottery: () => void;
   sendTest: (kind: TestEventKind, username: string) => void;
 };
@@ -67,6 +71,10 @@ export const createInternalHandler = (secret: string | undefined, actions: () =>
       const request = parseBoostRequest(await readJson(req));
       if (!request) throw new AdminError(400, 'неверное время буста');
       await actions().setBoost(request);
+    } else if (path === '/timer') {
+      const request = parseTimerRequest(await readJson(req));
+      if (!request) throw new AdminError(400, 'неверный запрос таймера');
+      await actions().setTimer(request);
     } else if (path === '/lottery') {
       if (!isLotteryRunRequest(await readJson(req))) throw new AdminError(400, 'нет подтверждения розыгрыша');
       actions().runLottery();
