@@ -46,6 +46,7 @@ export default defineNuxtPlugin(() => {
   socket.on('profile:show', useProfileStore().onShow);
   socket.on('leaderboard:show', useLeaderboardStore().onShow);
   socket.on('shop:show', useShopStore().onShow);
+  socket.on('tower:fight', useTowerStore().onFight);
   const lottery = useLotteryStore();
   socket.on('lottery:draw', lottery.onDraw);
   socket.on('lottery:participants', lottery.onParticipants);

@@ -63,6 +63,7 @@ onBeforeUnmount(() => {
     <ProfileWidget v-if="widgets.on('profile')" />
     <LeaderboardWidget v-if="widgets.on('leaderboard')" />
     <ShopWidget v-if="widgets.on('shop')" />
+    <TowerWidget v-if="widgets.on('tower')" />
 
     <div v-if="widgets.on('alerts')" class="absolute bottom-48 left-1/2 -translate-x-1/2">
       <AlertWidget />
