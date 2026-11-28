@@ -23,6 +23,7 @@ const links = [{ label: 'Оверлеи', icon: 'i-lucide-layers', to: '/', exte
 
 useAdminPalette().apply();
 
+const version = useAppVersion();
 const login = useAdminLogin();
 const { act } = useAdminApi();
 const logout = async () => {
@@ -32,19 +33,27 @@ const logout = async () => {
 
 <template>
   <UApp :locale="ru">
-    <UDashboardGroup>
-      <UDashboardSidebar class="min-w-56">
-        <template #header>
-          <span class="text-lg font-bold text-highlighted">fox-sphere</span>
+    <!-- Размеры в rem: развёрнутое меню 14, свёрнутая полоска с иконками 4.5. Состояние запоминается в cookie -->
+    <UDashboardGroup unit="rem">
+      <UDashboardSidebar collapsible :default-size="14" :collapsed-size="4.5">
+        <template #header="{ collapsed }">
+          <span v-if="!collapsed" class="text-lg font-bold text-highlighted">fox-sphere</span>
+          <UDashboardSidebarCollapse :class="collapsed ? 'mx-auto' : 'ms-auto'" />
         </template>
 
-        <UNavigationMenu :items="sections" orientation="vertical" />
-        <UNavigationMenu :items="links" orientation="vertical" class="mt-auto" />
+        <template #default="{ collapsed }">
+          <UNavigationMenu :items="sections" :collapsed="collapsed" orientation="vertical" tooltip />
+          <UNavigationMenu :items="links" :collapsed="collapsed" orientation="vertical" tooltip class="mt-auto" />
+        </template>
 
-        <template #footer>
-          <div class="flex w-full items-center justify-between gap-2">
-            <span class="truncate text-sm text-muted">{{ login }}</span>
-            <UButton color="neutral" variant="ghost" icon="i-lucide-log-out" @click="logout">Выйти</UButton>
+        <template #footer="{ collapsed }">
+          <div class="flex w-full flex-col gap-2">
+            <div v-if="!collapsed" class="flex w-full items-center justify-between gap-2">
+              <span class="truncate text-sm text-muted">{{ login }}</span>
+              <UButton color="neutral" variant="ghost" icon="i-lucide-log-out" @click="logout">Выйти</UButton>
+            </div>
+            <UButton v-else color="neutral" variant="ghost" icon="i-lucide-log-out" class="mx-auto" aria-label="Выйти" @click="logout" />
+            <span class="text-center text-xs text-dimmed">{{ collapsed ? `v${version}` : `Версия ${version}` }}</span>
           </div>
         </template>
       </UDashboardSidebar>
