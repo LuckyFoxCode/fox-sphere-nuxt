@@ -3,6 +3,7 @@
 // Числа - первая версия из docs/IDEAS.md; урон и защита врага в IDEAS не заданы, это допущение.
 import { getHeroById, getHeroStats, HEROES, type HeroStats } from './heroes';
 import { getBossById } from './bosses';
+import { currentBonus, type TowerBonus } from './towerBonus';
 
 export const TOWER_CONFIG = {
   // ВРЕМЕННО 100 на время тестов; рабочее значение 5 (см. обсуждение с владельцем)
@@ -23,7 +24,8 @@ export const BOSS_FLOORS: Readonly<Record<number, string>> = {
 
 export const TOWER_FLOORS = Math.max(...Object.keys(BOSS_FLOORS).map(Number));
 
-export const isBossFloor = (floor: number): boolean => floor in BOSS_FLOORS;
+// Босс-этаж по счёту, а не по каталогу: кривую сложности можно проверить на всех 45 этажах
+export const isBossFloor = (floor: number): boolean => floor > 0 && floor % TOWER_CONFIG.BOSS_EVERY === 0;
 
 // Оттенки «вражеских» героев по кругу этажей, чтобы соперник отличался от героя зрителя
 const ENEMY_TINTS = [0xff9a9a, 0x9ad0ff, 0xc9ff9a, 0xe0a0ff] as const;
@@ -42,9 +44,10 @@ const ENEMY_SPEED = 0.9;
 // Статы врага зависят только от этажа: «Тук» на этаже 7 не равен Туку зрителя с 50 уровнем
 export const enemyStats = (floor: number): TowerEnemy['stats'] => {
   const boss = isBossFloor(floor);
-  const health = 60 * 1.1 ** floor * (boss ? 1.6 : 1);
-  const attack = (8 + 2.5 * floor) * (boss ? 1.3 : 1);
-  const defense = (2 + 0.8 * floor) * (boss ? 1.3 : 1);
+  // Кривая подобрана так, чтобы герой 50 уровня доходил до 45 этажа, а ранние боссы были стеной
+  const health = 60 * 1.022 ** floor * (boss ? 1.35 : 1);
+  const attack = (8 + 2.2 * floor) * (boss ? 1.4 : 1);
+  const defense = (2 + 0.58 * floor) * (boss ? 1.4 : 1);
   return {
     health: Math.round(health),
     attack: Math.round(attack * 100) / 100,
@@ -80,6 +83,8 @@ export type TowerFight = {
   heroMaxHp: number;
   enemyMaxHp: number;
   turns: TowerTurn[];
+  // id бонуса, по которому считался бой
+  bonus: string;
 };
 
 // Урон: атака минус половина защиты цели, не меньше 1. Скорость - сколько ударов в единицу времени
@@ -87,9 +92,25 @@ const damageOf = (attack: number, targetDefense: number): number => Math.max(1, 
 
 const MAX_TURNS = 200;
 
-export const simulateFight = (heroId: string, level: number, floor: number): TowerFight => {
-  const hero: HeroStats = getHeroStats(heroId, level);
-  const enemy = getEnemy(floor).stats;
+export const simulateFight = (
+  heroId: string,
+  level: number,
+  floor: number,
+  bonus: TowerBonus = currentBonus(),
+): TowerFight => {
+  const base: HeroStats = getHeroStats(heroId, level);
+  const hero = {
+    health: Math.round(base.health * (bonus.hero.health ?? 1)),
+    attack: base.attack * (bonus.hero.attack ?? 1),
+    defense: base.defense * (bonus.hero.defense ?? 1),
+    speed: base.speed * (bonus.hero.speed ?? 1),
+  };
+  const raw = enemyStats(floor);
+  const enemy = {
+    ...raw,
+    health: Math.round(raw.health * (bonus.enemy.health ?? 1)),
+    defense: raw.defense * (bonus.enemy.defense ?? 1),
+  };
   const heroDamage = damageOf(hero.attack, enemy.defense);
   const enemyDamage = damageOf(enemy.attack, hero.defense);
 
@@ -109,16 +130,16 @@ export const simulateFight = (heroId: string, level: number, floor: number): Tow
         heroCharge -= 1;
         enemyHp = Math.max(0, Math.round((enemyHp - heroDamage) * 100) / 100);
         turns.push({ by: 'hero', damage: heroDamage, heroHp, enemyHp });
-        if (enemyHp <= 0) return { won: true, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns };
+        if (enemyHp <= 0) return { won: true, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns, bonus: bonus.id };
       } else {
         enemyCharge -= 1;
         heroHp = Math.max(0, Math.round((heroHp - enemyDamage) * 100) / 100);
         turns.push({ by: 'enemy', damage: enemyDamage, heroHp, enemyHp });
-        if (heroHp <= 0) return { won: false, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns };
+        if (heroHp <= 0) return { won: false, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns, bonus: bonus.id };
       }
     }
   }
-  return { won: false, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns };
+  return { won: false, heroMaxHp: hero.health, enemyMaxHp: enemy.health, turns, bonus: bonus.id };
 };
 
 // Награда за первое прохождение этажа (из IDEAS): монеты платятся один раз на зрителя, опыт герою - всегда
