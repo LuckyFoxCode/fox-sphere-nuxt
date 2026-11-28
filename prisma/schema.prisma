@@ -106,6 +106,7 @@ model SystemState {
   timerPausedLeftMs Int? // остаток на паузе (мс); не null — таймер стоит, timerEndsAt при этом null
   botLang           String? // en | uk | ru, выбирается в админке; null — BOT_LANG из shared/i18n
   widgets           String? // JSON {id: boolean} — включённые виджеты сцены; null — значения по умолчанию из shared/widgets.ts
+  seasons           String? // JSON {id: {mode, intensity}} — сезонные темы оверлея; null — все выключены, см. shared/seasons.ts
   updatedAt         DateTime  @updatedAt
 }
 

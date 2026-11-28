@@ -2,6 +2,7 @@
 import { toLang, type Lang } from '../../shared/i18n';
 import type { AdminAccount } from '../../shared/settings';
 import { isSameAccount } from '../../shared/twitch';
+import { parseSeasonsJson, type SeasonStates, type SeasonUpdate } from '../../shared/seasons';
 import { parseWidgetsJson, type WidgetId, type WidgetStates } from '../../shared/widgets';
 
 const STATE_ID = 1;
@@ -43,5 +44,21 @@ export const setWidget = async (id: WidgetId, enabled: boolean): Promise<WidgetS
     const next = { ...parseWidgetsJson(row?.widgets), [id]: enabled };
     const widgets = JSON.stringify(next);
     await tx.systemState.upsert({ where: { id: STATE_ID }, create: { id: STATE_ID, widgets }, update: { widgets } });
+    return next;
+  });
+
+export const getSeasons = async (): Promise<SeasonStates> => {
+  const row = await prisma.systemState.findUnique({ where: { id: STATE_ID }, select: { seasons: true } });
+  return parseSeasonsJson(row?.seasons);
+};
+
+// Как и у виджетов: чтение и запись в одной транзакции
+export const setSeason = async ({ id, mode, intensity }: SeasonUpdate): Promise<SeasonStates> =>
+  prisma.$transaction(async (tx) => {
+    const row = await tx.systemState.findUnique({ where: { id: STATE_ID }, select: { seasons: true } });
+    const current = parseSeasonsJson(row?.seasons);
+    const next = { ...current, [id]: { ...current[id], ...(mode && { mode }), ...(intensity && { intensity }) } };
+    const seasons = JSON.stringify(next);
+    await tx.systemState.upsert({ where: { id: STATE_ID }, create: { id: STATE_ID, seasons }, update: { seasons } });
     return next;
   });
