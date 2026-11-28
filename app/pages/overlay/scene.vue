@@ -21,6 +21,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="relative h-screen w-screen overflow-hidden bg-transparent">
+    <!-- Сезонные украшения (Рождество и др.) самым нижним слоем: всё остальное рисуется поверх них -->
+    <SeasonLayer />
+
     <!-- Герои первыми: идут под всеми остальными слоями, как нижний этаж сцены -->
     <HeroLane v-if="widgets.on('heroes')" />
 
