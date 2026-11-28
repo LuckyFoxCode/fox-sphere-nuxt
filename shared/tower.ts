@@ -6,8 +6,7 @@ import { getBossById } from './bosses';
 import { currentBonus, type TowerBonus } from './towerBonus';
 
 export const TOWER_CONFIG = {
-  // ВРЕМЕННО 100 на время тестов; рабочее значение 5 (см. обсуждение с владельцем)
-  ATTEMPTS_PER_DAY: 100,
+  ATTEMPTS_PER_DAY: 5,
   BOSS_EVERY: 5,
   // Пауза после последнего удара, пока играет падение и показывается итог
   END_PAUSE_MS: 1700,
