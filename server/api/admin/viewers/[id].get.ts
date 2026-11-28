@@ -1,5 +1,5 @@
 // Один зритель подробно: игры, счётчики ачивок, стрики, герои и все операции с монетами.
-import { ACHIEVEMENT_COIN_RECORDS } from '../../../../shared/achievements';
+import { ACHIEVEMENT_COIN_RECORDS, towerCounters } from '../../../../shared/achievements';
 import { HEROES } from '../../../../shared/heroes';
 import type { AdminViewerDetails } from '../../../../shared/viewers';
 
@@ -43,6 +43,7 @@ export default defineAdminHandler(async (event): Promise<AdminViewerDetails> => 
       prize1000: count('prize1000'),
       bestStreak: Math.max(0, ...viewer.watchStreaks.map((streak) => streak.streakValue)),
       goldenBeers: viewer.goldenBeers,
+      ...towerCounters(viewer.towerBest, viewer.heroes),
     },
     streaks: viewer.watchStreaks.map(({ streakValue, createdAt }) => ({
       value: streakValue,

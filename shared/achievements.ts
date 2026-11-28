@@ -2,8 +2,19 @@
 // (Viewer.spinsCount и goldenBeers, WatchStreak, CoinHistory). Бот, оверлей, админка и будущий сайт
 // берут отсюда одно и то же, поэтому пороги правятся в одном месте, а выдавать ничего не нужно.
 import catalog from './achievements.json';
+import { BOSS_FLOORS } from './tower';
 
-export type AchievementCounter = 'spins' | 'jackpots' | 'prize500' | 'prize1000' | 'bestStreak' | 'goldenBeers';
+export type AchievementCounter =
+  | 'spins'
+  | 'jackpots'
+  | 'prize500'
+  | 'prize1000'
+  | 'bestStreak'
+  | 'goldenBeers'
+  | 'towerFloor'
+  | 'towerBosses'
+  | 'heroLevel'
+  | 'towerHeroes';
 
 export type AchievementCounters = Record<AchievementCounter, number>;
 
@@ -86,3 +97,15 @@ export const achievementArtPath = (category: AchievementCategory, level: number)
         .replace('{level}', String(level))
         .replace('{threshold}', String(category.thresholds[level - 1] ?? ''))
     : null;
+
+// Счётчики башни из полей зрителя и его героев: `towerBest` - самый высокий оплаченный этаж, то есть
+// максимум среди героев; боссов убито столько, сколько их этажей не выше него
+export const towerCounters = (
+  towerBest: number,
+  heroes: readonly { level: number; towerFloor: number }[],
+): Pick<AchievementCounters, 'towerFloor' | 'towerBosses' | 'heroLevel' | 'towerHeroes'> => ({
+  towerFloor: towerBest,
+  towerBosses: Object.keys(BOSS_FLOORS).filter((floor) => Number(floor) <= towerBest).length,
+  heroLevel: Math.max(1, ...heroes.map((hero) => hero.level)),
+  towerHeroes: heroes.filter((hero) => hero.towerFloor > 0).length,
+});
