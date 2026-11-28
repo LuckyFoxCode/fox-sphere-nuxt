@@ -15,6 +15,7 @@ const sections = [
   { label: 'Пульт эфира', icon: 'i-lucide-radio', to: '/admin', exact: true },
   { label: 'Команды', icon: 'i-lucide-terminal', to: '/admin/commands' },
   { label: 'Зрители', icon: 'i-lucide-users', to: '/admin/viewers' },
+  { label: 'События', icon: 'i-lucide-party-popper', to: '/admin/events' },
   { label: 'Настройки', icon: 'i-lucide-settings', to: '/admin/settings' },
 ];
 // Обычные переходы с перезагрузкой: стили админки не должны ехать на другие страницы
