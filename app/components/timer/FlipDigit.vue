@@ -4,7 +4,7 @@ import { TIMER_PAPER } from '~/utils/timer';
 
 // Одна цифра таймера: тайл из двух половин на бумаге цвета стримера. Смена цифры - переворот
 // `rotateX 0 → -90 → 0`; сама цифра подменяется на середине, когда тайл стоит ребром.
-const props = defineProps<{ char: string; color: TimerColor }>();
+const props = defineProps<{ char: string; color: TimerColor; small?: boolean }>();
 
 // Длительность держится на одном числе: она уходит в CSS переменной, а подмена цифры
 // ждёт ровно половину - JS и анимация не могут разойтись. 260 мс при тике раз в секунду.
@@ -29,21 +29,23 @@ onBeforeUnmount(() => clearTimeout(swapTimer));
 
 <template>
   <div
-    class="relative inline-flex h-18.75 w-11 shrink-0 flex-col select-none perspective-near"
-    :class="{ 'is-flipping': isFlipping }"
+    class="relative inline-flex shrink-0 flex-col select-none perspective-near"
+    :class="[small ? 'h-10 w-6.5' : 'h-18.75 w-11', { 'is-flipping': isFlipping }]"
     :style="{ '--flip-ms': `${FLIP_MS}ms` }"
     @animationend="isFlipping = false"
   >
     <div class="relative flex h-1/2 w-full justify-center overflow-hidden rounded-t-[9px]" :class="TIMER_PAPER[color]">
       <span
-        class="absolute top-0 left-1/2 flex h-18.75 -translate-x-1/2 items-center text-5xl leading-none font-bold text-sticker-body tabular-nums"
+        class="absolute top-0 left-1/2 flex -translate-x-1/2 items-center leading-none font-bold text-sticker-body tabular-nums"
+        :class="small ? 'h-10 text-3xl' : 'h-18.75 text-5xl'"
       >
         {{ displayChar }}
       </span>
     </div>
     <div class="relative flex h-1/2 w-full justify-center overflow-hidden rounded-b-[9px]" :class="TIMER_PAPER[color]">
       <span
-        class="absolute bottom-0 left-1/2 flex h-18.75 -translate-x-1/2 items-center text-5xl leading-none font-bold text-sticker-body tabular-nums"
+        class="absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center leading-none font-bold text-sticker-body tabular-nums"
+        :class="small ? 'h-10 text-3xl' : 'h-18.75 text-5xl'"
       >
         {{ displayChar }}
       </span>

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 // Чип «×2 · 29:59» под шапкой стрима, слева от карточки музыки. Виден, только пока буст идёт.
+// Отступ справа: по умолчанию слева от карточки музыки; сцена, где музыка переехала, задаёт свой
+const { right = 'right-86' } = defineProps<{ right?: string }>();
 const boost = useBoostStore();
 
 const formatTime = (seconds: number) => {
@@ -14,7 +16,7 @@ const formatTime = (seconds: number) => {
        `right-[21.5rem]` = 12px отступ + 320px карточка музыки + 12px зазор. Поменяется ширина
        карточки музыки - поправить и здесь. -->
   <Transition name="boost-fade">
-    <div v-if="boost.boost" class="absolute top-18.5 right-86 z-10">
+    <div v-if="boost.boost" :class="['absolute top-18.5 z-10', right]">
       <StickerFrame
         role="status"
         :aria-label="`Опыт ×${boost.boost.multiplier}, осталось ${formatTime(boost.secondsLeft)}`"

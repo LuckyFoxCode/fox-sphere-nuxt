@@ -7,42 +7,64 @@
 useTransparentPage();
 const { $socket } = useNuxtApp();
 const chat = useChatStore();
-onMounted(() => $socket.connect());
-onBeforeUnmount(() => $socket.disconnect());
+const widgets = useWidgets();
+const webcam = computed(() => widgets.on('webcam'));
+onMounted(() => {
+  $socket.connect();
+  widgets.start();
+});
+onBeforeUnmount(() => {
+  $socket.disconnect();
+  widgets.stop();
+});
 </script>
 
 <template>
   <div class="relative h-screen w-screen overflow-hidden bg-transparent">
     <!-- Герои первыми: идут под всеми остальными слоями, как нижний этаж сцены -->
-    <HeroLane />
+    <HeroLane v-if="widgets.on('heroes')" />
 
-    <div class="absolute top-12 left-0 w-100">
-      <TimerWidget />
+    <!-- Таймер в центре шапки, на одной линии с банком и XP: так он не занимает колонку слева -->
+    <div v-if="widgets.on('timer')" class="absolute top-2 left-1/2 -translate-x-1/2">
+      <TimerWidget compact />
     </div>
 
-    <div class="absolute bottom-36 left-0 w-100">
+    <!-- С рамкой вебки (справа под шапкой) музыка живёт слева над чатом: карточка кончается на ~190 px,
+         чат начинается с 211 px. Без рамки она справа под шапкой, как раньше -->
+    <div v-if="webcam && widgets.on('music')" class="absolute top-2 left-0">
+      <MusicWidget />
+    </div>
+
+    <div v-if="widgets.on('chat')" class="absolute bottom-36 left-0 w-100">
       <ChatWidget :messages="chat.messages" />
     </div>
 
     <header class="flex w-full justify-end">
-      <div class="flex items-center gap-x-2 pt-2 pr-3">
+      <div v-if="widgets.on('header')" class="flex items-center gap-x-2 pt-2 pr-3">
         <RouletteTicker />
         <StreamXpWidget />
       </div>
     </header>
 
-    <div class="absolute top-18.5 right-3">
+    <div v-if="!webcam && widgets.on('music')" class="absolute top-18.5 right-3">
       <MusicWidget />
     </div>
-    <StreamXpBoost />
 
-    <RouletteWidget />
-    <LotteryWidget />
-    <ProfileWidget />
-    <LeaderboardWidget />
-    <ShopWidget />
+    <!-- Чип буста стоит под шапкой; при рамке вебки уходит левее неё (12 + 400 + 12 px) -->
+    <StreamXpBoost v-if="widgets.on('header')" :right="webcam ? 'right-106' : 'right-86'" />
 
-    <div class="absolute bottom-48 left-1/2 -translate-x-1/2">
+    <!-- Правый верхний угол под шапкой, 400 px: окно 16:9 с рамкой -->
+    <div v-if="webcam" class="absolute top-18.5 right-3 w-100">
+      <WebcamFrame />
+    </div>
+
+    <RouletteWidget v-if="widgets.on('roulette')" />
+    <LotteryWidget v-if="widgets.on('lottery')" />
+    <ProfileWidget v-if="widgets.on('profile')" />
+    <LeaderboardWidget v-if="widgets.on('leaderboard')" />
+    <ShopWidget v-if="widgets.on('shop')" />
+
+    <div v-if="widgets.on('alerts')" class="absolute bottom-48 left-1/2 -translate-x-1/2">
       <AlertWidget />
     </div>
   </div>

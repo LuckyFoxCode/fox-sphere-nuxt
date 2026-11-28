@@ -3,6 +3,8 @@
 // Звук окончания играет здесь, а не в сторе: он нужен только там, где таймер виден.
 import { TIMER_SOUND, TIMER_SOUND_VOLUME, timerDigits } from '~/utils/timer';
 
+// compact — для шапки сцены: одна строка (название и цифры) высотой с карточки банка и XP
+defineProps<{ compact?: boolean }>();
 const timer = useTimerStore();
 const digits = computed(() => timerDigits(timer.secondsLeft));
 
@@ -20,7 +22,21 @@ watch(
 <template>
   <Transition name="sticker-slap" mode="out-in">
     <StickerFrame
-      v-if="timer.timer"
+      v-if="timer.timer && compact"
+      role="timer"
+      :aria-label="`${timer.timer.title} — ${digits.join('')}`"
+      class="gap-x-3 px-3 py-1.5"
+    >
+      <h4 class="max-w-44 truncate text-sm leading-none font-bold text-sticker-ink">{{ timer.timer.title }}</h4>
+      <div class="flex items-center gap-x-1">
+        <template v-for="(char, index) in digits" :key="index">
+          <span v-if="char === ':'" class="text-2xl leading-none font-bold text-sticker-ink/55 select-none">:</span>
+          <FlipDigit v-else :char="char" :color="timer.timer.color" small />
+        </template>
+      </div>
+    </StickerFrame>
+    <StickerFrame
+      v-else-if="timer.timer"
       role="timer"
       :aria-label="`${timer.timer.title} — ${digits.join('')}`"
       class="w-full flex-col gap-y-2.5 px-3.5 pt-2.5 pb-3"
