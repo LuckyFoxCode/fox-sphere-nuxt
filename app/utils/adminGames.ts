@@ -32,7 +32,7 @@ import {
   SPIN_COOLDOWN_MS,
   type RoulettePrize,
 } from '#shared/roulette';
-import { heroXpToNext } from '#shared/tower';
+import { FRUIT_PRICE_PER_LEVEL, fruitPrice, heroXpToNext } from '#shared/tower';
 
 export type AdminGameLink = { label: string; to: string; icon: string };
 
@@ -102,6 +102,7 @@ export const adminGames = (commandPrefix: string): AdminGame[] => {
       rules: [
         'Новый зритель сразу получает бесплатного героя.',
         `${prefix}buy hero <имя> покупает героя, ${prefix}use hero <имя> делает его активным, ${prefix}shop показывает витрину на оверлее.`,
+        `${prefix}buy fruit — фрукт роста: активный герой получает +1 уровень за ${FRUIT_PRICE_PER_LEVEL} монет, умноженные на его текущий уровень (1→2 стоит ${fruitPrice(1)}, 2→3 стоит ${fruitPrice(2)}). Опыт внутри уровня остаётся. Это главный способ тратить монеты на героя.`,
         'Опыт герою дают только бои в башне: победа больше, поражение меньше. Сообщения в чате уровень героя не повышают.',
         `До следующего уровня нужно ${heroXpToNext(1)} опыта, умноженные на текущий уровень.`,
         'С уровнем растут здоровье, атака и защита. Скорость не меняется. У каждого героя свой уровень.',

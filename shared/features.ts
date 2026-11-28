@@ -18,6 +18,7 @@ export const FEATURES = {
   'widget:tower': { stage: 'beta', since: '0.2.0' },
   'widget:webcam': { stage: 'beta', since: '0.1.0' },
   tower: { stage: 'beta', since: '0.2.0' },
+  'tower-fruit': { stage: 'beta', since: '0.4.0' },
   'tower-bonus': { stage: 'beta', since: '0.2.0' },
   events: { stage: 'beta', since: '0.1.0' },
   games: { stage: 'beta', since: '0.3.0' },

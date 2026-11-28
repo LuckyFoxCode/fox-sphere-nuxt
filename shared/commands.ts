@@ -55,7 +55,7 @@ export const CODE_COMMANDS = {
   spinstats: { aliases: [], role: 'viewer', category: 'spin', description: 'Сколько спинов, выиграно и проиграно.' },
   fish: { aliases: ['рыбачить', 'рыбалка'], role: 'viewer', category: 'fish', description: 'Заброс удочки.' },
   pivo: { aliases: ['пиво', 'beer'], role: 'viewer', category: 'pivo', description: 'Открыть пиво.' },
-  buy: { aliases: ['купить'], role: 'viewer', category: 'hero', description: 'Купить героя: buy hero <имя>.' },
+  buy: { aliases: ['купить'], role: 'viewer', category: 'hero', description: 'Купить героя (buy hero <имя>) или фрукт роста (buy fruit).' },
   use: {
     aliases: ['надеть', 'активировать'],
     role: 'viewer',

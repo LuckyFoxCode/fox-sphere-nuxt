@@ -45,6 +45,10 @@ export type HeroMessages = {
   notEnough: (name: string, hero: string, price: number, have: number, shortfall: number) => string;
   bought: (name: string, hero: string, price: number, coinsAfter: number, prefix: string) => string;
   notOwned: (name: string, hero: string, prefix: string) => string;
+  // Фрукт роста: +1 уровень активному герою
+  fruitBought: (name: string, hero: string, level: number, price: number, coinsAfter: number) => string;
+  fruitNotEnough: (name: string, hero: string, price: number, have: number, shortfall: number) => string;
+  fruitMaxLevel: (name: string, hero: string) => string;
   alreadyActive: (name: string, hero: string) => string;
   equipped: (name: string, hero: string) => string;
   // Витрина в чат: каждый герой с ценой (0 — бесплатный)

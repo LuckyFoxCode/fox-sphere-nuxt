@@ -154,6 +154,10 @@ export const floorXp = (floor: number): number => 10 + 3 * floor;
 // За поражение героя тоже учат: треть опыта этажа, чтобы упёршийся в босса герой всё же рос
 export const lossXp = (floor: number): number => Math.max(1, Math.round(floorXp(floor) / 3));
 
+// Фрукт роста: +1 уровень выбранному герою за монеты, цена растёт с уровнем героя
+export const FRUIT_PRICE_PER_LEVEL = 200;
+export const fruitPrice = (level: number): number => FRUIT_PRICE_PER_LEVEL * level;
+
 // Сколько опыта до следующего уровня героя. В IDEAS не задано, это допущение (50 на уровень)
 export const heroXpToNext = (level: number): number => 50 * level;
 

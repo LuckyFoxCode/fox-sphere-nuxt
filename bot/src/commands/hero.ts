@@ -1,9 +1,9 @@
 // !buy hero <имя> (алиас !купить), !use hero <имя> (алиасы !надеть, !активировать) и !shop (!магазин,
 // !витрина). Каталог, цены и разбор аргументов — из старого fox-sphere. Отличия: витрина — окно на оверлее
 // (`shop:show`, в чат ничего не пишем), а смену героя оверлей узнаёт из `hero:changed`.
-import { findHeroByTerm, HEROES } from '../../../shared/heroes';
+import { findHeroByTerm, getHeroById, HEROES } from '../../../shared/heroes';
 import { codeCommand } from '../../../shared/commands';
-import { buyHero, equipHero, getActiveHeroId, listOwnedHeroIds } from '../heroes';
+import { buyFruit, buyHero, equipHero, getActiveHeroId, listOwnedHeroIds } from '../heroes';
 import { messages } from '../language';
 import { emitEvent } from '../socket';
 import type { CommandRegistry } from './registry';
@@ -13,6 +13,9 @@ const USE_COOLDOWN_MS = 5000;
 const SHOP_COOLDOWN_MS = 30_000;
 
 // Категории, которые называют героя; `!buy hero tug` и `!buy герой tug`. Единственная пока категория
+// `!buy fruit`: фрукт роста активному герою, без названия
+const FRUIT_WORDS: ReadonlySet<string> = new Set(['fruit', 'фрукт']);
+
 const HERO_CATEGORIES: ReadonlySet<string> = new Set(['hero', 'герой']);
 
 // «hero big robber» → категория «hero», название «big robber»; null — аргументов не хватает
@@ -30,6 +33,25 @@ export const registerHeroCommands = (registry: CommandRegistry, prefix: string):
     cooldownMs: BUY_COOLDOWN_MS,
     run: async ({ viewer, displayName, args, reply, releaseCooldown }) => {
       const t = messages().hero;
+
+      if (FRUIT_WORDS.has((args[0] ?? '').trim().toLowerCase())) {
+        const heroId = await getActiveHeroId(viewer.id);
+        const heroName = getHeroById(heroId).name;
+        const fruit = await buyFruit(viewer.id, heroId);
+        if (fruit.status === 'eaten') {
+          console.log(`[hero] ${displayName}: фрукт ${heroId} -> ${fruit.level} за ${fruit.price}`);
+          await reply(t.fruitBought(displayName, heroName, fruit.level, fruit.price, fruit.coinsAfter));
+        } else {
+          releaseCooldown();
+          await reply(
+            fruit.status === 'max-level'
+              ? t.fruitMaxLevel(displayName, heroName)
+              : t.fruitNotEnough(displayName, heroName, fruit.price, fruit.coins, fruit.shortfall),
+          );
+        }
+        return;
+      }
+
       const parsed = parseItemArgs(args);
       if (!parsed || !HERO_CATEGORIES.has(parsed.category)) {
         releaseCooldown();

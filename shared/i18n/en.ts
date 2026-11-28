@@ -48,7 +48,12 @@ export const en: BotMessages = {
       `💀 @${name}: ${hero} lost to ${enemy} on floor ${floor}. +${xp} hero XP${levelUp ? `, level ${levelUp}!` : ''}. Attempts left: ${left}`,
   },
   hero: {
-    buyUsage: (name, prefix) => `@${name}, type: ${prefix}buy hero <hero name>`,
+    buyUsage: (name, prefix) => `@${name}, type: ${prefix}buy hero <hero name> or ${prefix}buy fruit`,
+    fruitBought: (name, hero, level, price, coinsAfter) =>
+      `🍎 @${name}: ${hero} ate a growth fruit and is now level ${level}! -${price} coins, ${coinsAfter} left`,
+    fruitNotEnough: (name, hero, price, have, shortfall) =>
+      `@${name}, a fruit for ${hero} costs ${price}, you have ${have}: ${shortfall} short`,
+    fruitMaxLevel: (name, hero) => `@${name}, ${hero} is already at the maximum level`,
     useUsage: (name, prefix) => `@${name}, type: ${prefix}use hero <hero name>`,
     unknown: (name, heroes) => `@${name}, no such hero. Available: ${heroes}`,
     alreadyOwned: (name, hero) => `@${name}, you already own ${hero}`,

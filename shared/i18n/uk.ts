@@ -53,7 +53,12 @@ export const uk: BotMessages = {
       `💀 @${name}: ${hero} програв ${enemy} на поверсі ${floor}. +${xp} досвіду героя${levelUp ? `, рівень ${levelUp}!` : ''}. Спроб залишилось: ${left}`,
   },
   hero: {
-    buyUsage: (name, prefix) => `@${name}, пиши: ${prefix}buy hero <ім'я героя>`,
+    buyUsage: (name, prefix) => `@${name}, пиши: ${prefix}buy hero <ім'я героя> або ${prefix}buy fruit`,
+    fruitBought: (name, hero, level, price, coinsAfter) =>
+      `🍎 @${name}: ${hero} з'їв фрукт росту і тепер ${level} рівня! -${price} монет, залишилось ${coinsAfter}`,
+    fruitNotEnough: (name, hero, price, have, shortfall) =>
+      `@${name}, фрукт для ${hero} коштує ${price}, у тебе ${have}: не вистачає ${shortfall}`,
+    fruitMaxLevel: (name, hero) => `@${name}, ${hero} вже досяг максимального рівня`,
     useUsage: (name, prefix) => `@${name}, пиши: ${prefix}use hero <ім'я героя>`,
     unknown: (name, heroes) => `@${name}, такого героя немає. Є: ${heroes}`,
     alreadyOwned: (name, hero) => `@${name}, ${hero} у тебе вже є`,

@@ -1,6 +1,7 @@
 // Герои зрителей: активный герой для оверлея, покупка и смена. Логика из HeroService старого fox-sphere,
 // но без каналов и без общего кэша с UserService: один канал, один процесс.
-import { DEFAULT_HERO_ID, type HeroDefinition } from '../../shared/heroes';
+import { DEFAULT_HERO_ID, getHeroById, type HeroDefinition } from '../../shared/heroes';
+import { fruitPrice } from '../../shared/tower';
 import { prisma } from './db';
 
 // viewerId -> активный heroId. Каждое сообщение зрителя спрашивает героя, а базу трогаем только
@@ -64,6 +65,35 @@ export const buyHero = (viewerId: number, hero: HeroDefinition): Promise<BuyHero
     await tx.viewerHero.create({ data: { viewerId, heroId: hero.id } });
     const viewer = await tx.viewer.findUniqueOrThrow({ where: { id: viewerId } });
     return { status: 'bought', coinsAfter: viewer.coins };
+  });
+
+export type BuyFruitResult =
+  | { status: 'max-level' }
+  | { status: 'insufficient-funds'; price: number; coins: number; shortfall: number }
+  | { status: 'eaten'; level: number; price: number; coinsAfter: number };
+
+// Фрукт роста: +1 уровень активному герою. Цена от текущего уровня, опыт внутри уровня не трогаем.
+// Списание, уровень и журнал - одной транзакцией, баланс проверяется условием в самом списании.
+export const buyFruit = (viewerId: number, heroId: string): Promise<BuyFruitResult> =>
+  prisma.$transaction(async (tx): Promise<BuyFruitResult> => {
+    const row = await tx.viewerHero.findUniqueOrThrow({ where: { viewerId_heroId: { viewerId, heroId } } });
+    if (row.level >= getHeroById(heroId).maxLevel) return { status: 'max-level' };
+
+    const price = fruitPrice(row.level);
+    const debited = await tx.viewer.updateMany({
+      where: { id: viewerId, coins: { gte: price } },
+      data: { coins: { decrement: price } },
+    });
+    if (debited.count === 0) {
+      const viewer = await tx.viewer.findUniqueOrThrow({ where: { id: viewerId } });
+      return { status: 'insufficient-funds', price, coins: viewer.coins, shortfall: price - viewer.coins };
+    }
+    await tx.coinHistory.create({
+      data: { viewerId, amount: -price, reason: 'FRUIT_PURCHASE', details: `Fruit: ${heroId} ${row.level} -> ${row.level + 1}` },
+    });
+    await tx.viewerHero.update({ where: { id: row.id }, data: { level: row.level + 1 } });
+    const viewer = await tx.viewer.findUniqueOrThrow({ where: { id: viewerId } });
+    return { status: 'eaten', level: row.level + 1, price, coinsAfter: viewer.coins };
   });
 
 export type EquipHeroResult = 'equipped' | 'not-owned' | 'already-active';

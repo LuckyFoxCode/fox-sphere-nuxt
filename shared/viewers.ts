@@ -59,4 +59,5 @@ export const COIN_REASONS: Record<string, string> = {
   JACKPOT: 'Джекпот',
   FISH: 'Рыбалка',
   HERO_PURCHASE: 'Покупка героя',
+  FRUIT_PURCHASE: 'Фрукт роста',
 };
