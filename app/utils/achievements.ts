@@ -41,3 +41,13 @@ export const rimGems = (rarity: number): { x: number; y: number; r: number }[] =
     return { x: 50 + 45 * Math.sin(angle), y: 50 - 45 * Math.cos(angle), r: index % (count / 4) === 0 ? 4.6 : 3.2 };
   });
 };
+
+// Оправа значка: у категорий отсюда своя форма, фон и движение (AchievementGem.vue), остальные рисуются круглой медалью
+export type AchievementFrame = 'arch' | 'hex' | 'shield' | 'pennant';
+
+export const ACHIEVEMENT_FRAMES: Readonly<Record<string, AchievementFrame>> = {
+  'tower-floor': 'arch',
+  'tower-boss': 'hex',
+  'hero-level': 'shield',
+  'tower-squad': 'pennant',
+};

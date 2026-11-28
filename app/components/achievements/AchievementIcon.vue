@@ -3,7 +3,7 @@
 // наклейка с овсяным кантом, а ступень читается по фону и канту: горошек, полосы, решётка,
 // золотые лучи, радужная голография.
 import { ACHIEVEMENT_ART } from '~/utils/achievementArt';
-import { achievementAccent } from '~/utils/achievements';
+import { achievementAccent, ACHIEVEMENT_FRAMES } from '~/utils/achievements';
 import type { ArtShape } from '~/utils/roulette/art';
 
 const props = defineProps<{
@@ -13,13 +13,20 @@ const props = defineProps<{
   rarity: number;
 }>();
 
+const frame = computed(() => ACHIEVEMENT_FRAMES[props.category]);
 const shapes = computed<ArtShape[]>(() => ACHIEVEMENT_ART[props.category] ?? []);
 const silhouette = computed(() => shapes.value.filter((shape) => shape.solid !== false));
 const strokeOf = (shape: ArtShape): string => shape.stroke ?? (shape.solid === false ? 'none' : '#2b2630');
 </script>
 
 <template>
-  <div class="medal" :class="`tier-${rarity}`" :style="{ '--accent': achievementAccent(rarity) }" aria-hidden="true">
+  <AchievementGem
+    v-if="frame"
+    :category="category"
+    :rarity="rarity"
+    :frame="frame"
+  />
+  <div v-else class="medal" :class="`tier-${rarity}`" :style="{ '--accent': achievementAccent(rarity) }" aria-hidden="true">
     <span class="rays" />
     <span class="texture" />
     <svg viewBox="-6 -6 112 112" stroke-linecap="round" stroke-linejoin="round">
