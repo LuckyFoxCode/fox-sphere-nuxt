@@ -16,7 +16,7 @@ const SCALE = { heroes: 0.6, bosses: 0.5 } as const;
 const FOOT_PAD = { heroes: 88, bosses: 142 } as const;
 const LUNGE_PX = 60;
 // Удар «попадает» примерно на середине анимации атаки
-const HIT_AT_MS = 350;
+const HIT_AT_MS = 210;
 
 export type TowerHooks = {
   // После каждого удара: обе стороны уже в новом состоянии здоровья
@@ -157,7 +157,7 @@ export class TowerScene extends Phaser.Scene {
           this.tweens.add({
             targets: defender.sprite,
             x: defender.baseX + dir * 10,
-            duration: 70,
+            duration: 50,
             yoyo: true,
             repeat: 2,
           });

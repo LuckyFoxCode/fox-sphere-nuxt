@@ -9,10 +9,10 @@ export type CombatAnim = (typeof COMBAT_ANIMS)[number];
 const SHEET_LAYOUT: Record<CombatAnim, Omit<HeroSpriteSheet, 'path'> & { repeat: boolean }> = {
   idle: { frames: 16, frameRate: 12, columns: 4, rows: 4, repeat: true },
   walking: { frames: 20, frameRate: 16, columns: 4, rows: 5, repeat: true },
-  running: { frames: 12, frameRate: 16, columns: 4, rows: 3, repeat: true },
-  attacking: { frames: 10, frameRate: 14, columns: 5, rows: 2, repeat: false },
-  hurt: { frames: 10, frameRate: 14, columns: 5, rows: 2, repeat: false },
-  dying: { frames: 10, frameRate: 10, columns: 5, rows: 2, repeat: false },
+  running: { frames: 12, frameRate: 20, columns: 4, rows: 3, repeat: true },
+  attacking: { frames: 10, frameRate: 24, columns: 5, rows: 2, repeat: false },
+  hurt: { frames: 10, frameRate: 24, columns: 5, rows: 2, repeat: false },
+  dying: { frames: 10, frameRate: 16, columns: 5, rows: 2, repeat: false },
 };
 
 export type CombatSheet = HeroSpriteSheet & { repeat: boolean };

@@ -8,7 +8,7 @@ export const TOWER_CONFIG = {
   ATTEMPTS_PER_DAY: 3,
   BOSS_EVERY: 5,
   // Пауза после последнего удара, пока играет падение и показывается итог
-  END_PAUSE_MS: 2200,
+  END_PAUSE_MS: 1900,
   // Тот же бой вызывает следующий через эту паузу
   GAP_MS: 600,
 } as const;
@@ -153,8 +153,8 @@ export const attemptsLeft = (used: number, usedDay: string, today: string = dayK
 
 // Тайминги проигрывания: одни и те же числа знают и бот (когда писать в чат и пускать следующего),
 // и оверлей (сколько играть). Удар и ответная реакция идут встык.
-export const TURN_MS = 1100;
-export const INTRO_MS = 900;
+export const TURN_MS = 750;
+export const INTRO_MS = 700;
 export const fightDurationMs = (turnCount: number): number =>
   INTRO_MS + turnCount * TURN_MS + TOWER_CONFIG.END_PAUSE_MS;
 
