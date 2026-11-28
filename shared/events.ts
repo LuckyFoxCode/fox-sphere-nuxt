@@ -225,6 +225,8 @@ export type ProfileShowPayload = {
   // Активный герой и его уровень: null, если зрителю герой не определён
   heroId: string | null;
   heroLevel: number | null;
+  // Опыт героя внутри текущего уровня (до `heroXpToNext(heroLevel)`); null, если героя нет
+  heroXp?: number | null;
   // Лучший стрик просмотров; null, если ни одной награды за стрик ещё не было
   bestStreak: number | null;
   goldenBeers: number;
@@ -661,6 +663,7 @@ export const isProfileShowPayload = (value: unknown): value is ProfileShowPayloa
   isInt(value.coins, 0) &&
   (value.heroId === null || isNonEmptyString(value.heroId)) &&
   (value.heroLevel === null || isInt(value.heroLevel, 1, 1000)) &&
+  (value.heroXp === undefined || value.heroXp === null || isInt(value.heroXp, 0)) &&
   (value.bestStreak === null || isInt(value.bestStreak, 0)) &&
   isInt(value.goldenBeers, 0) &&
   typeof value.isBroadcaster === 'boolean' &&

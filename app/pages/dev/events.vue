@@ -709,6 +709,7 @@ const profileFromForm = (): ProfileShowPayload => {
     coins: profileCoins.value,
     heroId: profileNoHero.value ? null : profileHeroId.value,
     heroLevel: profileNoHero.value ? null : profileHeroLevel.value,
+    heroXp: profileNoHero.value ? null : 40,
     ...profileRoles,
   };
 };

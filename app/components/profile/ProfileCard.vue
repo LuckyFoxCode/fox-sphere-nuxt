@@ -10,6 +10,7 @@ import {
   PROFILE_BADGE_SLOTS,
 } from '#shared/achievements';
 import { getHeroById, getHeroStats, type HeroStats } from '#shared/heroes';
+import { heroXpToNext } from '#shared/tower';
 import type { ProfileShowPayload } from '#shared/events';
 import type { Component } from 'vue';
 import { CHAT_ROLE_STYLES, resolveChatRole, type ChatRole } from '~/utils/chat/chatRoles';
@@ -94,6 +95,23 @@ const xpCells = computed(() => {
 });
 
 const formatNumber = (value: number): string => value.toLocaleString('en-US');
+
+/** Опыт героя до следующего уровня; на потолке уровня полоса полная и подписана max. */
+const heroXp = computed(() => {
+  if (!hero.value) return null;
+  const level = props.profile.heroLevel ?? 1;
+  if (level >= hero.value.maxLevel) return { figures: 'max', progress: 100 };
+  const need = heroXpToNext(level);
+  const have = Math.min(props.profile.heroXp ?? 0, need);
+  return { figures: `${formatNumber(have)} / ${formatNumber(need)}`, progress: (have / need) * 100 };
+});
+const HERO_XP_CELLS = 20;
+const heroXpCells = computed(() => {
+  const filled = Math.floor(((heroXp.value?.progress ?? 0) / 100) * HERO_XP_CELLS);
+  return Array.from({ length: HERO_XP_CELLS }, (_, index) =>
+    index >= filled ? XP_CELL_CLASSES.empty : index === filled - 1 ? XP_CELL_CLASSES.lead : XP_CELL_CLASSES.filled,
+  );
+});
 const xpFigures = computed(() => `${formatNumber(props.profile.xp)} / ${formatNumber(props.profile.maxXp)}`);
 
 const numbers = computed(() => [
@@ -265,6 +283,33 @@ const achievementSlots = computed(() =>
             <span class="text-[9px] leading-none font-bold tracking-[0.17em] uppercase opacity-50">{{ stat.label }}</span>
             <span class="text-sm leading-none font-bold tabular-nums">{{ stat.value }}</span>
           </div>
+        </div>
+      </div>
+
+      <div
+        v-if="heroXp"
+        class="flex flex-col gap-y-1"
+      >
+        <div class="flex items-baseline justify-between">
+          <span class="text-[9.5px] font-bold tracking-[0.17em] uppercase opacity-55">
+            hero xp · lvl {{ profile.heroLevel ?? 1 }}
+          </span>
+          <span class="text-[11px] leading-none font-bold tabular-nums">{{ heroXp.figures }}</span>
+        </div>
+        <div
+          class="flex h-2 w-full items-center gap-0.5"
+          role="progressbar"
+          :aria-valuenow="Math.round(heroXp.progress)"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-label="`${hero?.name} xp`"
+        >
+          <span
+            v-for="(cell, index) in heroXpCells"
+            :key="index"
+            class="h-full flex-1 rounded-xs"
+            :class="cell"
+          />
         </div>
       </div>
 

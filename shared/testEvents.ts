@@ -53,6 +53,7 @@ export const PROFILE_SAMPLE: ProfileShowPayload = {
   coins: 4180,
   heroId: 'assassin',
   heroLevel: 7,
+  heroXp: 140,
   bestStreak: 60,
   goldenBeers: 13,
   isBroadcaster: false,

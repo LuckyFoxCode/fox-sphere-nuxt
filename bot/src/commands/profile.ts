@@ -28,6 +28,7 @@ export const buildProfilePayload = async (
     coins: viewer.coins,
     heroId,
     heroLevel: hero?.level ?? 1,
+    heroXp: hero?.xp ?? 0,
     bestStreak: counters.bestStreak > 0 ? counters.bestStreak : null,
     goldenBeers: viewer.goldenBeers,
     isBroadcaster: who.roles.isBroadcaster,
