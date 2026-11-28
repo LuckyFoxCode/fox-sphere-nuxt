@@ -77,9 +77,16 @@
     {
       "id": "tower-squad",
       "title": "Tower squad",
-      "unit": "heroes",
+      "unit": "squad level",
       "counter": "towerHeroes",
-      "thresholds": [1, 2, 3],
+      "thresholds": [1, 2, 3, 4, 5],
+      "requirements": [
+        { "heroes": 1, "floor": 5 },
+        { "heroes": 2, "floor": 10 },
+        { "heroes": 3, "floor": 20 },
+        { "heroes": 5, "floor": 30 },
+        { "heroes": 9, "floor": 45 }
+      ],
       "priority": 10
     }
   ]

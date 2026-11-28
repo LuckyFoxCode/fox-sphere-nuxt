@@ -2,6 +2,7 @@
 // (Viewer.spinsCount и goldenBeers, WatchStreak, CoinHistory). Бот, оверлей, админка и будущий сайт
 // берут отсюда одно и то же, поэтому пороги правятся в одном месте, а выдавать ничего не нужно.
 import catalog from './achievements.json';
+import { HEROES } from './heroes';
 import { BOSS_FLOORS } from './tower';
 
 export type AchievementCounter =
@@ -35,11 +36,28 @@ export interface AchievementCategory {
   thresholds: readonly number[];
   /** Чем меньше, тем реже категория: при равной ступени она идёт в профиле первой */
   priority: number;
+  /** Отряд: ступень N берётся, когда `heroes` разных героев дошли до этажа `floor`; счётчик - номер ступени */
+  requirements?: readonly { heroes: number; floor: number }[];
   /** Готовая картинка вместо SVG-иконки; `{level}` и `{threshold}` подставляются */
   art?: string;
 }
 
 export const ACHIEVEMENT_CATEGORIES: readonly AchievementCategory[] = catalog.categories as AchievementCategory[];
+
+/**
+ * Сколько ступеней категории достижимо сейчас. У отряда ступень требует N разных героев, а героев
+ * в магазине столько, сколько есть: лишние ступени появляются сами, когда герой добавляется в каталог.
+ */
+export const visibleLevels = (category: AchievementCategory, heroCount: number = HEROES.length): number =>
+  category.requirements
+    ? category.requirements.filter((tier) => tier.heroes <= heroCount).length
+    : category.thresholds.length;
+
+/** Подпись ступени отряда: «3 героя до этажа 20»; null у обычных категорий */
+export const requirementLabel = (category: AchievementCategory, level: number): string | null => {
+  const tier = category.requirements?.[level - 1];
+  return tier ? `героев: ${tier.heroes}, этаж ${tier.floor}` : null;
+};
 
 /** Ступеней редкости пять: у категорий с большим числом порогов (стрик) они делятся поровну */
 export const ACHIEVEMENT_RARITY_STEPS = 5;
@@ -98,6 +116,17 @@ export const achievementArtPath = (category: AchievementCategory, level: number)
         .replace('{threshold}', String(category.thresholds[level - 1] ?? ''))
     : null;
 
+// Ступень отряда: самая высокая, для которой хватает героев, дошедших до нужного этажа. Берётся из
+// towerFloor каждого героя, поэтому уже пройденные этажи засчитываются без миграции.
+const squadLevel = (heroes: readonly { towerFloor: number }[]): number => {
+  const tiers = ACHIEVEMENT_CATEGORIES.find((category) => category.counter === 'towerHeroes')?.requirements ?? [];
+  let level = 0;
+  tiers.forEach((tier, index) => {
+    if (heroes.filter((hero) => hero.towerFloor >= tier.floor).length >= tier.heroes) level = index + 1;
+  });
+  return level;
+};
+
 // Счётчики башни из полей зрителя и его героев: `towerBest` - самый высокий оплаченный этаж, то есть
 // максимум среди героев; боссов убито столько, сколько их этажей не выше него
 export const towerCounters = (
@@ -107,5 +136,5 @@ export const towerCounters = (
   towerFloor: towerBest,
   towerBosses: Object.keys(BOSS_FLOORS).filter((floor) => Number(floor) <= towerBest).length,
   heroLevel: Math.max(1, ...heroes.map((hero) => hero.level)),
-  towerHeroes: heroes.filter((hero) => hero.towerFloor > 0).length,
+  towerHeroes: squadLevel(heroes),
 });

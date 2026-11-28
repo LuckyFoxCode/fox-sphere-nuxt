@@ -233,7 +233,9 @@ export const adminGames = (commandPrefix: string): AdminGame[] => {
         head: ['Ачивка', 'Пороги ступеней'],
         rows: ACHIEVEMENT_CATEGORIES.map((category) => [
           category.title,
-          `${category.thresholds.join(', ')} (${category.unit})`,
+          category.requirements
+            ? category.requirements.map((tier) => `${tier.heroes} гер. до этажа ${tier.floor}`).join('; ')
+            : `${category.thresholds.join(', ')} (${category.unit})`,
         ]),
       },
     },

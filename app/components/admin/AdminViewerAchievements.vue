@@ -5,6 +5,8 @@ import {
   achievementArtPath,
   achievementLevel,
   achievementRarity,
+  requirementLabel,
+  visibleLevels,
   type AchievementCounters,
 } from '#shared/achievements';
 import { achievementAccent, achievementRarityLabel } from '~/utils/achievements';
@@ -15,7 +17,9 @@ const items = computed(() =>
   ACHIEVEMENT_CATEGORIES.map((category) => {
     const value = props.counters[category.counter];
     const level = achievementLevel(category.thresholds, value);
+    // Редкость по полной лестнице, а число ступеней - только достижимых сейчас
     const levels = category.thresholds.length;
+    const reachable = visibleLevels(category);
     // У невзятой ачивки показываем блёклый значок первой ступени
     const shown = Math.max(level, 1);
     return {
@@ -24,8 +28,10 @@ const items = computed(() =>
       unit: category.unit,
       value,
       level,
-      levels,
-      next: category.thresholds[level] ?? null,
+      levels: reachable,
+      next: level < reachable ? (category.thresholds[level] ?? null) : null,
+      nextLabel: requirementLabel(category, level + 1),
+      squad: Boolean(category.requirements),
       rarity: achievementRarity(shown, levels),
       art: achievementArtPath(category, shown),
     };
@@ -67,8 +73,12 @@ const earned = computed(() => items.value.filter((item) => item.level > 0).lengt
           <span class="text-xs text-muted tabular-nums">
             {{
               item.next === null
-                ? `${formatNumber(item.value)} ${item.unit}, все уровни взяты`
-                : `${formatNumber(item.value)} из ${formatNumber(item.next)} ${item.unit}`
+                ? item.squad
+                  ? 'Все доступные ступени взяты, новые появятся с новыми героями'
+                  : `${formatNumber(item.value)} ${item.unit}, все уровни взяты`
+                : item.nextLabel
+                  ? `Дальше: ${item.nextLabel}`
+                  : `${formatNumber(item.value)} из ${formatNumber(item.next)} ${item.unit}`
             }}
           </span>
         </div>
