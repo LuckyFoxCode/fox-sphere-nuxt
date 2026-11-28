@@ -37,6 +37,16 @@ export const en: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — a bite! Caught +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — a bite! Pulled out a chest: ${coins} coins went to the jackpot`,
   },
+  tower: {
+    queued: (name, position) => `🗼 @${name}, your hero is in the tower queue: place ${position}`,
+    alreadyQueued: (name) => `@${name}, you are already in the tower queue`,
+    noAttempts: (name, max) => `@${name}, no tower attempts left today (${max} per day). Come back tomorrow!`,
+    complete: (name) => `🏆 @${name}, your hero has cleared the whole tower. New floors are coming!`,
+    won: (name, hero, floor, enemy, coins, xp, levelUp, left) =>
+      `🗼 @${name}: ${hero} beat ${enemy} on floor ${floor}! +${coins} coins, +${xp} hero XP${levelUp ? `, level ${levelUp}!` : ''}. Attempts left: ${left}`,
+    lost: (name, hero, floor, enemy, left) =>
+      `💀 @${name}: ${hero} lost to ${enemy} on floor ${floor}. Attempts left: ${left}`,
+  },
   hero: {
     buyUsage: (name, prefix) => `@${name}, type: ${prefix}buy hero <hero name>`,
     useUsage: (name, prefix) => `@${name}, type: ${prefix}use hero <hero name>`,

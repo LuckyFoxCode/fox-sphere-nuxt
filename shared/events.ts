@@ -48,6 +48,29 @@ export type HeroChangedPayload = {
   heroId: string;
 };
 
+// Бой в башне: бот считает его целиком и присылает ходы, оверлей только проигрывает. `id` растёт
+// на каждый бой (оверлей различает повтор того же зрителя). `queued` - ники тех, кто ждёт своей очереди.
+export type TowerFightPayload = {
+  id: number;
+  userId: string;
+  displayName: string;
+  heroId: string;
+  level: number;
+  floor: number;
+  won: boolean;
+  hero: { name: string; maxHp: number };
+  enemy: {
+    kind: 'hero' | 'boss';
+    spriteId: string;
+    name: string;
+    maxHp: number;
+    // Оттенок вражеского героя (0xRRGGBB) или null
+    tint: number | null;
+  };
+  turns: { by: 'hero' | 'enemy'; damage: number; heroHp: number; enemyHp: number }[];
+  queued: string[];
+};
+
 // Состояние стрима для шапки. Поля те же, что у `stream:xp-updated` в старом fox-sphere:
 // `newXp` — весь накопленный XP стрима, `startXp` и `maxXp` — границы уровня `lvl`.
 export type StreamStatePayload = {
@@ -333,6 +356,7 @@ export type ServerToClientEvents = {
   'leaderboard:show': (payload: LeaderboardShowPayload) => void;
   'shop:show': (payload: ShopShowPayload) => void;
   'hero:changed': (payload: HeroChangedPayload) => void;
+  'tower:fight': (payload: TowerFightPayload) => void;
 };
 
 export type DevAck = (result: { ok: boolean; reason?: string }) => void;

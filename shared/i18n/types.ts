@@ -27,6 +27,15 @@ export type FishMessages = {
   bank: (name: string, coins: number) => string;
 };
 
+export type TowerMessages = {
+  queued: (name: string, position: number) => string;
+  alreadyQueued: NameMessage;
+  noAttempts: (name: string, max: number) => string;
+  complete: NameMessage;
+  won: (name: string, hero: string, floor: number, enemy: string, coins: number, xp: number, levelUp: number | null, left: number) => string;
+  lost: (name: string, hero: string, floor: number, enemy: string, left: number) => string;
+};
+
 export type HeroMessages = {
   buyUsage: (name: string, prefix: string) => string;
   useUsage: (name: string, prefix: string) => string;
@@ -139,6 +148,7 @@ export type BotMessages = {
   spin: SpinMessages;
   fish: FishMessages;
   hero: HeroMessages;
+  tower: TowerMessages;
   pivo: PivoMessages;
   vip: VipMessages;
   founder: FounderMessages;

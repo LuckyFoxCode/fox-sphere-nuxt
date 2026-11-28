@@ -28,6 +28,10 @@ model Viewer {
   xpThisWeek     Int           @default(0)
   hasTicket      Boolean       @default(false)
   isLuckyVip     Boolean       @default(false)
+  // Башня: самый высокий этаж, за который уже заплатили монеты, и попытки за сегодня (`towerAttemptsDay` - дата YYYY-MM-DD)
+  towerBest         Int           @default(0)
+  towerAttemptsUsed Int           @default(0)
+  towerAttemptsDay  String        @default("")
   coinHistory    CoinHistory[]
   xpHistory      XpHistory[]
   watchStreaks   WatchStreak[]
@@ -44,6 +48,8 @@ model ViewerHero {
   isActive  Boolean  @default(false)
   level     Int      @default(1)
   xp        Int      @default(0)
+  // Сколько этажей башни прошёл именно этот герой
+  towerFloor Int     @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   viewer    Viewer   @relation(fields: [viewerId], references: [id], onDelete: Cascade)

@@ -41,6 +41,16 @@ export const ru: BotMessages = {
     xp: (name, xp) => `⚡ @${name} — клюёт! Выловил +${xp} XP`,
     bank: (name, coins) => `🎣 @${name} — клюёт! Вытащил сундук: ${coins} монет ушли в джекпот`,
   },
+  tower: {
+    queued: (name, position) => `🗼 @${name}, твой герой в очереди на башню: место ${position}`,
+    alreadyQueued: (name) => `@${name}, ты уже в очереди на башню`,
+    noAttempts: (name, max) => `@${name}, попытки башни на сегодня кончились (${max} в день). Приходи завтра!`,
+    complete: (name) => `🏆 @${name}, твой герой прошёл всю башню. Новые этажи уже в пути!`,
+    won: (name, hero, floor, enemy, coins, xp, levelUp, left) =>
+      `🗼 @${name}: ${hero} победил ${enemy} на этаже ${floor}! +${coins} монет, +${xp} опыта героя${levelUp ? `, уровень ${levelUp}!` : ''}. Попыток осталось: ${left}`,
+    lost: (name, hero, floor, enemy, left) =>
+      `💀 @${name}: ${hero} проиграл ${enemy} на этаже ${floor}. Попыток осталось: ${left}`,
+  },
   hero: {
     buyUsage: (name, prefix) => `@${name}, пиши: ${prefix}buy hero <имя героя>`,
     useUsage: (name, prefix) => `@${name}, пиши: ${prefix}use hero <имя героя>`,

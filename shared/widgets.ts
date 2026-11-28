@@ -19,6 +19,7 @@ export const WIDGETS = [
   { id: 'lottery', title: 'Лотерея VIP', description: 'Розыгрыш недельных VIP по центру.', enabled: true },
   { id: 'profile', title: 'Карточка профиля', description: 'Карточка по команде !profile.', enabled: true },
   { id: 'leaderboard', title: 'Лидерборд', description: 'Топ-5 по награде Flex Leaderboard.', enabled: true },
+  { id: 'tower', title: 'Башня', description: 'Арена боя героя справа внизу над полосой героев, по команде !tower.', enabled: true },
   { id: 'shop', title: 'Магазин героев', description: 'Окно по команде !shop.', enabled: true },
   {
     id: 'webcam',
