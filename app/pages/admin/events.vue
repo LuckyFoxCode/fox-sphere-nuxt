@@ -31,7 +31,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <AdminPage title="События">
+  <AdminPage title="События" feature="events">
     <UAlert
       v-if="problem"
       color="error"

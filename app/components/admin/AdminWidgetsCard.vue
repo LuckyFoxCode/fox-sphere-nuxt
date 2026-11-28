@@ -34,7 +34,10 @@ const toggle = async (id: WidgetId, enabled: boolean) => {
       <ul class="flex flex-col divide-y divide-default">
         <li v-for="widget in WIDGETS" :key="widget.id" class="flex items-center justify-between gap-4 py-3">
           <div class="min-w-0">
-            <p class="font-medium text-highlighted">{{ widget.title }}</p>
+            <p class="flex flex-wrap items-center gap-2 font-medium text-highlighted">
+              {{ widget.title }}
+              <AdminFeatureBadges :id="`widget:${widget.id}`" />
+            </p>
             <p class="text-sm text-muted">{{ widget.description }}</p>
           </div>
           <USwitch

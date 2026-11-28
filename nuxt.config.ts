@@ -1,3 +1,5 @@
+import pkg from './package.json' with { type: 'json' };
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-11-01',
   devtools: { enabled: true },
@@ -20,6 +22,8 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL,
     // Секреты (INTERNAL_SECRET, ADMIN_SESSION_SECRET) сервер читает из process.env: здесь они попали бы в сборку
     public: {
+      // Версия проекта: показывается в админке и считает ярлык NEW (shared/features.ts)
+      appVersion: pkg.version,
       // Socket.io-сервер бота. Пустой socketUrl → тот же хост страницы + socketPort
       socketPort: Number(process.env.SOCKET_PORT) || 3002,
       socketUrl: process.env.SOCKET_URL || '',

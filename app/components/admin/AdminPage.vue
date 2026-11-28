@@ -1,15 +1,20 @@
 <script setup lang="ts">
 // Страница раздела: заголовок (на узком экране с кнопкой меню) и содержимое.
-// Слот `title` заменяет текст заголовка, например на хлебные крошки
-defineProps<{ title: string }>();
+// Слот `title` заменяет текст заголовка, например на хлебные крошки; `feature` — id из shared/features.ts для ярлыков
+defineProps<{ title: string; feature?: string }>();
 </script>
 
 <template>
   <UDashboardPanel>
     <template #header>
       <UDashboardNavbar :title="title">
-        <template v-if="$slots.title" #title>
-          <slot name="title" />
+        <template #title>
+          <slot name="title">
+            <span class="flex items-center gap-2">
+              {{ title }}
+              <AdminFeatureBadges v-if="feature" :id="feature" />
+            </span>
+          </slot>
         </template>
       </UDashboardNavbar>
     </template>
