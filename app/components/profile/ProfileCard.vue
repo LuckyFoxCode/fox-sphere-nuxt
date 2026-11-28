@@ -228,19 +228,19 @@ const achievementSlots = computed(() =>
             </span>
           </div>
 
-          <div class="mt-auto flex flex-col gap-y-1 rounded-lg border-2 border-white/70 bg-white/55 px-2.5 py-1.5">
+          <div class="mt-auto flex flex-col gap-y-1.5 rounded-lg border-2 border-white/70 bg-white/55 px-2.5 py-1.5">
             <div class="flex items-baseline justify-between gap-x-2">
-              <span class="truncate text-sm leading-none font-extrabold">{{ hero?.name ?? 'No hero yet' }}</span>
+              <span class="truncate text-xl leading-none font-extrabold">{{ hero?.name ?? 'No hero yet' }}</span>
               <span
                 v-if="hero"
-                class="shrink-0 text-[10px] leading-none font-bold tracking-[0.12em] uppercase opacity-70"
+                class="shrink-0 text-sm leading-none font-bold tracking-[0.08em] uppercase opacity-75"
               >
                 lvl {{ profile.heroLevel ?? 1 }}
               </span>
             </div>
             <template v-if="heroXp">
               <div
-                class="flex h-1.5 w-full items-center gap-px"
+                class="flex h-2 w-full items-center gap-px"
                 role="progressbar"
                 :aria-valuenow="Math.round(heroXp.progress)"
                 aria-valuemin="0"
@@ -254,7 +254,7 @@ const achievementSlots = computed(() =>
                   :class="cell"
                 />
               </div>
-              <span class="text-[10px] leading-none font-bold tabular-nums opacity-70">hero xp {{ heroXp.figures }}</span>
+              <span class="text-[13px] leading-none font-bold tabular-nums opacity-75">hero xp {{ heroXp.figures }}</span>
             </template>
           </div>
         </div>
