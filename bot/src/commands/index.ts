@@ -12,6 +12,7 @@ import { registerVipCommands, type VipDeps } from './vip';
 import { CommandRegistry } from './registry';
 import { registerSpinCommands, type SpinDeps } from './spin';
 import { registerTimerCommands } from './timer';
+import { registerTowerCommand } from './tower';
 import { createTextCommands } from './text';
 
 export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & { lottery: LotteryRunner }) => {
@@ -26,6 +27,7 @@ export const createRegistry = (deps: SpinDeps & Omit<VipDeps, 'prefix'> & { lott
   registerLotteryCommands(registry, deps.lottery);
   registerXpBoostCommand(registry, deps.prefix);
   registerTimerCommands(registry, deps.prefix);
+  registerTowerCommand(registry);
 
   registry.register({
     ...codeCommand('coins'),
