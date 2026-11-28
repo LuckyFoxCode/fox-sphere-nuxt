@@ -46,9 +46,6 @@ const roleStyle = computed(() => CHAT_ROLE_STYLES[role.value]);
 
 const hero = computed(() => (props.profile.heroId ? getHeroById(props.profile.heroId) : null));
 const portraitStyle = computed(() => (props.profile.heroId ? buildHeroPortraitStyle(props.profile.heroId) : {}));
-const heroLine = computed(() =>
-  hero.value ? `${hero.value.name} · hero lvl ${props.profile.heroLevel ?? 1}` : 'no hero assigned yet',
-);
 
 /**
  * Четыре стата героя: знак стата и число. Цвет — у знака, число остаётся графитовым. Шейд 700 держит
@@ -217,10 +214,6 @@ const achievementSlots = computed(() =>
             {{ profile.displayName }}
           </span>
 
-          <span class="truncate text-[12px] leading-none font-semibold opacity-60">
-            {{ heroLine }}
-          </span>
-
           <div
             v-if="roleFlags.length > 0"
             class="flex flex-wrap gap-1"
@@ -233,6 +226,36 @@ const achievementSlots = computed(() =>
             >
               {{ flag.label }}
             </span>
+          </div>
+
+          <div class="mt-auto flex flex-col gap-y-1 rounded-lg border-2 border-white/70 bg-white/55 px-2.5 py-1.5">
+            <div class="flex items-baseline justify-between gap-x-2">
+              <span class="truncate text-sm leading-none font-extrabold">{{ hero?.name ?? 'No hero yet' }}</span>
+              <span
+                v-if="hero"
+                class="shrink-0 text-[10px] leading-none font-bold tracking-[0.12em] uppercase opacity-70"
+              >
+                lvl {{ profile.heroLevel ?? 1 }}
+              </span>
+            </div>
+            <template v-if="heroXp">
+              <div
+                class="flex h-1.5 w-full items-center gap-px"
+                role="progressbar"
+                :aria-valuenow="Math.round(heroXp.progress)"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                :aria-label="`${hero?.name} xp`"
+              >
+                <span
+                  v-for="(cell, index) in heroXpCells"
+                  :key="index"
+                  class="h-full flex-1 rounded-xs"
+                  :class="cell"
+                />
+              </div>
+              <span class="text-[10px] leading-none font-bold tabular-nums opacity-70">hero xp {{ heroXp.figures }}</span>
+            </template>
           </div>
         </div>
       </div>
@@ -283,33 +306,6 @@ const achievementSlots = computed(() =>
             <span class="text-[9px] leading-none font-bold tracking-[0.17em] uppercase opacity-50">{{ stat.label }}</span>
             <span class="text-sm leading-none font-bold tabular-nums">{{ stat.value }}</span>
           </div>
-        </div>
-      </div>
-
-      <div
-        v-if="heroXp"
-        class="flex flex-col gap-y-1"
-      >
-        <div class="flex items-baseline justify-between">
-          <span class="text-[9.5px] font-bold tracking-[0.17em] uppercase opacity-55">
-            hero xp · lvl {{ profile.heroLevel ?? 1 }}
-          </span>
-          <span class="text-[11px] leading-none font-bold tabular-nums">{{ heroXp.figures }}</span>
-        </div>
-        <div
-          class="flex h-2 w-full items-center gap-0.5"
-          role="progressbar"
-          :aria-valuenow="Math.round(heroXp.progress)"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          :aria-label="`${hero?.name} xp`"
-        >
-          <span
-            v-for="(cell, index) in heroXpCells"
-            :key="index"
-            class="h-full flex-1 rounded-xs"
-            :class="cell"
-          />
         </div>
       </div>
 
