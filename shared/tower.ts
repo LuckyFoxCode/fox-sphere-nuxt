@@ -20,6 +20,12 @@ export const BOSS_FLOORS: Readonly<Record<number, string>> = {
   5: 'pirate_zombie',
   10: 'squidman',
   15: 'pirate_leader',
+  20: 'aztec_leader',
+  25: 'maya_leader',
+  30: 'nordic_leader',
+  35: 'boar_king',
+  40: 'shaman_king',
+  45: 'devil_leader',
 };
 
 export const TOWER_FLOORS = Math.max(...Object.keys(BOSS_FLOORS).map(Number));
