@@ -6,17 +6,17 @@ import { getBossById } from '#shared/bosses';
 import { fightDurationMs, INTRO_MS, TOWER_CONFIG, TURN_MS } from '#shared/tower';
 
 export const ARENA_WIDTH = 640;
-export const ARENA_HEIGHT = 280;
-const GROUND_Y = ARENA_HEIGHT - 8;
+export const ARENA_HEIGHT = 230;
+const GROUND_Y = ARENA_HEIGHT - 6;
 const HERO_X = 150;
 const ENEMY_X = ARENA_WIDTH - 150;
 // Босс нарисован крупнее героя: масштаб меньше, чтобы голова не упиралась в полоску здоровья
-const SCALE = { heroes: 0.6, bosses: 0.5 } as const;
+const SCALE = { heroes: 0.5, bosses: 0.42 } as const;
 // Отступ от стоп до низа клетки листа (в пикселях листа), измерен по альфа-каналу
 const FOOT_PAD = { heroes: 88, bosses: 142 } as const;
-const LUNGE_PX = 60;
+const LUNGE_PX = 50;
 // Удар «попадает» примерно на середине анимации атаки
-const HIT_AT_MS = 210;
+const HIT_AT_MS = 140;
 
 export type TowerHooks = {
   // После каждого удара: обе стороны уже в новом состоянии здоровья
@@ -157,9 +157,9 @@ export class TowerScene extends Phaser.Scene {
           this.tweens.add({
             targets: defender.sprite,
             x: defender.baseX + dir * 10,
-            duration: 50,
+            duration: 40,
             yoyo: true,
-            repeat: 2,
+            repeat: 1,
           });
         }
       });
