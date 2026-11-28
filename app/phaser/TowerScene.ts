@@ -16,7 +16,7 @@ const SCALE = { heroes: 0.5, bosses: 0.42 } as const;
 const FOOT_PAD = { heroes: 88, bosses: 142 } as const;
 const LUNGE_PX = 50;
 // Удар «попадает» примерно на середине анимации атаки
-const HIT_AT_MS = 140;
+const HIT_AT_MS = 165;
 
 export type TowerHooks = {
   // После каждого удара: обе стороны уже в новом состоянии здоровья

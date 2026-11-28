@@ -10,8 +10,8 @@ const SHEET_LAYOUT: Record<CombatAnim, Omit<HeroSpriteSheet, 'path'> & { repeat:
   idle: { frames: 16, frameRate: 12, columns: 4, rows: 4, repeat: true },
   walking: { frames: 20, frameRate: 16, columns: 4, rows: 5, repeat: true },
   running: { frames: 12, frameRate: 24, columns: 4, rows: 3, repeat: true },
-  attacking: { frames: 10, frameRate: 32, columns: 5, rows: 2, repeat: false },
-  hurt: { frames: 10, frameRate: 32, columns: 5, rows: 2, repeat: false },
+  attacking: { frames: 10, frameRate: 28, columns: 5, rows: 2, repeat: false },
+  hurt: { frames: 10, frameRate: 28, columns: 5, rows: 2, repeat: false },
   dying: { frames: 10, frameRate: 20, columns: 5, rows: 2, repeat: false },
 };
 

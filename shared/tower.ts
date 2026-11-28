@@ -154,7 +154,7 @@ export const attemptsLeft = (used: number, usedDay: string, today: string = dayK
 
 // Тайминги проигрывания: одни и те же числа знают и бот (когда писать в чат и пускать следующего),
 // и оверлей (сколько играть). Удар и ответная реакция идут встык.
-export const TURN_MS = 520;
+export const TURN_MS = 620;
 export const INTRO_MS = 500;
 export const fightDurationMs = (turnCount: number): number =>
   INTRO_MS + turnCount * TURN_MS + TOWER_CONFIG.END_PAUSE_MS;
