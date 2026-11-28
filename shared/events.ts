@@ -152,6 +152,15 @@ export type UserLevelUpPayload = {
   heroLevel?: number;
 };
 
+// Новый уровень героя зрителя (фрукт роста или опыт из башни). Показывается наклейкой с портретом героя
+export type HeroLevelUpPayload = {
+  userId: string;
+  username: string;
+  heroId: string;
+  fromLevel: number;
+  newLevel: number;
+};
+
 // VIP, выданный командой `!addvip`. Поля те же, что у `twitch:add-vip` в старом fox-sphere, но
 // `twitchId` назван `userId`, как у остальных алертов. Снятие VIP алерта не даёт.
 export type AddVipPayload = {
@@ -354,6 +363,7 @@ export type ServerToClientEvents = {
   'twitch:watch-streak': (payload: WatchStreakPayload) => void;
   'fishing:chest': (payload: FishingChestPayload) => void;
   'user:level-up': (payload: UserLevelUpPayload) => void;
+  'hero:level-up': (payload: HeroLevelUpPayload) => void;
   'twitch:golden-beer': (payload: GoldenBeerPayload) => void;
   'twitch:add-vip': (payload: AddVipPayload) => void;
   'profile:show': (payload: ProfileShowPayload) => void;

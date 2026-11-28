@@ -165,6 +165,16 @@ const drain = async (): Promise<void> => {
             `[tower] ${entry.displayName}: ${outcome.heroId} L${outcome.level}, этаж ${outcome.floor}, ${outcome.fight.won ? 'победа' : 'поражение'}`,
           );
           await wait(fightDurationMs(outcome.fight.turns.length));
+          // Алерт после боя, когда арена уже ушла: повышение героя не должно лечь поверх неё
+          if (outcome.levelUp) {
+            emitEvent('hero:level-up', {
+              userId: entry.twitchId,
+              username: entry.displayName,
+              heroId: outcome.heroId,
+              fromLevel: outcome.level,
+              newLevel: outcome.levelUp,
+            });
+          }
         }
         await entry.announce(outcome);
       } catch (error) {

@@ -39,6 +39,13 @@ export const registerHeroCommands = (registry: CommandRegistry, prefix: string):
         const heroName = getHeroById(heroId).name;
         const fruit = await buyFruit(viewer.id, heroId);
         if (fruit.status === 'eaten') {
+          emitEvent('hero:level-up', {
+            userId: viewer.twitchId,
+            username: displayName,
+            heroId,
+            fromLevel: fruit.level - 1,
+            newLevel: fruit.level,
+          });
           console.log(`[hero] ${displayName}: фрукт ${heroId} -> ${fruit.level} за ${fruit.price}`);
           await reply(t.fruitBought(displayName, heroName, fruit.level, fruit.price, fruit.coinsAfter));
         } else {

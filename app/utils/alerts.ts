@@ -12,6 +12,7 @@ import type {
   RewardRedeemPayload,
   SubPayload,
   SubTier,
+  HeroLevelUpPayload,
   UserLevelUpPayload,
   WatchStreakPayload,
 } from '#shared/events';
@@ -32,7 +33,8 @@ export type AlertKind =
   | 'ticket'
   | 'bits'
   | 'streak'
-  | 'levelup';
+  | 'levelup'
+  | 'herolevelup';
 
 export interface AlertView {
   kind: AlertKind;
@@ -48,6 +50,8 @@ export interface AlertView {
   media?: { src: string; alt: string };
   /** Level up: данные для отдельной карточки (LevelUpCard), как у сундука своя наклейка */
   levelUp?: UserLevelUpPayload;
+  /** Level up героя: данные для HeroLevelUpCard */
+  heroLevelUp?: HeroLevelUpPayload;
   /** Овсяный чип в углу — флаг, не факт (например, «new tier») */
   tag?: string;
   /** Адрес звука из public/; null — алерт без звука */
@@ -60,6 +64,7 @@ export interface AlertView {
 const ALERT_DURATION_MS = 5000;
 // Level up: на карточке портрет, ранг, полоса XP и статы героя, их надо успеть прочитать
 const LEVEL_UP_ALERT_DURATION_MS = 6500;
+const HERO_LEVEL_UP_ALERT_DURATION_MS = 5500;
 // Чуть дольше обычного: первую секунду занимает открытие сундука
 const CHEST_ALERT_DURATION_MS = 5500;
 // Пик звука приходится на открытие крышки (около 0,9 с)
@@ -93,6 +98,7 @@ export const ALERT_SOUNDS: Record<AlertKind, string | null> = {
   // В старом проекте был level-up.mp3, но он не перенесён: level-up.mp3 синтезирован с нуля (быстрый подъём
   // G-C-E-G и яркий мажорный аккорд, около 1,5 с), чужих файлов и лицензий нет
   levelup: '/assets/sound/level-up.mp3',
+  herolevelup: '/assets/sound/level-up.mp3',
 };
 
 const plural = (count: number, word: string): string => (count === 1 ? word : `${word}s`);
@@ -249,6 +255,17 @@ export const levelUpAlert = (payload: UserLevelUpPayload): AlertView => ({
   levelUp: payload,
   sound: ALERT_SOUNDS.levelup,
   durationMs: LEVEL_UP_ALERT_DURATION_MS,
+});
+
+// Новый уровень героя: компактная наклейка с портретом героя (HeroLevelUpCard)
+export const heroLevelUpAlert = (payload: HeroLevelUpPayload): AlertView => ({
+  kind: 'herolevelup',
+  paper: 'bg-paper-cyan',
+  label: 'hero level up',
+  title: payload.username,
+  heroLevelUp: payload,
+  sound: ALERT_SOUNDS.herolevelup,
+  durationMs: HERO_LEVEL_UP_ALERT_DURATION_MS,
 });
 
 export const subAlert = (sub: SubPayload): AlertView => {

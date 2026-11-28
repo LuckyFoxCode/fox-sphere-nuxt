@@ -9,6 +9,7 @@ import type {
   BitsPayload,
   RewardRedeemPayload,
   SubPayload,
+  HeroLevelUpPayload,
   UserLevelUpPayload,
   WatchStreakPayload,
 } from '#shared/events';
@@ -91,6 +92,7 @@ export const useAlertsStore = defineStore('alerts', () => {
   const onFishingChest = (payload: FishingChestPayload) => push(chestAlert(payload));
   const onGoldenBeer = (payload: GoldenBeerPayload) => push(goldenBeerAlert(payload));
   const onLevelUp = (payload: UserLevelUpPayload) => push(levelUpAlert(payload));
+  const onHeroLevelUp = (payload: HeroLevelUpPayload) => push(heroLevelUpAlert(payload));
 
   const onAddVip = (payload: AddVipPayload) => push(addVipAlert(payload));
   const onLotteryTicket = (payload: LotteryTicketPayload) => push(lotteryTicketAlert(payload));
@@ -106,6 +108,7 @@ export const useAlertsStore = defineStore('alerts', () => {
     onFishingChest,
     onGoldenBeer,
     onLevelUp,
+    onHeroLevelUp,
     onAddVip,
     onLotteryTicket,
   };

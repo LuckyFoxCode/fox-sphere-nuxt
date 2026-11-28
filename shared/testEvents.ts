@@ -22,6 +22,7 @@ export const TEST_EVENTS = [
   { kind: 'add-vip', label: 'Новый VIP', group: 'alert' },
   { kind: 'lottery-ticket', label: 'Билет лотереи', group: 'alert' },
   { kind: 'level-up', label: 'Level up', group: 'alert' },
+  { kind: 'hero-level-up', label: 'Level up героя', group: 'alert' },
   { kind: 'profile', label: 'Профиль', group: 'card' },
   { kind: 'shop', label: 'Магазин героев', group: 'card' },
   { kind: 'leaderboard', label: 'Лидерборд', group: 'card' },
@@ -149,6 +150,8 @@ export const emitTestEvent = (emit: Emit, kind: TestEventKind, { username, lang,
         heroLevel: 6,
       });
     }
+    case 'hero-level-up':
+      return emit('hero:level-up', { ...who, heroId: DEFAULT_HERO_ID, fromLevel: 5, newLevel: 6 });
     case 'profile':
       return emit('profile:show', { ...PROFILE_SAMPLE, userId, username: username.toLowerCase(), displayName: username });
     case 'shop':
