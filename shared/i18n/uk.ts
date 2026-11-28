@@ -49,8 +49,8 @@ export const uk: BotMessages = {
     complete: (name) => `🏆 @${name}, твій герой пройшов усю вежу. Нові поверхи вже в дорозі!`,
     won: (name, hero, floor, enemy, coins, xp, levelUp, left) =>
       `🗼 @${name}: ${hero} переміг ${enemy} на поверсі ${floor}! +${coins} монет, +${xp} досвіду героя${levelUp ? `, рівень ${levelUp}!` : ''}. Спроб залишилось: ${left}`,
-    lost: (name, hero, floor, enemy, left) =>
-      `💀 @${name}: ${hero} програв ${enemy} на поверсі ${floor}. Спроб залишилось: ${left}`,
+    lost: (name, hero, floor, enemy, xp, levelUp, left) =>
+      `💀 @${name}: ${hero} програв ${enemy} на поверсі ${floor}. +${xp} досвіду героя${levelUp ? `, рівень ${levelUp}!` : ''}. Спроб залишилось: ${left}`,
   },
   hero: {
     buyUsage: (name, prefix) => `@${name}, пиши: ${prefix}buy hero <ім'я героя>`,

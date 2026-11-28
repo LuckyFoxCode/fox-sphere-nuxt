@@ -151,6 +151,8 @@ export const simulateFight = (
 // Награда за первое прохождение этажа (из IDEAS): монеты платятся один раз на зрителя, опыт герою - всегда
 export const floorCoins = (floor: number): number => 20 + 8 * floor;
 export const floorXp = (floor: number): number => 10 + 3 * floor;
+// За поражение героя тоже учат: треть опыта этажа, чтобы упёршийся в босса герой всё же рос
+export const lossXp = (floor: number): number => Math.max(1, Math.round(floorXp(floor) / 3));
 
 // Сколько опыта до следующего уровня героя. В IDEAS не задано, это допущение (50 на уровень)
 export const heroXpToNext = (level: number): number => 50 * level;

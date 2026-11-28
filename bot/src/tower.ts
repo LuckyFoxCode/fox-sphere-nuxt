@@ -9,6 +9,7 @@ import {
   fightDurationMs,
   floorCoins,
   floorXp,
+  lossXp,
   getEnemy,
   simulateFight,
   TOWER_CONFIG,
@@ -54,15 +55,16 @@ export const runTowerFight = async (viewerId: number): Promise<TowerOutcome> => 
     let xp = 0;
     let levelUp: number | null = null;
 
-    if (fight.won) {
-      xp = floorXp(floor);
-      const grown = applyHeroXp(row.level, row.xp, xp, getHeroById(heroId).maxLevel);
-      await tx.viewerHero.update({
-        where: { id: row.id },
-        data: { towerFloor: floor, level: grown.level, xp: grown.xp },
-      });
-      if (grown.levelsGained > 0) levelUp = grown.level;
+    // Опыт героя идёт и за поражение (меньше): иначе упёршийся в босса герой никогда не вырастет
+    xp = fight.won ? floorXp(floor) : lossXp(floor);
+    const grown = applyHeroXp(row.level, row.xp, xp, getHeroById(heroId).maxLevel);
+    await tx.viewerHero.update({
+      where: { id: row.id },
+      data: { ...(fight.won ? { towerFloor: floor } : {}), level: grown.level, xp: grown.xp },
+    });
+    if (grown.levelsGained > 0) levelUp = grown.level;
 
+    if (fight.won) {
       // Монеты платятся за этаж один раз на зрителя: второй герой на уже оплаченном этаже получает только опыт
       if (floor > viewer.towerBest) {
         coins = floorCoins(floor);

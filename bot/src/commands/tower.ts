@@ -35,7 +35,7 @@ export const registerTowerCommand = (registry: CommandRegistry): void => {
         await reply(
           outcome.fight.won
             ? t.won(displayName, hero, outcome.floor, enemy, outcome.coins, outcome.xp, outcome.levelUp, outcome.left)
-            : t.lost(displayName, hero, outcome.floor, enemy, outcome.left),
+            : t.lost(displayName, hero, outcome.floor, enemy, outcome.xp, outcome.levelUp, outcome.left),
         );
       };
 

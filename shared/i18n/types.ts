@@ -33,7 +33,7 @@ export type TowerMessages = {
   noAttempts: (name: string, max: number) => string;
   complete: NameMessage;
   won: (name: string, hero: string, floor: number, enemy: string, coins: number, xp: number, levelUp: number | null, left: number) => string;
-  lost: (name: string, hero: string, floor: number, enemy: string, left: number) => string;
+  lost: (name: string, hero: string, floor: number, enemy: string, xp: number, levelUp: number | null, left: number) => string;
 };
 
 export type HeroMessages = {
