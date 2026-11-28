@@ -5,16 +5,16 @@ import { getHeroById } from '#shared/heroes';
 import { getBossById } from '#shared/bosses';
 import { fightDurationMs, INTRO_MS, TOWER_CONFIG, TURN_MS } from '#shared/tower';
 
-export const ARENA_WIDTH = 640;
-export const ARENA_HEIGHT = 230;
+export const ARENA_WIDTH = 520;
+export const ARENA_HEIGHT = 170;
 const GROUND_Y = ARENA_HEIGHT - 6;
-const HERO_X = 150;
-const ENEMY_X = ARENA_WIDTH - 150;
+const HERO_X = 120;
+const ENEMY_X = ARENA_WIDTH - 120;
 // Босс нарисован крупнее героя: масштаб меньше, чтобы голова не упиралась в полоску здоровья
-const SCALE = { heroes: 0.5, bosses: 0.42 } as const;
+const SCALE = { heroes: 0.3, bosses: 0.25 } as const;
 // Отступ от стоп до низа клетки листа (в пикселях листа), измерен по альфа-каналу
 const FOOT_PAD = { heroes: 88, bosses: 142 } as const;
-const LUNGE_PX = 50;
+const LUNGE_PX = 40;
 // Удар «попадает» примерно на середине анимации атаки
 const HIT_AT_MS = 165;
 

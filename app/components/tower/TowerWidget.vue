@@ -4,7 +4,8 @@ import type { TowerScene } from '~/phaser/TowerScene';
 import { ARENA_HEIGHT, ARENA_WIDTH } from '~/phaser/TowerScene';
 import { isBossFloor } from '#shared/tower';
 
-// Арена башни: справа внизу, над полосой героев, чтобы они проходили под ней и не перекрывались.
+// Арена башни: справа внизу, над полосой героев (bottom-64, 256 px: ник, титул и облачко над ходящим героем
+// занимают до ~230 px от низа), чтобы они проходили под ней и не перекрывались.
 // Бой считает бот, здесь он только проигрывается. Появляется на время боя, потом прячется.
 // Phaser грузится динамически: он трогает window и canvas, и на сервере его импорт упал бы.
 const tower = useTowerStore();
@@ -77,7 +78,7 @@ onBeforeUnmount(() => {
   <Transition name="arena-fade">
     <div
       v-show="visible"
-      class="font-quicksand pointer-events-none absolute right-3 bottom-36 rounded-2xl border-2 border-sticker-edge bg-sticker-body/95 text-sticker-ink shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
+      class="font-quicksand pointer-events-none absolute right-3 bottom-64 rounded-2xl border-2 border-sticker-edge bg-sticker-body/95 text-sticker-ink shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
       :style="{ width: ARENA_WIDTH + 'px' }"
     >
       <div class="flex items-center justify-between gap-3 border-b-2 border-sticker-edge/60 px-4 py-2">
